@@ -2,11 +2,13 @@ import os
 import hashlib
 from datetime import datetime
 from app.models.user import Document
+from app.services.ocr_service import OCRService
 
 class DocumentManager:
 
     def __init__(self, file_path):
         self.local_file_path = file_path
+        self.ocr_service = OCRService()
 
     def handle_document(self, file, username, is_local = True):
         filename = self.generate_filename(file.filename)
@@ -19,6 +21,7 @@ class DocumentManager:
 
             # sende new_doc an OCR, dort wird der Text ausgelesen und die Bilder erkannt
             # zurück kommt das Objekt mit den Text aufgesplittet und Bildern (hier die URLs hinterlegt)
+            new_doc = self.ocr_service.extract_text(new_doc)
 
             # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
 

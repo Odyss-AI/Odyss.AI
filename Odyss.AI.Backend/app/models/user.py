@@ -3,26 +3,26 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 class Image(BaseModel):
-    ID: str
-    URL_zu_Bild: str
-    Seite: int
-    Type: str
-    Textinhalt_aus_OCR: str
-    Output_von_Bilderkenner: str
+    id: str
+    link: str
+    page: int
+    type: str
+    imgtext: str
+    llm_output: str
 
-class TextObject(BaseModel):
-    ID: str
-    Ausgelesener_Text: str
-    Seite: int
+class TextChunk(BaseModel):
+    id: str
+    text: str
+    page: int
 
 class Document(BaseModel):
-    ID: str
-    Name: str
-    Timestamp: datetime
-    URL_von_Dokument: str
-    Zusammenfassung: str
-    Bilder: List[Image]
-    TextObjekt: List[TextObject]
+    id: str
+    name: str
+    timestamp: datetime
+    doclink: str
+    summary: str
+    imgList: List[Image]
+    textList: List[TextChunk]
 
 class User(BaseModel):
     id: str
