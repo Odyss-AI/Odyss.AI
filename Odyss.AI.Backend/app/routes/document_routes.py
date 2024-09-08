@@ -1,6 +1,11 @@
 from flask import request, jsonify
+from app.utils.helpers import allowed_file
 from app.routes import main
 from app.db import get_db
+from app.services.document_manager import DocumentManager
+
+UPLOAD_FOLDER = r'C:\Users\efitt\Documents'
+doc_manager = DocumentManager(UPLOAD_FOLDER)
 
 @main.route('/docs/getdocs', methods=['GET'])
 def get_documents():
@@ -16,8 +21,8 @@ def get_documents():
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen der Dokumente: {e}"}), 500
     
-@main.route('/docs/adddoc', methods=['POST'])
-def add_document():
+@main.route('/docs/upload/text', methods=['POST'])
+def upload_document_plain_text():
     try:
         db = get_db()
         data = request.get_json()
@@ -29,7 +34,7 @@ def add_document():
         if not document_data:
             return jsonify({"error": "Dokumentdaten sind erforderlich"}), 400
         
-        # Hier Onedrive Service einbinden, um Dokument hochzuladen und URL in DB speichern
+        # Call Doc Manager, um Dokumente zu speichern in Onedrive, Text auslesen, Metadaten extrahieren, usw.
 
         # Dokument hinzufügen
         for doc in document_data:
@@ -40,5 +45,39 @@ def add_document():
         if document_id:
             return jsonify({"message": "Dokument erfolgreich hinzugefügt", "document_id": document_id}), 201
         return jsonify({"error": "Benutzer nicht gefunden"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {e}"}), 500
+    
+
+@main.route('/docs/upload', methods=['POST'])
+def upload_document():
+    try:
+        username = request.args.get('username')
+        file_data = request.data  # PDF-Datei direkt aus dem Request-Body
+        
+        if not username:
+            return jsonify({"error": "Username ist erforderlich"}), 400
+        if not file_data:
+            return jsonify({'error': 'Empty PDF content'}), 400
+        
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        
+        if file and allowed_file(file.filename):
+
+            # Save file on filesystem just for testing
+            filepath = doc_manager.save_document_local(file)
+
+            # Call Doc Manager, um Dokumente zu speichern in Onedrive, Text auslesen, Metadaten extrahieren, usw.
+
+
+            return jsonify({'message': 'File uploaded successfully', 'filepath': filepath}), 200
+        else:
+            return jsonify({'error': 'File type not allowed'}), 400
+        # Call Doc Manager, um Dokumente zu speichern in Onedrive, Text auslesen, Metadaten extrahieren, usw.
+
+
     except Exception as e:
         return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {e}"}), 500
