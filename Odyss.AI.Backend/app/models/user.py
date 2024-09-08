@@ -17,6 +17,7 @@ class TextObject(BaseModel):
 
 class Document(BaseModel):
     ID: str
+    Name: str
     Timestamp: datetime
     URL_von_Dokument: str
     Zusammenfassung: str
