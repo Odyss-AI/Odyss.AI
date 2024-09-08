@@ -10,6 +10,8 @@ class OCRService:
         # Du kannst dir ein Tool wie Insomnia holen, um direkt ein Dokument über den
         # Endpunkt zu senden und zu schauen, was du bekommst: 
         # document_routes.py -> document_manager.py --> OCRService
+        # Falls du das so testen willst, frag mich einfach kurz für Einrichtung Insomnia,
+        # musst auch den Pfad in document_routes.py anpassen, damit es funktioniert
 
         # Splitte den ausgelesenen Text in kleine Abschnitte und speichere
         # diese in doc.textlist als liste von TextChunk Objekten
