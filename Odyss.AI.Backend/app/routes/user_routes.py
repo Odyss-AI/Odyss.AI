@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.routes import main
-from app.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
+from app.utils.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
 
 @main.route('/users/adduser', methods=['POST'])
 def add_user():

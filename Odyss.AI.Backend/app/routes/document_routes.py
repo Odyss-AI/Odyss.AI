@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from app.utils.helpers import allowed_file
 from app.routes import main
-from app.db import get_db
+from app.utils.db import get_db
 from app.services.document_manager import DocumentManager
 
 UPLOAD_FOLDER = r'C:\Users\efitt\Documents'
