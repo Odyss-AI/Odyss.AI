@@ -13,30 +13,34 @@ class DocumentManager:
     def handle_document(self, file, username, is_local = True):
         filename = self.generate_filename(file.filename)
         try:
+            # Save the document either locally or on OneDrive
             filepath = self.save_document_local(file, filename) if is_local else self.save_document_onedrive(file, filename)
             if filepath is None:
                 return None, "File already exists"
             
+            # Create a new document object with necessary metadata
             new_doc = self.get_new_doc(filename, filepath, file.filename)
 
-            # sende new_doc an OCR, dort wird der Text ausgelesen und die Bilder erkannt
-            # zurück kommt das Objekt mit den Text aufgesplittet und Bildern (hier die URLs hinterlegt)
+            # Send new_doc to OCR, where the text is read out and the images are recognized
+            # The object with the text split up and images (here the URLs are stored) comes back
             new_doc = self.ocr_service.extract_text(new_doc)
 
-            # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
+            # Text gets embedded and stored in the vector database
 
-            # die Bilder werden in getaggt, entsprechend in LLM ausgelesen und Embeddings erstellt
+            # Images get tagged and informations with special LLM are stored in the vector database after embedding
 
-            # Speicher new_doc in der Datenbank unter dem User
+            # Summary is generated from the text through LLM
+
+            # Save new_doc in the database
 
             return new_doc, "File uploaded successfully"
         except Exception as e:
             return None, e
     
     def generate_filename(self, original_filename):
-        # Erzeuge einen SHA-256-Hash basierend auf dem ursprünglichen Dateinamen
+        # Create a unique filename based on the original filename
         file_hash = hashlib.sha256(original_filename.encode('utf-8')).hexdigest()
-        # Behalte die ursprüngliche Dateiendung bei
+        # Save the file extension
         _, file_extension = os.path.splitext(original_filename)
         return f"{file_hash}{file_extension}"
 
