@@ -14,6 +14,7 @@ class TextChunk(BaseModel):
     id: str
     text: str
     page: int
+    formula: str
 
 class Document(BaseModel):
     id: str
