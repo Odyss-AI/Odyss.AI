@@ -1,6 +1,7 @@
 from quart import Quart
 from app.routes import main
-from app.utils.db import init_db_service  # Importiere die Initialisierungsfunktion
+from app.utils.db import init_db_service
+from setup import setup_virtualenv
 
 def create_app():
 
