@@ -20,3 +20,4 @@ tzdata
 wsproto
 qdrant-client
 mistral
+aiocache

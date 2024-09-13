@@ -1,9 +1,16 @@
-from quart import Quart, websocket, jsonify
 import json
+import datetime 
+
+from quart import Quart, websocket, jsonify
 from app.routes import main
 from app.utils.db import get_db
+from app.models.chat import Chat, Message
+from app.services.message_manager import MessageManager
+from bson.objectid import ObjectId
+
 
 db = get_db()
+msg_manager = MessageManager()
 
 @main.route('/', methods=['GET'])
 def home():
@@ -16,8 +23,11 @@ async def chat():
         data = json.loads(message)
         
         username = data.get('username')
+        msg = data.get('message')
         chat_id = data.get('chat_id')
-        files = data.get('files')
+
+        if not chat_id:
+            chat_id = None
         
         if not username:
             await websocket.send(json.dumps({"error": "Nicht authentifiziert"}))
@@ -28,13 +38,14 @@ async def chat():
                 await websocket.send(json.dumps({"error": "Benutzer nicht gefunden"}))
                 continue
 
-        # Hier könnte man die Nachricht weiter verarbeiten, z.B. speichern oder an andere Clients senden
-        response = {
-            "username": username,
-            "message": data.get('message'),
-            "chat_id": chat_id,
-            "files": files
-        }
+        msg = Message(
+            id=str(ObjectId()),
+            is_user=True,
+            content=msg,
+            timestamp=datetime.datetime.now()
+        )
+
+        llm_res = await msg_manager.handle_message(msg, username, chat_id)
         
-        await websocket.send(json.dumps("Hallo, ich bin ein Chatbot!"))
+        await websocket.send(json.dumps(str(llm_res)))
 

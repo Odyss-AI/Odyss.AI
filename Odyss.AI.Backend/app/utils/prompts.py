@@ -10,9 +10,9 @@ def summary_prompt_builder(chunks: List[TextChunk]):
         {
             "role": "system",
             "content": f"""
-                You are a teacher tasked with summarizing an essay. After reading the essay, give a short summary about the content in the essay.
+                You are a teacher tasked with summarizing an text. After reading the text, give a short summary in max five sentences about the content in the essay.
 
-                # Essay:
+                # Text:
                 {context}
 
                 # Instructions:
@@ -31,7 +31,7 @@ def qna_prompt_builder(chunks: List[TextChunk], question: str):
                 "role": "system",
                 "content": f"""
                     You are a teacher. Your task is to read and understand the following text.
-                    After reading the text, answer the questions that follow.
+                    After reading the text, answer the questions that follow. If no text is provided, please answer the question to the best of your ability.
 
                     # Text:
                     {context}

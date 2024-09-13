@@ -5,8 +5,6 @@ import aiohttp
 import asyncio
 import uuid
 
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import PointStruct
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
@@ -15,23 +13,18 @@ from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
 from app.utils.helpers import mistral_api
 from app.utils.prompts import summary_prompt_builder
+from app.services.sim_search_service import SimailaritySearchService
 
 class DocumentManager:
 
-    def __init__(self, qdrant_host='localhost', qdrant_port=6333):
+    def __init__(self):
         self.local_file_path = Config.LOCAL_DOC_PATH
         self.tei_url = Config.TEI_URL + "/embed"
-        self.ocr_service = OCRService()
-        self.qdrant_client = QdrantClient(host=qdrant_host, port=qdrant_port)
-        self.collection_name = 'doc_embeddings'
-        self.qdrant_client.recreate_collection(
-            collection_name=self.collection_name,
-            vectors_config={'size': 1024, 'distance': 'Cosine'}
-        )
-        self.db = get_db()
+        self.sim_search = SimailaritySearchService()
 
     async def handle_document(self, file, username, is_local = True):
         try:
+            db = get_db()
             filename, id = self.generate_filename(file.filename)
             filepath = await self.save_document_local_async(file, filename) if is_local else self.save_document_onedrive(file, filename)
             # if filepath is None:
@@ -46,18 +39,18 @@ class DocumentManager:
             new_doc = get_test_document(id)
 
             # Embeddings mit TEI erstellen
-            # embeddings = await self.create_embeddings_async(new_doc)
+            embeddings = await self.sim_search.create_embeddings_async(new_doc)
 
             # Embeddings in Qdrant speichern
-            # await self.save_embedding_async(id, embeddings)
+            await self.sim_search.save_embedding_async(id, embeddings)
 
-            # TODO: Zusammenfassung des Dokuments erstellen mit LLM
+            # Zusammenfassung des Dokuments erstellen mit LLM
             prompt = summary_prompt_builder(new_doc.textList)
             summary = await mistral_api(prompt)
             new_doc.summary = summary
 
             # Save new_doc in the database
-            #await self.db.add_document_to_user_async(username, new_doc)
+            await db.add_document_to_user_async(username, new_doc)
 
             return new_doc, "File uploaded successfully"
         except Exception as e:
@@ -95,54 +88,7 @@ class DocumentManager:
             imgList = [],
             textList = []
         )
-    
-    async def fetch_embedding_async(self, to_embed: str):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
-                    if response.status == 200:
-                        response_json = await response.json()  # Stelle sicher, dass await verwendet wird
-                        if isinstance(response_json, list) and len(response_json) > 0 and isinstance(response_json[0], list):
-                            return response_json[0]  # Rückgabe des ersten Elements der Liste
-                        else:
-                            print("Fehler: Unerwartetes Format der API-Antwort.")
-                            return None
-                    else:
-                        print(f"Fehler: {response.status}")
-                        return None
-        except aiohttp.ClientError as e:
-            print(f"HTTP-Fehler: {e}")
-            return None
 
-    async def create_embeddings_async(self, doc: Document):
-        tasks = []
-        for chunk in doc.textList:
-            tasks.append(self.fetch_embedding_async(chunk.text))
-        for img in doc.imgList:
-            tasks.append(self.fetch_embedding_async(img.imgtext))
-            tasks.append(self.fetch_embedding_async(img.llm_output))
-        
-        embeddings = await asyncio.gather(*tasks)
-        
-        return embeddings
-    
-    async def save_embedding_async(self, doc_id: str, embeddings: list):
-        try:
-            points = [
-                PointStruct(
-                    id=str(uuid.uuid4()),
-                    vector=embedding,
-                    payload={"doc_id": doc_id}
-                )
-                for embedding in embeddings
-            ]
-            self.qdrant_client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            print(f"Embeddings für Dokument {doc_id} erfolgreich gespeichert.")
-        except Exception as e:
-            print(f"Fehler beim Speichern der Embeddings: {e}")
 
         
     
