@@ -2,7 +2,7 @@ import os
 from quart import Quart, request, jsonify
 from app.utils.helpers import allowed_file
 from app.routes import main
-from app.db import get_db
+from app.utils.db import get_db
 from app.services.document_manager import DocumentManager
 from app.config import Config
 
