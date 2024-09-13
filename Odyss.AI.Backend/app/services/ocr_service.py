@@ -1,10 +1,10 @@
-
+from app.models.user import Document
 
 class OCRService:
     def __init__(self):
         self.ocr = None
 
-    def extract_text(self, doc):
+    def extract_text(self, doc: Document):
         # Emil tob dich aus, in doc bekommst du das Dokumentenobjekt übergeben 
         # Schau in user.py nach: Darin ist die URL, Name, usw.
         # Du kannst dir ein Tool wie Insomnia holen, um direkt ein Dokument über den
