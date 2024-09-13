@@ -1,7 +1,7 @@
 # Odyss.AI
 
-## Um alle Pakete für das Backend automatisch in einer virtuellen Umgebung zu installieren folgender Befehl im Ordner Odyss.AI.Backend: 
-# python setup.py
+## Um alle Pakete für das Backend automatisch in einer virtuellen Umgebung zu installieren folgender Befehl im Ordner Odyss.AI.Backend:  
+### python setup.py
 
 
 
