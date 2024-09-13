@@ -18,3 +18,5 @@ quart
 typing_extensions
 tzdata
 wsproto
+qdrant-client
+mistral

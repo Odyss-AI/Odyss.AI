@@ -7,9 +7,9 @@ def get_test_user():
         documents=[]
     )
 
-def get_test_document():
+def get_test_document(path: str):
     return Document(
-        id="5f2b6b3b4f3d453e2f6e1c7d",
+        id=path,
         name="testdocument",
         timestamp="2020-08-05T12:00:00",
         doclink="",
