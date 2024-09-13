@@ -30,10 +30,10 @@ class DocumentManager:
             # Send new_doc to OCR, where the text is read out and the images are recognized
             # The object with the text split up and images (here the URLs are stored) comes back
             new_doc = self.ocr_service.extract_text(new_doc)
-            # new_doc = get_test_document()
+            #new_doc = get_test_document()
 
             # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
-            # await self.create_text_embedding_async(new_doc)
+            #embeddings = await self.create_text_embedding_async(new_doc)
 
             # Summary is generated from the text through LLM
 
@@ -82,20 +82,19 @@ class DocumentManager:
                 if response.status == 200:
                     return await response.json().get("embedding")
                 return None
-            
-    async def save_embedding_async(self, doc_id: str, embedding: str):
-        # Speichere das Embedding in der VektorDb
-        pass
     
     async def create_text_embedding_async(self, doc: Document):
         tasks = []
-        for text in doc.textList:
-            tasks.append(self.fetch_embedding(text.text))
+        for chunk in doc.textList:
+            tasks.append(self.fetch_embedding_async(doc.id, chunk.text))
         
         embeddings = await asyncio.gather(*tasks)
         
-        for text, embedding in zip(doc.textList, embeddings):
-            text.embedding = embedding
+        return embeddings
+    
+    async def save_embedding_async(self, doc_id: str, embedding: str):
+        # Speichere das Embedding in der VektorDb
+        pass
 
         
     
