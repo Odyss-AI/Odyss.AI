@@ -10,6 +10,28 @@ from bson.objectid import ObjectId
 
 msg_manager = MessageManager()
 
+class ChunkModel:
+    def __init__(self, chunk):
+        self.chunk = chunk
+
+    def model_dump(self, by_alias=False):
+        # Beispielhafte Implementierung der model_dump Methode
+        return {"chunk": self.chunk}
+
+def convert_to_model(chunk):
+    # Konvertiere chunk in ein Objekt der Klasse ChunkModel
+    return ChunkModel(chunk)
+
+def convert_datetime(obj):
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = convert_datetime(value)
+    elif isinstance(obj, list):
+        obj = [convert_datetime(item) for item in obj]
+    elif isinstance(obj, datetime.datetime):
+        obj = obj.isoformat()
+    return obj
+
 @main.route('/', methods=['GET'])
 def home():
     return "<h1>Hallo bei Odyss.AI</h1>"
@@ -45,7 +67,15 @@ async def chat():
             timestamp=datetime.datetime.now()
         )
 
-        llm_res = await msg_manager.handle_message(msg, username, chat_id)
+        llm_res, chunks, chat_id = await msg_manager.handle_message(msg, username, chat_id)
         
-        await websocket.send(json.dumps(str(llm_res)))
+        llm_res_dict = llm_res.model_dump(by_alias=True)
+        llm_res_dict = convert_datetime(llm_res_dict)
 
+        res = {
+            "chatId": chat_id,
+            "message": llm_res_dict,
+            "chunks": [chunk.model_dump(by_alias=True) if hasattr(chunk, 'model_dump') else convert_to_model(chunk).model_dump(by_alias=True) for chunk in chunks]
+        }
+
+        await websocket.send(json.dumps(res))

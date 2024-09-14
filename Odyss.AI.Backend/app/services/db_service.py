@@ -1,4 +1,6 @@
 import os
+import asyncio
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
 from app.models.user import User, Document
@@ -37,7 +39,7 @@ class MongoDBService:
 
     def __init__(self, db_name, uri=Config.MONGODB_CONNECTION_STRING):
         if not hasattr(self, 'client'):
-            self.client = AsyncIOMotorClient(uri)
+            self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=10000)
             self.db = self.client[db_name]
             self.user_collection = self.db["users"]
             self.chat_collection = self.db["chats"]
@@ -61,6 +63,9 @@ class MongoDBService:
             if user:
                 return user
             return None
+        except asyncio.CancelledError:
+            print("Die Operation wurde abgebrochen.")
+            raise
         except Exception as e:
             print(f"Error getting user: {e}")
             return None
@@ -89,8 +94,8 @@ class MongoDBService:
             for doc in documents:
                 if doc_ids is None or doc.get("id") in doc_ids:
                     for chunk in doc.get("textchunks", []):
-                        if chunk.get("chunk_id") in chunk_ids:
-                            chunks.append(chunk)
+                        if chunk.get("chunk_id") in chunk_ids[0]:
+                            chunks.append([chunk, chunk_ids[1]])
             
             return chunks
         except Exception as e:
@@ -98,9 +103,9 @@ class MongoDBService:
             return None
 
     async def add_document_to_user_async(self, username, document: Document):
-        async with await self.client.start_session() as session:
-            async with session.start_transaction():
-                try:
+        try:
+            async with await self.client.start_session() as session:
+                async with session.start_transaction():
                     user = await self.get_user_async(username)
                     if not user:
                         return None
@@ -116,10 +121,15 @@ class MongoDBService:
                         {"$push": {"documents": document.model_dump(by_alias=True)}},
                         session=session
                     )
+
                     return document.id
-                except Exception as e:
-                    print(f"Error adding document to user: {e}")
-                    return None
+        except asyncio.CancelledError:
+            print("Die Operation wurde abgebrochen.")
+            raise
+        except Exception as e:
+            print(f"Fehler beim Hinzufügen des Dokuments: {e}")
+            return None
+
 
     async def delete_document_of_user_async(self, username, document_id):
         try:
@@ -134,9 +144,10 @@ class MongoDBService:
     
     async def get_chat_async(self, chat_id):
         try:
-            chat = await self.chat_collection.find_one({"chat_id": chat_id})
-            chat = Chat(chat)
-            return chat
+            chat = await self.chat_collection.find_one({"id": chat_id})
+            if chat:
+                return Chat(**chat) 
+            return None
         except Exception as e:
             print(f"Error getting chat: {e}")
             return None
@@ -167,15 +178,18 @@ class MongoDBService:
     
     async def add_message_to_chat_async(self, chat_id: str, message: Message):
         try:
-            chat = await self.get_chat(chat_id)
+            chat = await self.get_chat_async(chat_id)
             if not chat:
                 return None
-            message.id = str(ObjectId())
-            chat.messages.append(message)
-            await self.chat_collection.update_one(
-                {"chat_id": chat_id},
-                {"$set": {"messages": chat.messages}}
+            
+            message_dict = message.model_dump(by_alias=True)
+
+            result = await self.chat_collection.update_one(
+                {"id": chat_id},
+                {"$push": {"messages": message_dict}}
             )
+
+            return result.modified_count > 0
         except Exception as e:
             print(f"Error adding message to chat: {e}")
             return None

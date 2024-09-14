@@ -37,20 +37,37 @@ class DocumentManager:
             # new_doc = self.ocr_service.extract_text(new_doc)
             new_doc = get_test_document(id)
 
+            # user_docs = await db.get_documents_of_user_async(username)
+            # if user_docs is not None:
+            #     for doc in user_docs:
+            #         if doc.name == id:
+            #             return None, "File already exists"
+
             # Embeddings mit TEI erstellen
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
 
+            if embeddings is None:
+                return None, "Error creating embeddings"
+            
             # Embeddings in Qdrant speichern
-            await self.sim_search.save_embedding_async(id, embeddings)
+            is_save_successfull = await self.sim_search.save_embedding_async(id, embeddings)
+            if not is_save_successfull:
+                return None, "Error saving embeddings"
 
             # Zusammenfassung des Dokuments erstellen mit LLM
             prompt = summary_prompt_builder(new_doc.textList)
             summary = await mistral_api(prompt)
             new_doc.summary = summary
 
-            # Save new_doc in the database
-            await db.add_document_to_user_async(username, new_doc)
+            if new_doc.summary is None:
+                return None, "Error creating summary"
 
+            # Save new_doc in the database
+            doc_id = await db.add_document_to_user_async(username, new_doc)
+
+            if doc_id is None:
+                return None, "Error saving document"
+            
             return new_doc, "File uploaded successfully"
         except Exception as e:
             return None, e

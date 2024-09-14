@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny
+from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
 from app.models.user import Document
 from app.config import Config
 
@@ -12,31 +12,7 @@ class SimailaritySearchService:
         self.tei_url = Config.TEI_URL + "/embed"
         self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
         self.collection_name = 'doc_embeddings'
-        self.qdrant_client.recreate_collection(
-            collection_name=self.collection_name,
-            vectors_config={'size': 1024, 'distance': 'Cosine'}
-        )
-
-    async def save_embedding_async(self, doc_id: str, embeddings: list):
-        try:
-            points = [
-                PointStruct(
-                    id=str(uuid.uuid4()),
-                    vector=embedding[0],
-                    payload={
-                        "doc_id": doc_id,
-                        "chunk_id": embedding[1]
-                        }
-                )
-                for embedding in embeddings
-            ]
-            self.qdrant_client.upsert(
-                collection_name=self.collection_name,
-                points=points
-            )
-            print(f"Embeddings für Dokument {doc_id} erfolgreich gespeichert.")
-        except Exception as e:
-            print(f"Fehler beim Speichern der Embeddings: {e}")
+        self._initialize_collection()
 
     async def fetch_embedding_async(self, to_embed: str, chunk_id: str):
         try:
@@ -67,6 +43,24 @@ class SimailaritySearchService:
         embeddings = await asyncio.gather(*tasks)
         
         return embeddings
+    
+    async def save_embedding_async(self, id, embeddings):
+        try:
+            points = []
+            for embedding in embeddings:
+                points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
+
+            result = self.qdrant_client.upsert(
+                collection_name=self.collection_name, 
+                wait=True, 
+                points=points
+                )
+            
+            return result.status == 'completed'
+            
+        except Exception as e:
+            print(f"Fehler beim Speichern des Embeddings: {e}")
+            return None
 
     async def search_similar_documents(self, doc_ids: list, query: str, count: int = 5):
         try:
@@ -83,19 +77,68 @@ class SimailaritySearchService:
                 ]
             )
 
-            # Search for similar documents with the filter
-            results = self.qdrant_client.search(
-                collection_name=self.collection_name,
-                query_vector=query_embeddings[0],
-                limit=count,
-                query_filter=filter  # Korrigierte Filter-Übergabe
-            )
-            
+
+
+            # # Search for similar documents with the filter
+            # results = self.qdrant_client.query_points(
+            #     collection_name=self.collection_name,
+            #     query=query_embeddings[0],
+            #     limit=count,
+            #     # query_filter=filter,
+            #     with_payload=True,
+            #     with_vectors=False
+            # )
+
+            search_result = self.qdrant_client.query_points(
+                collection_name=self.collection_name, 
+                query=query_embeddings[0], 
+                limit=5,
+                with_payload=True,
+                with_vectors=True
+            ).points
+                        
             # Extract chunk_ids from the payload of the top results
-            chunk_ids = [result.payload['chunk_id'] for result in results]
+            chunk_ids = []
+            chunk_ids = [[result.payload['chunk_id'], result.score] for result in search_result]
             
             return chunk_ids
         except Exception as e:
             print(f"Fehler bei der Dokumentsuche: {e}")
             return None
 
+    def _initialize_collection(self):
+        # Überprüfen, ob die Collection bereits existiert
+        try:
+            collections = self.qdrant_client.get_collections()
+            col_names = []
+            for collection in collections:
+                if len(collection[1]) > 0:
+                    col_names.append(str(collection[1][0].name))
+        except Exception as e:
+            print(f"Fehler beim Abrufen der Collections: {e}")
+            return
+        
+        if self.collection_name not in col_names:
+
+            # Erstelle die Collection
+            self.qdrant_client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(size=1024, distance='Cosine'),
+                on_disk_payload=True,
+                hnsw_config=HnswConfigDiff(
+                    m=16,
+                    ef_construct=100,
+                    full_scan_threshold=10000,
+                    max_indexing_threads=0,
+                    on_disk=True
+                ),
+                optimizers_config=OptimizersConfigDiff(
+                    deleted_threshold=0.0,
+                    vacuum_min_vector_number=0,
+                    indexing_threshold=10000,
+                    flush_interval_sec=5
+                )
+            )
+            print(f"Collection '{self.collection_name}' erstellt.")
+        else:
+            print(f"Collection '{self.collection_name}' existiert bereits.")

@@ -2,14 +2,14 @@ import datetime
 
 from app.utils.db import get_db
 from app.models.chat import Chat, Message
-from app.models.user import TextChunk
+from app.models.user import TextChunk, Document
 from app.utils.helpers import mistral_api
 from app.utils.prompts import qna_prompt_builder
 from bson.objectid import ObjectId
 from app.services.caching import CachingService
 from app.services.db_service import MongoDBService
 from app.services.sim_search_service import SimailaritySearchService
-from bson.objectid import ObjectId
+from typing import List, Optional
 
 class MessageManager:
     def __init__(self):
@@ -36,10 +36,10 @@ class MessageManager:
         answer = await mistral_api(prompt)
 
         # Die Antwort des LLM wird in die Datenbank geschrieben
-        bot_msg = await self.write_bot_msg(chat, answer)
+        bot_msg = await self.write_bot_msg(db, chat, answer)
 
         # Die Antwort wird an den Benutzer zurückgegeben
-        return bot_msg
+        return bot_msg, chunks, chat.id
 
     async def get_chat(self, db: MongoDBService, message: Message, user: str, chat_id: str = None):
         # Checke im Cache, ob der Chat dort bereits geladen ist, wenn nicht, lade den Chat aus der Datenbank
@@ -52,15 +52,18 @@ class MessageManager:
         # chat = await Chat(self.cache.get(chat_id))
         chat = None
         if not chat:
-            chat = Chat(await self.db.chats.find_one({"_id": ObjectId(chat_id)}))
+            chat = await db.get_chat_async(chat_id)
             if chat:
+                await db.add_message_to_chat_async(chat.id, message)
                 chat.messages.append(message)
                 # await self.caching_service.set(chat_id, chat)
-                await self.db.add_message_to_chat(chat.id, message)
+            else:
+                chat = await db.create_chat_async(user, message)
+                # await self.cache.set(chat.id, chat)
         else:
             chat.messages.append(message)
             # self.cache.update(chat_id, chat)
-            await self.db.add_message_to_chat(chat.id, message)
+            await db.add_message_to_chat(chat.id, message)
 
         return chat
     
@@ -88,15 +91,23 @@ class MessageManager:
             timestamp=datetime.datetime.now()
         )
 
-        await db.add_message_to_chat(chat.id, bot_msg)
+        await db.add_message_to_chat_async(chat.id, bot_msg)
         chat.messages.append(bot_msg)
-        await self.cache.update(chat.id, chat)
+        # await self.cache.update(chat.id, chat)
 
         return bot_msg
     
-    def get_chunks_from_docs(self, docs: list = [], chunk_ids: list = None):
+    def get_chunks_from_docs(self, docs: list[Document] = [], chunk_ids: list = None):
         result = []
+        if chunk_ids is None:
+            return result
+
+        # Erstelle ein Dictionary für schnellen Zugriff auf die Scores
+        chunk_id_to_score = {chunk_id: score for chunk_id, score in chunk_ids}
+
         for doc in docs:
-            if chunk_ids is None or doc.chunk_id in chunk_ids:
-                result.append(doc.text)
+            for chunk in doc.textList:
+                if chunk.id in chunk_id_to_score:
+                    result.append([chunk.text, chunk_id_to_score[chunk.id]])
+        
         return result

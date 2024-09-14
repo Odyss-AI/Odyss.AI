@@ -22,10 +22,13 @@ def summary_prompt_builder(chunks: List[TextChunk]):
         },
     ]
 
-def qna_prompt_builder(chunks: List[TextChunk], question: str):
+def qna_prompt_builder(chunks: list, question: str):
 
-    context = "\n".join(f"{i+1}. Part: {t.text}" for i, t in enumerate(chunks))
-
+    context = ""
+    if chunks:
+        for chunk, i in chunks:
+            context += str(i) + ". " + chunk[0] + "\n"
+            
     return [
             {
                 "role": "system",
@@ -37,7 +40,7 @@ def qna_prompt_builder(chunks: List[TextChunk], question: str):
                     {context}
 
                     # Instructions:
-                    ## Answer the following question:
+                    ## In clear and concise language, answer the following question in 3-8 sentences:
                     {question}
                     """,
             }
