@@ -8,8 +8,6 @@ from app.models.chat import Chat, Message
 from app.services.message_manager import MessageManager
 from bson.objectid import ObjectId
 
-
-db = get_db()
 msg_manager = MessageManager()
 
 @main.route('/', methods=['GET'])
@@ -18,6 +16,8 @@ def home():
 
 @main.websocket('/chat')
 async def chat():
+    db = get_db()
+    
     while True:
         message = await websocket.receive()
         data = json.loads(message)

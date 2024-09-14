@@ -3,12 +3,13 @@ import aiohttp
 import asyncio
 
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import PointStruct
+from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny
 from app.models.user import Document
 from app.config import Config
 
 class SimailaritySearchService:
     def __init__(self):
+        self.tei_url = Config.TEI_URL + "/embed"
         self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
         self.collection_name = 'doc_embeddings'
         self.qdrant_client.recreate_collection(
@@ -66,30 +67,28 @@ class SimailaritySearchService:
         embeddings = await asyncio.gather(*tasks)
         
         return embeddings
-    
+
     async def search_similar_documents(self, doc_ids: list, query: str, count: int = 5):
         try:
             # Fetch embeddings for the query
-            query_embeddings = await self.fetch_embedding_async(query)
+            query_embeddings = await self.fetch_embedding_async(query, "q")
             
-            # Define the filter for doc_ids
-            filter_criteria = {
-                "must": [
-                    {
-                        "key": "id",
-                        "match": {
-                            "value": doc_ids
-                        }
-                    }
+            # Verwende MatchAny, um eine Liste von Werten zu filtern
+            filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="doc_id",  # Das Feld, das gefiltert werden soll
+                        match=MatchAny(any=doc_ids)  # Verwende MatchAny anstelle von MatchValue
+                    )
                 ]
-            }
-            
+            )
+
             # Search for similar documents with the filter
             results = self.qdrant_client.search(
                 collection_name=self.collection_name,
-                query=query_embeddings,
-                top=count,
-                filter=filter_criteria
+                query_vector=query_embeddings[0],
+                limit=count,
+                query_filter=filter  # Korrigierte Filter-Übergabe
             )
             
             # Extract chunk_ids from the payload of the top results
@@ -99,3 +98,4 @@ class SimailaritySearchService:
         except Exception as e:
             print(f"Fehler bei der Dokumentsuche: {e}")
             return None
+

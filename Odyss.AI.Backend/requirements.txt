@@ -21,3 +21,4 @@ wsproto
 qdrant-client
 mistral
 aiocache
+aiocache[redis]

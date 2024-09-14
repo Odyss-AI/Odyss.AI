@@ -19,7 +19,6 @@ class DocumentManager:
 
     def __init__(self):
         self.local_file_path = Config.LOCAL_DOC_PATH
-        self.tei_url = Config.TEI_URL + "/embed"
         self.sim_search = SimailaritySearchService()
 
     async def handle_document(self, file, username, is_local = True):
