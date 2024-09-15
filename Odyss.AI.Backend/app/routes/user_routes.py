@@ -1,5 +1,8 @@
 from quart import request, jsonify
 from app.routes import main
+from bson import json_util
+from app.models.user import User
+from app.models.chat import Chat
 from app.utils.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
 
 # Benutzer hinzufügen
@@ -33,9 +36,15 @@ async def get_user():
 
         # Benutzer abrufen
         user = await db.get_user_async(username)
+        chats = await db.get_chats_by_user_async(username)
+
+        res = {
+            "user": user, 
+            "chats": chats
+        }
 
         if user:
-            return jsonify({"message": "Benutzer gefunden", "user": user}), 200
+            return json_util.dumps(res), 200
         else:
             return jsonify({"error": "Benutzer nicht gefunden"}), 404
     except Exception as e:

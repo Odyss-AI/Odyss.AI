@@ -157,7 +157,7 @@ class MongoDBService:
             chats_cursor = self.chat_collection.find({"user_id": user})
             chats = []
             async for chat in chats_cursor:
-                chats.append(Chat(chat))
+                chats.append(Chat(**chat))
             return chats
         except Exception as e:
             print(f"Error getting chats by user: {e}")
