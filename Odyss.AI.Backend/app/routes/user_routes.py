@@ -18,10 +18,14 @@ async def add_user():
             return jsonify({"error": "Username ist erforderlich"}), 400
 
         # Benutzer erstellen
-        user_id = await db.create_user_async(username)
+        user = await db.create_user_async(username)
+        res = {
+            "user": user, 
+            "chats": []
+        }
 
-        if user_id:
-            return jsonify({"message": "Benutzer erfolgreich erstellt", "user_id": user_id}), 201
+        if user:
+            return json_util.dumps(res), 201
         else:
             return jsonify({"error": "Benutzername existiert bereits"}), 409
     except Exception as e:
@@ -49,3 +53,17 @@ async def get_user():
             return jsonify({"error": "Benutzer nicht gefunden"}), 404
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen des Benutzers: {e}"}), 500
+    
+@main.route('/users/getchats', methods=['GET'])
+async def get_chats():
+    try:
+        db = get_db()
+        username = request.args.get('username')
+
+        # Chats abrufen
+        chats = await db.get_chats_by_user_async(username)
+        if chats:
+            return jsonify({"message": "Chats gefunden", "chats": [chat.model_dump(by_alias=True) for chat in chats]}), 200
+        return jsonify({"error": "Chats nicht gefunden"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Abrufen der Chats: {e}"}), 500

@@ -52,7 +52,7 @@ class MongoDBService:
                 return None  # Benutzername existiert bereits
             user = User(id=str(ObjectId()), username=username)
             await self.user_collection.insert_one(user.model_dump(by_alias=True))
-            return user.id
+            return user
         except Exception as e:
             print(f"Error creating user: {e}")
             return None

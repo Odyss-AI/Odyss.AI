@@ -170,6 +170,17 @@ main button:hover {
   flex-direction: column;
 }
 
+.chunk {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  color: #282c34;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #f1f1f1;
+}
+
 .chat-message.user {
   background-color: #e1ffc7;
   align-self: flex-end;

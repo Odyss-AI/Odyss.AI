@@ -27,7 +27,7 @@ def qna_prompt_builder(chunks: list, question: str):
     context = ""
     if chunks:
         for chunk, i in chunks:
-            context += str(i) + ". " + chunk[0] + "\n"
+            context += chunk + "\n"
             
     return [
             {

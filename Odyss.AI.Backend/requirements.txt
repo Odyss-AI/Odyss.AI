@@ -22,3 +22,4 @@ qdrant-client
 mistral
 aiocache
 aiocache[redis]
+quart-cors
