@@ -88,7 +88,7 @@ function App() {
       const lastMessage = messages[messages.length - 1];
       console.log('Last Message:', lastMessage);
       setChats([...chats, lastMessage.message]);
-      setLastMessage(lastMessage.message);
+      setLastMessage(lastMessage);
     }
   }, [messages]);
 
@@ -116,9 +116,9 @@ function App() {
         <div className="chat-container">
           <div>
             {hasMessages && Array.isArray(chats) && chats.map((chat, index) => (
-              <div key={index} className={`chat-message ${hasMessages && chat.is_user ? 'user' : 'bot'}`}>
+              <div key={index} className={`chat-message ${hasMessages && chat?.is_user ? 'user' : 'bot'}`}>
                 <p className='chat-user'>{user}</p>
-                <p className='chat-msg'>{hasMessages && chat.content}</p>
+                <p className='chat-msg'>{hasMessages && chat?.content}</p>
               </div>
             ))}
           </div>
@@ -137,10 +137,11 @@ function App() {
           <h3>Simalarity</h3>
           <div className="chat-container">
             <div>
-              {lastMessage.chunks.map((chunk, index) => (
-                <div key={index} className='chunks'>
-                  <p className='chat-user'>{chunk[1]}</p>
-                  <p className='chat-msg'>{chunk[0]}</p>
+              {lastMessage.chunks.map((chunkObj, index) => (
+                console.log('Chunk:', chunkObj),
+                <div key={index} className='chunk bot'>
+                  <p className='chat-user'>{chunkObj.chunk[1]}</p>
+                  <p className='chat-msg'>{chunkObj.chunk[0]}</p>
                 </div>
               ))}
             </div>
