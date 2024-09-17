@@ -18,3 +18,8 @@ quart
 typing_extensions
 tzdata
 wsproto
+qdrant-client
+mistral
+aiocache
+aiocache[redis]
+quart-cors
