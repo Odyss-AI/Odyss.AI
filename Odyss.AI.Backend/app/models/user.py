@@ -18,6 +18,7 @@ class TextChunk(BaseModel):
 
 class Document(BaseModel):
     id: str
+    doc_id: str
     name: str
     timestamp: datetime
     doclink: str

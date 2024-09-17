@@ -28,11 +28,16 @@ async def get_documents():
 @main.route('/docs/upload', methods=['POST'])
 async def upload_document():
     try:
+        db = get_db()
         username = request.args.get('username')
         file_data = await request.files  # PDF-Datei direkt aus dem Request-Body
 
         if not username:
             return jsonify({"error": "Username ist erforderlich"}), 400
+        
+        # Prüfen, ob der Benutzername in der Datenbank vorhanden ist
+        if await db.get_user_async(username) is None:
+            return jsonify({"error": "Benutzer nicht gefunden"}), 404
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):

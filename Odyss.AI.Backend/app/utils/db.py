@@ -7,7 +7,7 @@ def init_db_service():
     if db_service is None:
         try:
             print("Initialize database connection ...")
-            db_service = MongoDBService(db_name="odyss_ai", collection_name="users")
+            db_service = MongoDBService(db_name="odyss_ai")
             print("MongoDB-Connection is established")
         except Exception as e:
             print(f"Error while opening connection to MongoDB: {e}")
