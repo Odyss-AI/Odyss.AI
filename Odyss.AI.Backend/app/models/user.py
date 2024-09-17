@@ -14,6 +14,7 @@ class TextChunk(BaseModel):
     id: str
     text: str
     page: int
+    formula: List[str] = Field(default_factory=list)
 
 class Document(BaseModel):
     id: str

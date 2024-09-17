@@ -1,9 +1,11 @@
-from flask import Flask
+from quart import Quart
 from app.routes import main
-from app.db import init_db_service  # Importiere die Initialisierungsfunktion
+from app.utils.db import init_db_service
+from setup import setup_virtualenv
 
 def create_app():
-    app = Flask(__name__)
+
+    app = Quart(__name__)
     # Initialisiere den MongoDBService
     init_db_service()
 

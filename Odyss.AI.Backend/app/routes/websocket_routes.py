@@ -1,4 +1,4 @@
-from flask import render_template
+from quart import Quart
 from app.routes import main
 
 @main.route('/', methods=['GET'])
