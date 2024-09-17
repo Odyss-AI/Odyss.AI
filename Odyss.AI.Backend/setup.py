@@ -17,7 +17,7 @@ def setup_virtualenv():
         activate_script = os.path.join('venv', 'bin', 'activate')
 
     print("Aktiviere virtuelle Umgebung und installiere Pakete...")
-    subprocess.check_call(f"{activate_script} && pip install -r requirements.txt", shell=True)
+    subprocess.check_call(f"{activate_script} && pip install -r Odyss.AI.Backend/requirements.txt", shell=True)
 
 if __name__ == "__main__":
     setup_virtualenv()

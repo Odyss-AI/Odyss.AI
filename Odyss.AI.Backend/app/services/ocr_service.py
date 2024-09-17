@@ -9,11 +9,10 @@ from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
 import hashlib
 from datetime import datetime
-from . import TextChunk, Image
+from app.models.user import TextChunk, Image
 
 
 class OCRService:
-    UPLOAD_FOLDER = r'C:\Users\ramaz\Documents'
     def __init__(self):
         self.ocr = PaddleOCR(use_angle_cls=True, use_gpu=False, lang="de")
         self.processor = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
@@ -54,7 +53,7 @@ class OCRService:
         # So ist deine Logik abgekapselt und du kannst machen was du willst solange 
         # du das Dokumentenobjekt zurückgibst mit den entsprechenden Werten eingefügt
 
-        return doc
+        # return doc
     
 # Convert_to_PDF 
     def convert_docx_to_pdf(self, doc):
