@@ -1,3 +1,4 @@
+import zlib
 from paddleocr import PaddleOCR
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
@@ -20,7 +21,6 @@ class OCRService:
 
     def extract_text(self, doc):
         file_extension = os.path.splitext(doc.name)[1].lower()
-
         if file_extension == ".pdf":
             # self.process_pdf(doc) # PDF-Verarbeitung aufrufen
             print("pdf")
@@ -30,30 +30,6 @@ class OCRService:
         else:
             print("Unsupported file type. Please provide a .docx, .pptx, or .pdf file.")
         return doc
-            
-        # Emil tob dich aus, in doc bekommst du das Dokumentenobjekt übergeben 
-        # Schau in user.py nach: Darin ist die URL, Name, usw.dwa
-        # Du kannst dir ein Tool wie Insomnia holen, um direkt ein Dokument über den
-        # Endpunkt zu senden und zu schauen, was du bekommst: 
-        # document_routes.py -> document_manager.py --> OCRService
-        # Falls du das so testen willst, frag mich einfach kurz für Einrichtung Insomnia,
-        # musst auch den Pfad in document_routes.py anpassen, damit es funktioniert
-
-        # Splitte den ausgelesenen Text in kleine Abschnitte und speichere
-        # diese in doc.textlist als liste von TextChunk Objekten
-        # Die TextChunks haben die Attribute ID, Text und Page
-        # return das Dokumentenobjekt, daraus wird anschließend die Emebddings erstellt
-
-        # Die erkannten Bilder werden in doc.imgList als Liste von Image Objekten gespeichert
-        # Die Image Objekte haben die Attribute ID, Link, Page, Type, Imgtext und LLM_Output
-        # Die Bilder sollen in OneDrie gespeichert werden, muss noch implementiert werden
-
-        # Wichtig: Mach so viele Methoden darunter wie du brauchst für die OCR Logik, 
-        # aber alle sollen hierin aufgerufen werden
-        # So ist deine Logik abgekapselt und du kannst machen was du willst solange 
-        # du das Dokumentenobjekt zurückgibst mit den entsprechenden Werten eingefügt
-
-        # return doc
     
 # Convert_to_PDF 
     def convert_docx_to_pdf(self, doc):

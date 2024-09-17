@@ -23,3 +23,15 @@ mistral
 aiocache
 aiocache[redis]
 quart-cors
+paddleocr
+transformers
+PIL
+os
+re
+PyPDF2
+pdfplumber
+pptxtopdf
+docx2pdf
+hashlib
+datetime
+zlib
