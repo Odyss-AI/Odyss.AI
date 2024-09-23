@@ -12,9 +12,10 @@ def create_app():
     app = Quart(__name__)
     app = cors(app, allow_origin="*")
 
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+    app.logger.setLevel(logging.DEBUG)
 
-    logging.info("Starting Odyss.AI backend ...")
+    logging.debug("Starting Odyss.AI backend ...")
 
     # Initialize the database service
     init_db_service()
@@ -23,5 +24,6 @@ def create_app():
 
     app.register_blueprint(main)
 
-    logging.info("Odyss.AI is running")
+    logging.debug("Odyss.AI backend is running")
+
     return app
