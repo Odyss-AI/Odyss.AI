@@ -69,6 +69,10 @@ async def chat():
 
         llm_res, chunks, chat_id = await msg_manager.handle_message_async(msg, username, chat_id)
         
+        if llm_res is None:
+            await websocket.send(json.dumps({"error": chunks}))
+            continue
+
         llm_res_dict = llm_res.model_dump(by_alias=True)
         llm_res_dict = convert_datetime(llm_res_dict)
 
