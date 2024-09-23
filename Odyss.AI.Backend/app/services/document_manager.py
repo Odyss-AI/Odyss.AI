@@ -4,6 +4,8 @@ import hashlib
 import aiohttp
 import asyncio
 
+from bson import ObjectId
+
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
@@ -30,6 +32,22 @@ class DocumentManager:
             # Send new_doc to OCR, where the text is read out and the images are recognized
             # The object with the text split up and images (here the URLs are stored) comes back
             new_doc = self.ocr_service.extract_text(new_doc)
+
+            print("nach extract")
+
+            print(f"EMR Document ID: {new_doc.id}")
+            print(f"EMR Document Name: {new_doc.name}")
+            print(f"EMR Timestamp: {new_doc.timestamp}")
+            print(f"EMR Document Link: {new_doc.doclink}")
+            print(f"EMR Summary: {new_doc.summary}")
+
+            # Print text chunks
+            for idx, chunk in enumerate(new_doc.textList):
+                print(f"EMR Text Chunk {idx+1}: {chunk.text} (Page {chunk.page})")
+
+            # Print images
+            for idx, img in enumerate(new_doc.imgList):
+                print(f"EMR Image {idx+1}: Link={img.link}, Page={img.page}, OCR Text={img.imgtext}")
             #new_doc = get_test_document()
 
             # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
@@ -67,7 +85,8 @@ class DocumentManager:
     
     def get_new_doc(self, name, path, original_name):
         return Document(
-            id = name,
+            id = str(ObjectId()),
+            doc_id=name,
             name = original_name,
             timestamp = datetime.now(),
             doclink = path,

@@ -1,3 +1,4 @@
+from io import BytesIO
 import zlib
 from paddleocr import PaddleOCR
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
@@ -8,9 +9,10 @@ import PyPDF2
 import pdfplumber
 from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
-import hashlib
-from datetime import datetime
 from app.models.user import TextChunk, Image
+from docx import Document as DocxDocument
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 
 class OCRService:
@@ -21,56 +23,68 @@ class OCRService:
 
     def extract_text(self, doc):
         file_extension = os.path.splitext(doc.name)[1].lower()
+
         if file_extension == ".pdf":
-            # self.process_pdf(doc) # PDF-Verarbeitung aufrufen
-            print("pdf")
+            self.process_pdf(doc)  # PDF-Verarbeitung aufrufen
         elif file_extension in [".docx", ".pptx"]:
-            self.convert_to_pdf(doc)  # PDF-Konvertierung aufrufen
-            # self.process_pdf(doc)  # PDF-Verarbeitung aufrufen
+            self.convert_docx_or_pptx_to_pdf(doc)  # Konvertiere DOCX/PPTX zu PDF
+            self.process_pdf(doc)  # PDF-Verarbeitung aufrufen
         else:
-            print("Unsupported file type. Please provide a .docx, .pptx, or .pdf file.")
+            print("Unsupported file type")  # Überprüfen, ob der Dateityp nicht unterstützt wird
+
         return doc
-    
-# Convert_to_PDF 
-    def convert_docx_to_pdf(self, doc):
-        docx_path = os.path.join(self.UPLOAD_FOLDER, doc.name)
-        with open(docx_path, "wb") as f:
-            f.write(doc.doclink.read())  # Speichert die Datei lokal aus dem Dokumentobjekt
 
+
+# Convert
+    def convert_docx_or_pptx_to_pdf(self, doc):
         try:
-            # Konvertierung von DOCX zu PDF
-            docx_to_pdf(docx_path)
+            if doc.name.endswith(".docx"):
+                docx_to_pdf(doc.doclink)  # Convert DOCX to PDF
+            elif doc.name.endswith(".pptx"):
+                pptx_to_pdf(doc.doclink)  # Convert PPTX to PDF
         except Exception as e:
-            raise Exception(f"Fehler bei der Konvertierung von DOCX zu PDF: {e}")
+            raise Exception(f"Error during conversion: {e}")
 
-        # Überprüfen, ob die PDF-Datei erstellt wurde
-        pdf_path = docx_path.replace(".docx", ".pdf")
-        if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"Die konvertierte PDF-Datei wurde nicht gefunden: {pdf_path}")
+        doc.name = doc.name.replace('.docx', '.pdf').replace('.pptx', '.pdf')
+        return doc
 
-        return pdf_path
+    def convert_docx_to_pdf(self, doc):
+        doc_content = DocxDocument(doc.doclink)
+        
+        # Erstelle einen PDF-Stream
+        pdf_stream = BytesIO()
+        pdf_canvas = canvas.Canvas(pdf_stream, pagesize=letter)
+
+        for paragraph in doc_content.paragraphs:
+            pdf_canvas.drawString(100, 750, paragraph.text)
+            pdf_canvas.showPage()  # Neue Seite für jeden Absatz
+
+        pdf_canvas.save()
+        pdf_stream.seek(0)  # Setze den Stream zurück
+
+        # Speichere die PDF-Datei im Document-Objekt
+        doc.doclink = pdf_stream  # Setze den doclink auf den PDF-Stream
+        return pdf_stream  # Gib den PDF-Stream zurück
+
+
 
     def convert_pptx_to_pdf(self, doc):
-        pptx_path = os.path.join(self.UPLOAD_FOLDER, doc.name)
-        with open(pptx_path, "wb") as f:
-            f.write(doc.doclink.read())  # Speichert die Datei lokal aus dem Dokumentobjekt
+        # Dateiinhalt in Bytes laden
+        pptx_stream = BytesIO(doc.doclink.read())
+        pdf_stream = BytesIO()  # Erstelle einen neuen BytesIO-Stream für die PDF
 
         try:
-            # Konvertierung von PPTX zu PDF
-            pptx_to_pdf(pptx_path, self.UPLOAD_FOLDER)
+            # Konvertiere PPTX-Stream direkt zu PDF-Stream
+            pptx_to_pdf(pptx_stream, pdf_stream)  # Anpassung hier
+            pdf_stream.seek(0)  # Zurücksetzen des Streams auf den Anfang
         except Exception as e:
             raise Exception(f"Fehler bei der Konvertierung von PPTX zu PDF: {e}")
 
-        # Überprüfen, ob die PDF-Datei erstellt wurde
-        pdf_path = pptx_path.replace(".pptx", ".pdf")
-        if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"Die konvertierte PDF-Datei wurde nicht gefunden: {pdf_path}")
+        return pdf_stream  # Gibt den PDF-Stream zurück
 
-        return pdf_path
-    
-    
+      
 # handle formulas
-    def extract_formulas_from_image(image_path):
+    def extract_formulas_from_image(self, image_path):
         processor = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
         model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-small-handwritten")
 
@@ -83,12 +97,12 @@ class OCRService:
         formulas = re.findall(r'\$[^\$]+\$', generated_text)
         return formulas
     
-    def save_formulas_to_file(formulas, output_path):
+    def save_formulas_to_file(self, formulas, output_path):
         with open(output_path, "w", encoding="utf-8") as f:
             for formula, page_num in formulas:
                 f.write(f"Formula on Page {page_num}: {formula}\n")
 
-    def extract_text_formulas_from_pdf(file_path):
+    def extract_text_formulas_from_pdf(self, file_path):
         formulas = []
         with pdfplumber.open(file_path) as pdf:
             for page_num, page in enumerate(pdf.pages):
@@ -98,17 +112,18 @@ class OCRService:
         return formulas
 
 # extraction
-    def extract_text_from_pdf(self, file_path):
+    def extract_text_from_pdf(self, pdf_stream):
         full_text = ""
-        with open(file_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            for page_num, page in enumerate(pdf_reader.pages):
-                page_text = page.extract_text()
-                if page_text:
-                    full_text += f"{page_text.strip()} (Page {page_num + 1})\n"
-                else:
-                    full_text += f"No text detected on page {page_num + 1}\n"
+        pdf_reader = PyPDF2.PdfReader(pdf_stream)
+        for page_num, page in enumerate(pdf_reader.pages):
+            page_text = page.extract_text()
+            if page_text:
+                full_text += f"{page_text.strip()} (Page {page_num + 1})\n"
+            else:
+                full_text += f"No text detected on page {page_num + 1}\n"
         return full_text
+
+
 
     def extract_images_from_pdf(self, file_path, doc):
         pdf_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -181,19 +196,14 @@ class OCRService:
                 text_chunk = TextChunk(id=self.generate_id(), text=chunk.strip(), page=idx + 1)
                 doc.textList.append(text_chunk)
 
-    def generate_id(self):
-        # Generate a unique ID for chunks or images
-        return hashlib.sha256(str(datetime.now().timestamp()).encode()).hexdigest()
 
 # Sudo main
-    def process_pdf(self, file_path, doc):
-        output_text = self.extract_text_from_pdf(file_path)
+    def process_pdf(self, doc):
+        # Extract text and images from PDF
+        output_text = self.extract_text_from_pdf(doc.doclink)
         self.split_text_into_chunks(output_text, doc)
-        self.extract_images_from_pdf(file_path, doc)
-        formulas = self.extract_text_formulas_from_pdf(file_path)
-        self.save_formulas_to_file(formulas, "math_formulas.txt")
+        self.extract_images_from_pdf(doc.doclink, doc)
 
-
-
-
-    
+        # Hier musst du die imgList und textList des vorhandenen `Document`-Objekts aktualisieren
+        doc.imgList = doc.imgList
+        doc.textList = doc.textList
