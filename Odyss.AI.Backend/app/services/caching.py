@@ -1,13 +1,13 @@
-from aiocache import caches, cached
+import asyncio
+from typing import Optional
+from pydantic import BaseModel
+from datetime import datetime
+from aiocache import caches, Cache
 from aiocache.serializers import JsonSerializer
 
-# Konfiguration des Caches
 caches.set_config({
     'default': {
-        'cache': "aiocache.RedisCache",
-        'endpoint': "127.0.0.1",
-        'port': 6379,
-        'timeout': 1,
+        'cache': "aiocache.SimpleMemoryCache",
         'serializer': {
             'class': "aiocache.serializers.JsonSerializer"
         }
@@ -16,28 +16,105 @@ caches.set_config({
 
 class CachingService:
     def __init__(self):
-        self.cache = caches.get('default')
+        self.cache: Cache = caches.get('default')
+        self.cache.serializer = JsonSerializer()
 
-    async def set(self, key, value, ttl=600):
-        """Fügt einen neuen Wert in den Cache ein."""
-        await self.cache.set(key, value, ttl=ttl)
+    async def set(self, key: str, value: BaseModel, ttl: int = 600) -> bool:
+        """
+        Adds a new value to the cache.
 
-    async def get(self, key):
-        """Überprüft, ob ein Wert im Cache enthalten ist und gibt ihn zurück."""
-        return await self.cache.get(key)
+        Args:
+            key (str): The key under which the value should be stored.
+            value (BaseModel): The value to be stored, which must be a Pydantic model.
+            ttl (int, optional): Time-to-live for the cache entry in seconds. Defaults to 600 seconds.
 
-    async def exists(self, key):
-        """Überprüft, ob ein Schlüssel im Cache existiert."""
-        return await self.cache.exists(key)
+        Returns:
+            bool: True if the value was successfully set, False otherwise.
+        """
+        try:
+            await self.cache.set(key, value.json(), ttl=ttl)
+            return True
+        except Exception as e:
+            print(f"Error setting value for key {key}: {e}")
+            return False
 
-    async def delete(self, key):
-        """Löscht einen Wert aus dem Cache."""
-        await self.cache.delete(key)
+    async def get(self, key: str, model: BaseModel) -> Optional[BaseModel]:
+        """
+        Checks if a value is in the cache and returns it.
 
-    async def update(self, key, value, ttl=600):
-        """Aktualisiert einen Wert im Cache."""
-        await self.cache.set(key, value, ttl=ttl)
+        Args:
+            key (str): The key of the value to retrieve.
+            model (BaseModel): The Pydantic model class to deserialize the cached value.
 
-    async def clear(self):
-        """Löscht alle Werte aus dem Cache."""
-        await self.cache.clear()
+        Returns:
+            Optional[BaseModel]: The deserialized value if found, None otherwise.
+        """
+        try:
+            data = await asyncio.wait_for(self.cache.get(key), timeout=5.0)
+            if data:
+                return model.model_validate_json(data)
+            return None
+        except asyncio.TimeoutError:
+            print(f"TimeoutError: Retrieving value for key {key} took too long.")
+            return None
+        except asyncio.CancelledError:
+            print(f"CancelledError: Retrieving value for key {key} was cancelled.")
+            return None
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return None
+
+    async def exists(self, key: str) -> bool:
+        """
+        Checks if a key exists in the cache.
+
+        Args:
+            key (str): The key to check for existence.
+
+        Returns:
+            bool: True if the key exists, False otherwise.
+        """
+        try:
+            return await self.cache.exists(key)
+        except Exception as e:
+            print(f"Error checking existence of key {key}: {e}")
+            return False
+
+    async def delete(self, key: str) -> bool:
+        """
+        Deletes a value from the cache.
+
+        Args:
+            key (str): The key of the value to delete.
+
+        Returns:
+            bool: True if the value was successfully deleted, False otherwise.
+        """
+        try:
+            await self.cache.delete(key)
+            return True
+        except Exception as e:
+            print(f"Error deleting key {key}: {e}")
+            return False
+
+    async def update(self, key: str, value: BaseModel, ttl: int = 600) -> bool:
+        """
+        Updates a value in the cache.
+
+        Args:
+            key (str): The key of the value to update.
+            value (BaseModel): The new value to be stored, which must be a Pydantic model.
+            ttl (int, optional): Time-to-live for the cache entry in seconds. Defaults to 600 seconds.
+
+        Returns:
+            bool: True if the value was successfully updated, False otherwise.
+        """
+        try:
+            if await self.exists(key):
+                return await self.set(key, value, ttl)
+            else:
+                print(f"Key {key} does not exist in the cache.")
+                return False
+        except Exception as e:
+            print(f"Error updating key {key}: {e}")
+            return False

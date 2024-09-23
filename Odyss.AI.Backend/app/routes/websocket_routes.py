@@ -67,7 +67,7 @@ async def chat():
             timestamp=datetime.datetime.now()
         )
 
-        llm_res, chunks, chat_id = await msg_manager.handle_message(msg, username, chat_id)
+        llm_res, chunks, chat_id = await msg_manager.handle_message_async(msg, username, chat_id)
         
         llm_res_dict = llm_res.model_dump(by_alias=True)
         llm_res_dict = convert_datetime(llm_res_dict)

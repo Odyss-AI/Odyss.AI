@@ -41,7 +41,7 @@ async def upload_document():
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):
-                new_doc, msg = await doc_manager.handle_document(f, username, is_local=True)
+                new_doc, msg = await doc_manager.handle_document_async(f, username, is_local=True)
                 if new_doc is None:
                     return jsonify({'error': str(msg)}), 400
 

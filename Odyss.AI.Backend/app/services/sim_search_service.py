@@ -62,7 +62,7 @@ class SimailaritySearchService:
             print(f"Fehler beim Speichern des Embeddings: {e}")
             return None
 
-    async def search_similar_documents(self, doc_ids: list, query: str, count: int = 5):
+    async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
         try:
             # Fetch embeddings for the query
             query_embeddings = await self.fetch_embedding_async(query, "q")

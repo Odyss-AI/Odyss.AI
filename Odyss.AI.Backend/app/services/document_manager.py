@@ -11,7 +11,7 @@ from app.models.user import Document
 from app.services.ocr_service import OCRService
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.helpers import mistral_api
+from app.utils.helpers import call_mistral_api_async
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
 
@@ -21,7 +21,7 @@ class DocumentManager:
         self.local_file_path = Config.LOCAL_DOC_PATH
         self.sim_search = SimailaritySearchService()
 
-    async def handle_document(self, file, username, is_local = True):
+    async def handle_document_async(self, file, username, is_local = True):
         try:
             db = get_db()
             filename, id = self.generate_filename(file.filename)
@@ -56,7 +56,7 @@ class DocumentManager:
 
             # Zusammenfassung des Dokuments erstellen mit LLM
             prompt = summary_prompt_builder(new_doc.textList)
-            summary = await mistral_api(prompt)
+            summary = await call_mistral_api_async(prompt)
             new_doc.summary = summary
 
             if new_doc.summary is None:
