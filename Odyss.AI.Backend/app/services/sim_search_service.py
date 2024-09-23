@@ -8,6 +8,10 @@ from app.models.user import Document
 from app.config import Config
 
 class SimailaritySearchService:
+    """
+    A service for performing similarity search operations using Qdrant and TEI embeddings.
+    """
+    
     def __init__(self):
         self.tei_url = Config.TEI_URL + "/embed"
         self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
@@ -15,6 +19,16 @@ class SimailaritySearchService:
         self._initialize_collection()
 
     async def fetch_embedding_async(self, to_embed: str, chunk_id: str):
+        """
+        Fetches the embedding for a given text asynchronously.
+
+        Args:
+            to_embed (str): The text to be embedded.
+            chunk_id (str): The ID of the chunk.
+
+        Returns:
+            list: A list containing the embedding and the chunk ID, or None if an error occurs.
+        """
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
@@ -33,6 +47,15 @@ class SimailaritySearchService:
             return None
 
     async def create_embeddings_async(self, doc: Document):
+        """
+        Creates embeddings for the text and image chunks in a document asynchronously.
+
+        Args:
+            doc (Document): The document containing text and image chunks.
+
+        Returns:
+            list: A list of embeddings.
+        """
         tasks = []
         for chunk in doc.textList:
             tasks.append(self.fetch_embedding_async(chunk.text, chunk.id))
@@ -45,6 +68,16 @@ class SimailaritySearchService:
         return embeddings
     
     async def save_embedding_async(self, id, embeddings):
+        """
+        Saves the embeddings to the Qdrant collection asynchronously.
+
+        Args:
+            id (str): The document ID.
+            embeddings (list): The list of embeddings to be saved.
+
+        Returns:
+            bool: True if the embeddings were successfully saved, False otherwise.
+        """
         try:
             points = []
             for embedding in embeddings:
@@ -63,36 +96,37 @@ class SimailaritySearchService:
             return None
 
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
+        """
+        Searches for similar documents based on the provided query and document IDs asynchronously.
+
+        Args:
+            doc_ids (list): The list of document IDs to filter the search.
+            query (str): The query text to search for similar documents.
+            count (int, optional): The number of similar documents to return. Defaults to 5.
+
+        Returns:
+            list: A list of chunk IDs and their scores, or None if an error occurs.
+        """
         try:
             # Fetch embeddings for the query
             query_embeddings = await self.fetch_embedding_async(query, "q")
             
-            # Verwende MatchAny, um eine Liste von Werten zu filtern
             filter = Filter(
                 must=[
                     FieldCondition(
-                        key="doc_id",  # Das Feld, das gefiltert werden soll
-                        match=MatchAny(any=doc_ids)  # Verwende MatchAny anstelle von MatchValue
+                        # Field to filter on
+                        key="doc_id",
+                        # Match any of the values in the list
+                        match=MatchAny(any=doc_ids)
                     )
                 ]
             )
-
-
-
-            # # Search for similar documents with the filter
-            # results = self.qdrant_client.query_points(
-            #     collection_name=self.collection_name,
-            #     query=query_embeddings[0],
-            #     limit=count,
-            #     # query_filter=filter,
-            #     with_payload=True,
-            #     with_vectors=False
-            # )
 
             search_result = self.qdrant_client.query_points(
                 collection_name=self.collection_name, 
                 query=query_embeddings[0], 
                 limit=5,
+                filter=filter,
                 with_payload=True,
                 with_vectors=True
             ).points
@@ -107,7 +141,9 @@ class SimailaritySearchService:
             return None
 
     def _initialize_collection(self):
-        # Überprüfen, ob die Collection bereits existiert
+        """
+        Initializes the Qdrant collection if it does not already exist.
+        """
         try:
             collections = self.qdrant_client.get_collections()
             col_names = []
@@ -120,7 +156,7 @@ class SimailaritySearchService:
         
         if self.collection_name not in col_names:
 
-            # Erstelle die Collection
+            # Create the Collection
             self.qdrant_client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(size=1024, distance='Cosine'),

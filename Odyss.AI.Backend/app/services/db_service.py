@@ -33,6 +33,16 @@ class MongoDBService:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """
+        Ensures that only one instance of the class is created (singleton pattern).
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            MongoDBService: The singleton instance of the MongoDBService class.
+        """
         if cls._instance is None:
             cls._instance = super(MongoDBService, cls).__new__(cls)
         return cls._instance
@@ -46,6 +56,16 @@ class MongoDBService:
 
 
     async def create_user_async(self, username):
+        """
+        Creates a new user in the database asynchronously.
+
+        Args:
+            username (str): The username of the new user.
+
+        Returns:
+            User: The created user object, or None if the username already exists or an error occurs.
+        """
+        
         try:
             existing_user = await self.user_collection.find_one({"username": username})
             if existing_user:
@@ -58,6 +78,16 @@ class MongoDBService:
             return None
 
     async def get_user_async(self, username):
+        """
+        Retrieves a user from the database by username asynchronously.
+
+        Args:
+            username (str): The username of the user to retrieve.
+
+        Returns:
+            dict: The user document, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if user:
@@ -71,6 +101,16 @@ class MongoDBService:
             return None
     
     async def get_documents_of_user_async(self, username):
+        """
+        Retrieves all documents associated with a user asynchronously.
+
+        Args:
+            username (str): The username of the user whose documents are to be retrieved.
+
+        Returns:
+            list: A list of Document objects, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if not user:
@@ -83,6 +123,18 @@ class MongoDBService:
             return None
     
     async def get_chunks_by_ids_async(self, username: str, chunk_ids: list, doc_ids=None):
+        """
+        Retrieves text chunks by their IDs asynchronously.
+
+        Args:
+            username (str): The username of the user whose chunks are to be retrieved.
+            chunk_ids (list): A list of chunk IDs to retrieve.
+            doc_ids (list, optional): A list of document IDs to filter the chunks. Defaults to None.
+
+        Returns:
+            list: A list of chunks and their scores, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if not user:
@@ -103,6 +155,17 @@ class MongoDBService:
             return None
 
     async def add_document_to_user_async(self, username, document: Document):
+        """
+        Adds a document to a user's document list asynchronously.
+
+        Args:
+            username (str): The username of the user to add the document to.
+            document (Document): The document to add.
+
+        Returns:
+            str: The ID of the added document, or None if the user is not found or an error occurs.
+        """
+        
         try:
             async with await self.client.start_session() as session:
                 async with session.start_transaction():
@@ -132,6 +195,17 @@ class MongoDBService:
 
 
     async def delete_document_of_user_async(self, username, document_id):
+        """
+        Deletes a document from a user's document list asynchronously.
+
+        Args:
+            username (str): The username of the user to delete the document from.
+            document_id (str): The ID of the document to delete.
+
+        Returns:
+            bool: True if the document was successfully deleted, False otherwise.
+        """
+        
         try:
             result = await self.user_collection.update_one(
                 {"username": username},
@@ -143,6 +217,16 @@ class MongoDBService:
             return False
     
     async def get_chat_async(self, chat_id):
+        """
+        Retrieves a chat from the database by chat ID asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve.
+
+        Returns:
+            Chat: The chat object, or None if the chat is not found or an error occurs.
+        """
+        
         try:
             chat = await self.chat_collection.find_one({"id": chat_id})
             if chat:
@@ -153,6 +237,16 @@ class MongoDBService:
             return None
     
     async def get_chats_by_user_async(self, user):
+        """
+        Retrieves all chats associated with a user asynchronously.
+
+        Args:
+            user (str): The user ID whose chats are to be retrieved.
+
+        Returns:
+            list: A list of Chat objects, or None if an error occurs.
+        """
+        
         try:
             chats_cursor = self.chat_collection.find({"user_id": user})
             chats = []
@@ -164,6 +258,17 @@ class MongoDBService:
             return None
     
     async def create_chat_async(self, user: str, message: Message):
+        """
+        Creates a new chat in the database asynchronously.
+
+        Args:
+            user (str): The user ID associated with the chat.
+            message (Message): The initial message of the chat.
+
+        Returns:
+            Chat: The created chat object, or None if an error occurs.
+        """
+        
         try:
             chat = Chat( 
                 id=str(ObjectId()),
@@ -177,6 +282,17 @@ class MongoDBService:
             return None
     
     async def add_message_to_chat_async(self, chat_id: str, message: Message):
+        """
+        Adds a message to a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to add the message to.
+            message (Message): The message to add.
+
+        Returns:
+            bool: True if the message was successfully added, False otherwise.
+        """
+        
         try:
             chat = await self.get_chat_async(chat_id)
             if not chat:
@@ -195,6 +311,16 @@ class MongoDBService:
             return None
 
     async def get_messages_from_chat_async(self, chat_id):
+        """
+        Retrieves all messages from a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve messages from.
+
+        Returns:
+            list: A list of messages, or an empty list if the chat is not found or an error occurs.
+        """
+        
         try:
             chat = await self.get_chat(chat_id)
             if chat:
