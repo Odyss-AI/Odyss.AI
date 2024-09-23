@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -35,7 +37,7 @@ class CachingService:
             await self.cache.set(key, value.json(), ttl=ttl)
             return True
         except Exception as e:
-            print(f"Error setting value for key {key}: {e}")
+            logging.error(f"Error setting value for key {key}: {e}")
             return False
 
     async def get(self, key: str, model: BaseModel) -> Optional[BaseModel]:
@@ -55,13 +57,13 @@ class CachingService:
                 return model.model_validate_json(data)
             return None
         except asyncio.TimeoutError:
-            print(f"TimeoutError: Retrieving value for key {key} took too long.")
+            logging.error(f"TimeoutError: Retrieving value for key {key} took too long.")
             return None
         except asyncio.CancelledError:
-            print(f"CancelledError: Retrieving value for key {key} was cancelled.")
+            logging.error(f"CancelledError: Retrieving value for key {key} was cancelled.")
             return None
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logging.error(f"An unexpected error occurred: {e}")
             return None
 
     async def exists(self, key: str) -> bool:
@@ -77,7 +79,7 @@ class CachingService:
         try:
             return await self.cache.exists(key)
         except Exception as e:
-            print(f"Error checking existence of key {key}: {e}")
+            logging.error(f"Error checking existence of key {key}: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -94,7 +96,7 @@ class CachingService:
             await self.cache.delete(key)
             return True
         except Exception as e:
-            print(f"Error deleting key {key}: {e}")
+            logging.error(f"Error deleting key {key}: {e}")
             return False
 
     async def update(self, key: str, value: BaseModel, ttl: int = 600) -> bool:
@@ -113,8 +115,8 @@ class CachingService:
             if await self.exists(key):
                 return await self.set(key, value, ttl)
             else:
-                print(f"Key {key} does not exist in the cache.")
+                logging.error(f"Key {key} does not exist in the cache.")
                 return False
         except Exception as e:
-            print(f"Error updating key {key}: {e}")
+            logging.error(f"Error updating key {key}: {e}")
             return False

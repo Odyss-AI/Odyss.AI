@@ -1,6 +1,7 @@
 import uuid
 import aiohttp
 import asyncio
+import logging
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
@@ -11,12 +12,21 @@ class SimailaritySearchService:
     """
     A service for performing similarity search operations using Qdrant and TEI embeddings.
     """
-    
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(SimailaritySearchService, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
-        self.tei_url = Config.TEI_URL + "/embed"
-        self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
-        self.collection_name = 'doc_embeddings'
-        self._initialize_collection()
+        if not hasattr(self, '_initialized'):  # Verhindert mehrfache Initialisierung
+            self.tei_url = Config.TEI_URL + "/embed"
+            self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
+            self.collection_name = 'doc_embeddings'
+            self._initialize_collection()
+            self._initialized = True
 
     async def fetch_embedding_async(self, to_embed: str, chunk_id: str):
         """
@@ -37,13 +47,13 @@ class SimailaritySearchService:
                         if isinstance(response_json, list) and len(response_json) > 0 and isinstance(response_json[0], list):
                             return [response_json[0], chunk_id]  # Rückgabe des ersten Elements der Liste
                         else:
-                            print("Fehler: Unerwartetes Format der API-Antwort.")
+                            logging.error(f"Error fetching embedding at {chunk_id}: Invalid response")
                             return None
                     else:
-                        print(f"Fehler: {response.status}")
+                        print(f"Error at {chunk_id}: {response.status}")
                         return None
         except aiohttp.ClientError as e:
-            print(f"HTTP-Fehler: {e}")
+            logging.error(f"HTTP-Error at {chunk_id}: {e}")
             return None
 
     async def create_embeddings_async(self, doc: Document):
@@ -92,7 +102,7 @@ class SimailaritySearchService:
             return result.status == 'completed'
             
         except Exception as e:
-            print(f"Fehler beim Speichern des Embeddings: {e}")
+            logging.error(f"Error while saving embeddings at document {id}: {e}")
             return None
 
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
@@ -126,7 +136,7 @@ class SimailaritySearchService:
                 collection_name=self.collection_name, 
                 query=query_embeddings[0], 
                 limit=5,
-                filter=filter,
+                query_filter=filter,
                 with_payload=True,
                 with_vectors=True
             ).points
@@ -137,7 +147,7 @@ class SimailaritySearchService:
             
             return chunk_ids
         except Exception as e:
-            print(f"Fehler bei der Dokumentsuche: {e}")
+            logging.error(f"Error while searching similar docs: {e}")
             return None
 
     def _initialize_collection(self):
@@ -151,7 +161,7 @@ class SimailaritySearchService:
                 if len(collection[1]) > 0:
                     col_names.append(str(collection[1][0].name))
         except Exception as e:
-            print(f"Fehler beim Abrufen der Collections: {e}")
+            logging.error(f"Error while getting collections: {e}")
             return
         
         if self.collection_name not in col_names:
@@ -175,6 +185,6 @@ class SimailaritySearchService:
                     flush_interval_sec=5
                 )
             )
-            print(f"Collection '{self.collection_name}' erstellt.")
+            logging.info(f"Collection '{self.collection_name}' created.")
         else:
-            print(f"Collection '{self.collection_name}' existiert bereits.")
+            logging.info(f"Access to vector collection '{self.collection_name}'.")

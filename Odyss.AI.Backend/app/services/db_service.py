@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
@@ -74,7 +75,7 @@ class MongoDBService:
             await self.user_collection.insert_one(user.model_dump(by_alias=True))
             return user
         except Exception as e:
-            print(f"Error creating user: {e}")
+            logging.error(f"Error creating user: {e}")
             return None
 
     async def get_user_async(self, username):
@@ -94,10 +95,10 @@ class MongoDBService:
                 return user
             return None
         except asyncio.CancelledError:
-            print("Die Operation wurde abgebrochen.")
+            logging.error("Die Operation wurde abgebrochen.")
             raise
         except Exception as e:
-            print(f"Error getting user: {e}")
+            logging.error(f"Error getting user: {e}")
             return None
     
     async def get_documents_of_user_async(self, username):
@@ -114,12 +115,12 @@ class MongoDBService:
         try:
             user = await self.user_collection.find_one({"username": username})
             if not user:
-                print(f"User {username} not found.")
+                logging.info(f"User {username} not found.")
                 return None
             documents = user.get("documents", [])
             return [Document(**doc) for doc in documents]
         except Exception as e:
-            print(f"Error getting documents of user {username}: {e}")
+            logging.error(f"Error getting documents of user {username}: {e}")
             return None
     
     async def get_chunks_by_ids_async(self, username: str, chunk_ids: list, doc_ids=None):
@@ -151,7 +152,7 @@ class MongoDBService:
             
             return chunks
         except Exception as e:
-            print(f"Error getting chunks by IDs: {e}")
+            logging.error(f"Error getting chunks by IDs: {e}")
             return None
 
     async def add_document_to_user_async(self, username, document: Document):
@@ -187,10 +188,10 @@ class MongoDBService:
 
                     return document.id
         except asyncio.CancelledError:
-            print("Die Operation wurde abgebrochen.")
+            logging.error("Die Operation wurde abgebrochen.")
             raise
         except Exception as e:
-            print(f"Fehler beim Hinzufügen des Dokuments: {e}")
+            logging.error(f"Fehler beim Hinzufügen des Dokuments: {e}")
             return None
 
 
@@ -213,7 +214,7 @@ class MongoDBService:
             )
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error deleting document of user: {e}")
+            logging.error(f"Error deleting document of user: {e}")
             return False
     
     async def get_chat_async(self, chat_id):
@@ -233,7 +234,7 @@ class MongoDBService:
                 return Chat(**chat) 
             return None
         except Exception as e:
-            print(f"Error getting chat: {e}")
+            logging.error(f"Error getting chat: {e}")
             return None
     
     async def get_chats_by_user_async(self, user):
@@ -254,7 +255,7 @@ class MongoDBService:
                 chats.append(Chat(**chat))
             return chats
         except Exception as e:
-            print(f"Error getting chats by user: {e}")
+            logging.error(f"Error getting chats by user: {e}")
             return None
     
     async def create_chat_async(self, user: str, message: Message):
@@ -278,7 +279,7 @@ class MongoDBService:
             await self.chat_collection.insert_one(chat.model_dump(by_alias=True))
             return chat
         except Exception as e:
-            print(f"Error creating chat: {e}")
+            logging.error(f"Error creating chat: {e}")
             return None
     
     async def add_message_to_chat_async(self, chat_id: str, message: Message):
@@ -307,7 +308,7 @@ class MongoDBService:
 
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error adding message to chat: {e}")
+            logging.error(f"Error adding message to chat: {e}")
             return None
 
     async def get_messages_from_chat_async(self, chat_id):
@@ -327,7 +328,7 @@ class MongoDBService:
                 return chat.get("messages", [])
             return []
         except Exception as e:
-            print(f"Error getting messages from chat: {e}")
+            logging.error(f"Error getting messages from chat: {e}")
             return []
 
     
@@ -347,5 +348,5 @@ class MongoDBService:
                 document["_id"] = str(document["_id"])
             return document
         except Exception as e:
-            print(f"Error converting ObjectId: {e}")
+            logging.error(f"Error converting ObjectId: {e}")
             return document
