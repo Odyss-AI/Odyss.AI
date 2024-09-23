@@ -8,7 +8,7 @@ from app.utils.prompts import summary_prompt_builder
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-async def mistral_api(prompt: list):
+async def call_mistral_api_async(prompt: list):
     api_key = Config.MISTRAL_KEY
     model = "mistral-large-latest"
 
