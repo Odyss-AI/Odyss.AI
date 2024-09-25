@@ -49,22 +49,32 @@ class OCRService:
         return doc
 
     def convert_docx_to_pdf(self, doc):
-        doc_content = DocxDocument(doc.doclink)
+        print(f"Starting DOCX to PDF conversion for: {doc.doclink}")
         
-        # Erstelle einen PDF-Stream
-        pdf_stream = BytesIO()
-        pdf_canvas = canvas.Canvas(pdf_stream, pagesize=letter)
+        try:
+            doc_content = DocxDocument(doc.doclink)
+            print(f"Number of paragraphs in DOCX: {len(doc_content.paragraphs)}")
+            
+            pdf_stream = BytesIO()
+            pdf_canvas = canvas.Canvas(pdf_stream, pagesize=letter)
 
-        for paragraph in doc_content.paragraphs:
-            pdf_canvas.drawString(100, 750, paragraph.text)
-            pdf_canvas.showPage()  # Neue Seite für jeden Absatz
+            for idx, paragraph in enumerate(doc_content.paragraphs):
+                print(f"Writing Paragraph {idx + 1} to PDF: {paragraph.text}")
+                pdf_canvas.drawString(100, 750, paragraph.text)
+                pdf_canvas.showPage()
 
-        pdf_canvas.save()
-        pdf_stream.seek(0)  # Setze den Stream zurück
+            pdf_canvas.save()
+            pdf_stream.seek(0)
 
-        # Speichere die PDF-Datei im Document-Objekt
-        doc.doclink = pdf_stream  # Setze den doclink auf den PDF-Stream
-        return pdf_stream  # Gib den PDF-Stream zurück
+            pdf_length = pdf_stream.getbuffer().nbytes
+            print(f"PDF Stream created with length: {pdf_length} bytes")
+
+            doc.doclink = pdf_stream
+            return pdf_stream
+
+        except Exception as e:
+            print(f"Error during DOCX to PDF conversion: {e}")
+            raise
 
 
 
@@ -114,67 +124,80 @@ class OCRService:
 # extraction
     def extract_text_from_pdf(self, pdf_stream):
         full_text = ""
-        pdf_reader = PyPDF2.PdfReader(pdf_stream)
-        for page_num, page in enumerate(pdf_reader.pages):
-            page_text = page.extract_text()
-            if page_text:
-                full_text += f"{page_text.strip()} (Page {page_num + 1})\n"
-            else:
-                full_text += f"No text detected on page {page_num + 1}\n"
+        try:
+            pdf_reader = PyPDF2.PdfReader(pdf_stream)
+            for page_num, page in enumerate(pdf_reader.pages):
+                print(f"Reading text from page {page_num + 1}")
+                page_text = page.extract_text()
+                if page_text:
+                    full_text += f"{page_text.strip()} (Page {page_num + 1})\n"
+                else:
+                    print(f"No text found on page {page_num + 1}.")
+                    full_text += f"No text detected on page {page_num + 1}\n"
+            
+            if not full_text.strip():  # If no text was found
+                print("The document appears to contain only images.")
+                full_text = ""  # Return empty string for image-only documents
+
+        except Exception as e:
+            print(f"Error extracting text from PDF: {e}")
+
         return full_text
 
 
 
-    def extract_images_from_pdf(self, file_path, doc):
-        pdf_name = os.path.splitext(os.path.basename(file_path))[0]
-        images_dir = "extracted_images"
-        os.makedirs(images_dir, exist_ok=True)
 
-        with open(file_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            for page_num, page in enumerate(pdf_reader.pages):
-                image_counter = 1
-                resources = page.get('/Resources').get_object()
-                xobjects = resources.get('/XObject')
+    def extract_images_from_pdf(self, pdf_stream, doc):
+        image_counter = 1
 
-                if xobjects:
-                    xobjects = xobjects.get_object()
-                    for obj in xobjects:
-                        xobject = xobjects[obj].get_object()
-                        if xobject['/Subtype'] == '/Image':
-                            try:
-                                data = xobject._data
-                                if '/Filter' in xobject:
-                                    if xobject['/Filter'] == '/FlateDecode':
-                                        data = zlib.decompress(data)
+        # Öffne den PDF-Stream anstelle einer Datei
+        pdf_reader = PyPDF2.PdfReader(pdf_stream)
+        
+        for page_num, page in enumerate(pdf_reader.pages):
+            resources = page.get('/Resources').get_object()
+            xobjects = resources.get('/XObject')
 
-                                image_path = os.path.join(images_dir, f"{pdf_name}_page_{page_num + 1}_image_{image_counter}.jpg")
-                                with open(image_path, "wb") as image_file:
-                                    image_file.write(data)
+            if xobjects:
+                xobjects = xobjects.get_object()
+                for obj in xobjects:
+                    xobject = xobjects[obj].get_object()
+                    if xobject['/Subtype'] == '/Image':
+                        try:
+                            data = xobject._data
+                            if '/Filter' in xobject:
+                                if xobject['/Filter'] == '/FlateDecode':
+                                    data = zlib.decompress(data)
 
-                                # OCR on Image
-                                self.ocr_image(image_path, doc, page_num + 1, image_counter)
-                                image_counter += 1
-                            except Exception as e:
-                                print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
+                            # Statt die Datei zu speichern, verwende BytesIO
+                            image_stream = BytesIO(data)
+
+                            # Führe OCR auf dem Bild durch, ohne es zu speichern
+                            self.ocr_image(image_stream, doc, page_num + 1, image_counter)
+                            image_counter += 1
+                        except Exception as e:
+                            print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
 
 # OCR
-    def ocr_image(self, image_path, doc, page_num):
+    def ocr_image(self, image_stream, doc, page_num, image_counter):
         try:
-            ocr_result = self.ocr.ocr(image_path)
+            # Lade das Bild direkt aus dem BytesIO-Stream
+            image_stream.seek(0)  # Setze den Stream auf den Anfang zurück
+            ocr_result = self.ocr.ocr(image_stream)
+
             if ocr_result:
                 img_text = "\n".join([line[1][0] for line in ocr_result[0]])
                 image_obj = Image(
                     id=self.generate_id(),
-                    link=image_path,
+                    link=f"page_{page_num}_image_{image_counter}.jpg",  # Link könnte für spätere Nutzung oder Referenz generiert werden
                     page=page_num,
                     type="OCR",
                     imgtext=img_text,
-                    llm_output=""  # You can fill this with LLM processing results if needed
+                    llm_output=""  # Kann später durch LLM-Ergebnisse gefüllt werden
                 )
                 doc.imgList.append(image_obj)
         except Exception as e:
-            print(f"Error during OCR for {image_path}: {e}")
+            print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+
 
 # Helper
     def save_image_data(self, xobject, data, pdf_name, page_num, image_counter, images_dir):
@@ -199,11 +222,26 @@ class OCRService:
 
 # Sudo main
     def process_pdf(self, doc):
-        # Extract text and images from PDF
-        output_text = self.extract_text_from_pdf(doc.doclink)
-        self.split_text_into_chunks(output_text, doc)
-        self.extract_images_from_pdf(doc.doclink, doc)
+        print(f"Starting PDF processing for document: {doc.name}")
+        
+        try:
+            # Attempt to extract text from PDF
+            print("Attempting to extract text from PDF...")
+            output_text = self.extract_text_from_pdf(doc.doclink)
+            print(f"Extracted text from PDF: {output_text}")
+            
+            # Split extracted text into chunks if text is found
+            if output_text:
+                print("Splitting extracted text into chunks...")
+                self.split_text_into_chunks(output_text, doc)
+                print(f"Text chunks created: {len(doc.textList)}")
+            else:
+                print("No text detected in PDF, proceeding to image extraction...")
 
-        # Hier musst du die imgList und textList des vorhandenen `Document`-Objekts aktualisieren
-        doc.imgList = doc.imgList
-        doc.textList = doc.textList
+            # Always attempt image extraction regardless of text outcome
+            print("Attempting to extract images from PDF...")
+            self.extract_images_from_pdf(doc.doclink, doc)
+            print(f"Image extraction complete. Images found: {len(doc.imgList)}")
+
+        except Exception as e:
+            print(f"Error during PDF processing: {e}")
