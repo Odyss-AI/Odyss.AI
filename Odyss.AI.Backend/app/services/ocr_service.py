@@ -1,5 +1,6 @@
 from io import BytesIO
 import zlib
+from bson import ObjectId
 from paddleocr import PaddleOCR
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
@@ -77,7 +78,6 @@ class OCRService:
             raise
 
 
-
     def convert_pptx_to_pdf(self, doc):
         # Dateiinhalt in Bytes laden
         pptx_stream = BytesIO(doc.doclink.read())
@@ -92,7 +92,6 @@ class OCRService:
 
         return pdf_stream  # Gibt den PDF-Stream zurück
 
-      
 # handle formulas
     def extract_formulas_from_image(self, image_path):
         processor = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
@@ -121,19 +120,22 @@ class OCRService:
                 formulas.extend([(match, page_num + 1) for match in matches])
         return formulas
 
+
 # extraction
     def extract_text_from_pdf(self, pdf_stream):
         full_text = ""
+        page_texts = []  # Liste, um Text pro Seite zu speichern
         try:
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
-                print(f"Reading text from page {page_num + 1}")
                 page_text = page.extract_text()
                 if page_text:
-                    full_text += f"{page_text.strip()} (Page {page_num + 1})\n"
+                    full_text += f"{page_text.strip()}\n"
+                    page_texts.append((page_text.strip(), page_num + 1))  # Seitenzahl hinzufügen
                 else:
                     print(f"No text found on page {page_num + 1}.")
                     full_text += f"No text detected on page {page_num + 1}\n"
+                    page_texts.append(("", page_num + 1))  # Leeren Text hinzufügen
             
             if not full_text.strip():  # If no text was found
                 print("The document appears to contain only images.")
@@ -142,7 +144,7 @@ class OCRService:
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
 
-        return full_text
+        return page_texts  # Gib die Liste von Seiten zurück
 
 
 
@@ -187,7 +189,7 @@ class OCRService:
             if ocr_result:
                 img_text = "\n".join([line[1][0] for line in ocr_result[0]])
                 image_obj = Image(
-                    id=self.generate_id(),
+                    id=str(ObjectId()),
                     link=f"page_{page_num}_image_{image_counter}.jpg",  # Link könnte für spätere Nutzung oder Referenz generiert werden
                     page=page_num,
                     type="OCR",
@@ -212,31 +214,31 @@ class OCRService:
                 img.save(image_path)
             return image_path
 
-    def split_text_into_chunks(self, full_text, doc):
-        chunks = full_text.split('\n')
-        for idx, chunk in enumerate(chunks):
+    def split_text_into_chunks(self, full_text, doc, page_num):
+        # Split based on double newlines to capture paragraphs or sections
+        chunks = full_text.split('\n\n')
+        for chunk in chunks:
             if chunk.strip():
-                text_chunk = TextChunk(id=self.generate_id(), text=chunk.strip(), page=idx + 1)
+                text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
                 doc.textList.append(text_chunk)
+
 
 
 # Sudo main
     def process_pdf(self, doc):
         print(f"Starting PDF processing for document: {doc.name}")
-        
+
         try:
             # Attempt to extract text from PDF
             print("Attempting to extract text from PDF...")
-            output_text = self.extract_text_from_pdf(doc.doclink)
-            print(f"Extracted text from PDF: {output_text}")
-            
-            # Split extracted text into chunks if text is found
-            if output_text:
-                print("Splitting extracted text into chunks...")
-                self.split_text_into_chunks(output_text, doc)
-                print(f"Text chunks created: {len(doc.textList)}")
-            else:
-                print("No text detected in PDF, proceeding to image extraction...")
+            page_texts = self.extract_text_from_pdf(doc.doclink)
+            print(f"Extracted text from PDF.")
+
+            # Split extracted text into chunks
+            print("Splitting extracted text into chunks...")
+            for text, page_num in page_texts:
+                self.split_text_into_chunks(text, doc, page_num)  # page_num wird jetzt korrekt übergeben
+            print(f"Text chunks created: {len(doc.textList)}")
 
             # Always attempt image extraction regardless of text outcome
             print("Attempting to extract images from PDF...")
@@ -245,3 +247,5 @@ class OCRService:
 
         except Exception as e:
             print(f"Error during PDF processing: {e}")
+
+
