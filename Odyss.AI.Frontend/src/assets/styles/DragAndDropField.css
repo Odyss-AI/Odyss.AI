@@ -1,0 +1,18 @@
+.drag-drop-container {
+    position: fixed; /* Fixiere das Feld */
+    top: 50%; /* Vertikal in der Mitte der Seite */
+    left: 20px; /* Abstand vom linken Rand */
+    transform: translateY(-50%); /* Verschiebe das Element um die Hälfte seiner Höhe nach oben */
+    width: 300px; /* Breite des Drag-and-Drop-Felds */
+    height: 400px; /* Höhe des Drag-and-Drop-Felds */
+    border: 2px dashed #ccc; /* Gepunktete Umrandung */
+    border-radius: 10px; /* Abgerundete Ecken */
+    display: flex; /* Flexbox für zentrierten Inhalt */
+    flex-direction: column; /* Vertikale Anordnung */
+    align-items: center; /* Zentriert den Inhalt horizontal */
+    justify-content: center; /* Zentriert den Inhalt vertikal */
+    background-color: #f9f9f9; /* Heller Hintergrund */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Schatten für Tiefe */
+    z-index: 5; /* Unter dem Header */
+    color: black;
+}

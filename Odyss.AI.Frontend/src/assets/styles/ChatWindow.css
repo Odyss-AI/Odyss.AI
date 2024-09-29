@@ -1,0 +1,37 @@
+.chat-window-container {
+    position: fixed;
+    top: 80px; /* Abstand zum Header */
+    right: 0;
+    height: calc(100vh - 80px); /* Volle Höhe minus der Header-Höhe */
+    width: 50%; /* Nimmt die rechte Hälfte der Seite ein */
+    background-color: #f7f7f7;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 5;
+color: black   ;
+}
+
+.chat-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 60%; /* Nachrichten nehmen maximal 60% der Breite des Fensters ein */
+}
+
+/* Nachrichten von Nauta werden linksbündig ausgerichtet */
+.nauta-message {
+    align-self: flex-start; /* Linksbündig */
+    background-color: #eaeaea; /* Graue Nachrichtenblase */
+    color: #000;
+}
+
+/* Nachrichten des Users werden rechtsbündig ausgerichtet */
+.user-message {
+    align-self: flex-end; /* Rechtsbündig */
+    background-color: #daf8cb; /* Grüne Nachrichtenblase */
+    color: #000;
+}

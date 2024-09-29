@@ -1,0 +1,29 @@
+.header-container {
+    display: flex; /* Flexbox für die Anordnung der Elemente */
+    align-items: center; /* Zentriere Elemente vertikal */
+    justify-content: space-between; /* Verteile Platz zwischen Logo, Text und Titel */
+    padding: 10px 20px; /* Innenabstand */
+    background-color: #4A90E2; /* Hintergrundfarbe des Headers */
+    color: white; /* Textfarbe */
+    position: fixed; /* Fixiere den Header oben */
+    top: 0; /* Positioniere den Header oben */
+    left: 0; /* Setze den Header auf den linken Rand */
+    right: 0; /* Setze den Header auf den rechten Rand */
+    z-index: 1000; /* Höherer Z-Index, um sicherzustellen, dass er über anderen Elementen angezeigt wird */
+}
+
+.header-title {
+    font-size: 24px; /* Schriftgröße des Titels */
+    margin: 0; /* Entferne Standard-Margen */
+}
+
+.header-text {
+    font-size: 16px; /* Schriftgröße des Beschreibungstextes */
+    margin-left: 20px; /* Abstand zwischen Logo und Text */
+}
+
+.header-logo {
+    height: 50px; /* Höhe des Logos */
+    width: auto; /* Automatische Breite für das Seitenverhältnis */
+}
+

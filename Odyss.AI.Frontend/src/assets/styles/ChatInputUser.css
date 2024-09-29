@@ -1,0 +1,27 @@
+.chat-input-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: calc(50% - 40px);
+    display: flex; /* Flexbox, um Elemente nebeneinander anzuordnen */
+    align-items: center; /* Zentriere den Button und das Input-Feld vertikal */
+    justify-content: center;
+    z-index: 15;
+}
+
+.chat-upload-button {
+    background-color: transparent; /* Kein Hintergrund */
+    border: none; /* Keine sichtbare Umrandung */
+    cursor: pointer; /* Zeigt den Mauszeiger als Hand beim Hover an */
+    margin-right: 10px; /* Abstand zum Input-Feld */
+    color: black;
+}
+
+.chat-input {
+    width: 100%; /* Input-Feld nimmt die volle Breite ein */
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+}
