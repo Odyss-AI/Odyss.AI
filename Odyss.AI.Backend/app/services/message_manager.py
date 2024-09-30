@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 from app.services.caching import CachingService
 from app.services.db_service import MongoDBService
 from app.services.sim_search_service import SimailaritySearchService
+from app.models.enum import AvailibleModels
 from typing import List, Optional
 
 class MessageManager:
@@ -62,7 +63,7 @@ class MessageManager:
         try:
             # Build the prompt for the LLM
             prompt = qna_prompt_builder(chunks, message.content)
-            if message.selected_model == "chatgpt":
+            if message.selected_model == AvailibleModels.CHATGPT.value:
                 answer = await call_chatgpt_api_async(prompt)
             else:
                 answer = await call_mistral_api_async(prompt)
