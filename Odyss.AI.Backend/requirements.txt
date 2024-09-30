@@ -23,3 +23,4 @@ mistral
 aiocache
 aiocache[redis]
 quart-cors
+openai

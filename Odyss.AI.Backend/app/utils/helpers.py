@@ -1,5 +1,6 @@
 import asyncio
 
+from openai import OpenAI
 from app.models.enum import ALLOWED_EXTENSIONS
 from mistralai import Mistral
 from app.config import Config
@@ -20,3 +21,13 @@ async def call_mistral_api_async(prompt: list):
     )
 
     return chat_response.choices[0].message.content
+
+async def call_chatgpt_api_async(prompt: list):
+    client = OpenAI()
+
+    completion = client.chat.completions.create(
+        model = "gpt-4o-mini",
+        messages = prompt
+    )
+
+    return completion.choices[0].message

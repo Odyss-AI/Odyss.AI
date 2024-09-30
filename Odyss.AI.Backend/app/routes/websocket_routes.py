@@ -46,7 +46,8 @@ async def chat():
         
         username = data.get('username')
         msg = data.get('message')
-        chat_id = data.get('chat_id')
+        chat_id = data.get('chatId')
+        model = data.get('model')
 
         if not chat_id:
             chat_id = None
@@ -64,7 +65,8 @@ async def chat():
             id=str(ObjectId()),
             is_user=True,
             content=msg,
-            timestamp=datetime.datetime.now()
+            timestamp=datetime.datetime.now(),
+            selected_model=model
         )
 
         llm_res, chunks, chat_id = await msg_manager.handle_message_async(msg, username, chat_id)
