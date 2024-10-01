@@ -4,15 +4,23 @@ import ChatInputUser from "./components/ChatInputUser.jsx";
 import ChatWindow from "./components/ChatWindow.jsx";
 import Header from "./components/Header.jsx";
 import DragAndDropField from "./components/DragAndDropField.jsx";
+import {useState} from "react";
+
+
 
 const App = () => {
-  return (
-      <div>
+    const [isUserLogidIn, setUserLogidIn] = useState(false);
+
+    return (
+      <>
       <Header/>
-        <DragAndDropField/>
-        <ChatWindow/>
-        <ChatInputUser/>
-      </div>
+          {!isUserLogidIn && <>
+              <DragAndDropField/>
+              <ChatWindow/>
+              <ChatInputUser/>
+          </>}
+
+      </>
   );
 };
 
