@@ -35,19 +35,19 @@ class DocumentManager:
 
             print("nach extract")
 
-            print(f"EMR Document ID: {new_doc.id}")
-            print(f"EMR Document Name: {new_doc.name}")
-            print(f"EMR Timestamp: {new_doc.timestamp}")
-            print(f"EMR Document Link: {new_doc.doclink}")
-            print(f"EMR Summary: {new_doc.summary}")
+            # print(f"EMR Document ID: {new_doc.id}")
+            # print(f"EMR Document Name: {new_doc.name}")
+            # print(f"EMR Timestamp: {new_doc.timestamp}")
+            # print(f"EMR Document Link: {new_doc.doclink}")
+            # print(f"EMR Summary: {new_doc.summary}")
 
-            # Print text chunks
-            for idx, chunk in enumerate(new_doc.textList):
-                print(f"EMR Text Chunk {idx+1}: {chunk.text} (Page {chunk.page})")
+            # # Print text chunks
+            # for idx, chunk in enumerate(new_doc.textList):
+            #     print(f"EMR Text Chunk {idx+1}: {chunk.text} (Page {chunk.page})")
 
-            # Print images
-            for idx, img in enumerate(new_doc.imgList):
-                print(f"EMR Image {idx+1}: Link={img.link}, Page={img.page}, OCR Text={img.imgtext}")
+            # # Print images
+            # for idx, img in enumerate(new_doc.imgList):
+            #     print(f"EMR Image {idx+1}: Link={img.link}, Page={img.page}, OCR Text={img.imgtext}")
             #new_doc = get_test_document()
 
             # für die Texte werden Embeddings erstellt und in VektorDb gespeichert

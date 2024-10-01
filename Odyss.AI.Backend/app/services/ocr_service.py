@@ -3,7 +3,6 @@ import zlib
 from bson import ObjectId
 from paddleocr import PaddleOCR
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from PIL import Image
 import os
 import re
 import PyPDF2
@@ -14,6 +13,7 @@ from app.models.user import TextChunk, Image
 from docx import Document as DocxDocument
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from PIL import Image as PilImage
 
 
 class OCRService:
@@ -146,81 +146,145 @@ class OCRService:
 
         return page_texts  # Gib die Liste von Seiten zurück
 
-
-
-
+# Extrahieren von Bildern aus dem PDF
     def extract_images_from_pdf(self, pdf_stream, doc):
-        image_counter = 1
-
-        # Öffne den PDF-Stream anstelle einer Datei
-        pdf_reader = PyPDF2.PdfReader(pdf_stream)
-        
-        for page_num, page in enumerate(pdf_reader.pages):
-            resources = page.get('/Resources').get_object()
-            xobjects = resources.get('/XObject')
-
-            if xobjects:
-                xobjects = xobjects.get_object()
-                for obj in xobjects:
-                    xobject = xobjects[obj].get_object()
-                    if xobject['/Subtype'] == '/Image':
-                        try:
-                            data = xobject._data
-                            if '/Filter' in xobject:
-                                if xobject['/Filter'] == '/FlateDecode':
-                                    data = zlib.decompress(data)
-
-                            # Statt die Datei zu speichern, verwende BytesIO
-                            image_stream = BytesIO(data)
-
-                            # Führe OCR auf dem Bild durch, ohne es zu speichern
-                            self.ocr_image(image_stream, doc, page_num + 1, image_counter)
-                            image_counter += 1
-                        except Exception as e:
-                            print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
-
-# OCR
-    def ocr_image(self, image_stream, doc, page_num, image_counter):
+        images = []
         try:
-            # Lade das Bild direkt aus dem BytesIO-Stream
-            image_stream.seek(0)  # Setze den Stream auf den Anfang zurück
-            ocr_result = self.ocr.ocr(image_stream)
+            # Nutze den PdfReader, um das PDF direkt aus dem Stream zu lesen
+            pdf_reader = PyPDF2.PdfReader(pdf_stream)
+            for page_num, page in enumerate(pdf_reader.pages):
+                resources = page.get("/Resources").get_object()
+                xobjects = resources.get("/XObject")
 
-            if ocr_result:
-                img_text = "\n".join([line[1][0] for line in ocr_result[0]])
-                image_obj = Image(
-                    id=str(ObjectId()),
-                    link=f"page_{page_num}_image_{image_counter}.jpg",  # Link könnte für spätere Nutzung oder Referenz generiert werden
-                    page=page_num,
-                    type="OCR",
-                    imgtext=img_text,
-                    llm_output=""  # Kann später durch LLM-Ergebnisse gefüllt werden
-                )
-                doc.imgList.append(image_obj)
+                if xobjects:
+                    xobjects = xobjects.get_object()
+                    image_counter = 1  # Image counter für jede Seite zurücksetzen
+                    for obj in xobjects:
+                        xobject = xobjects[obj].get_object()
+                        if xobject["/Subtype"] == "/Image":
+                            try:
+                                data = xobject._data
+                                if "/Filter" in xobject:
+                                    if xobject["/Filter"] == "/FlateDecode":
+                                        data = zlib.decompress(data)
+
+                                # Entscheide das Bildformat basierend auf dem Filter
+                                if xobject.get("/Filter") == "/DCTDecode":
+                                    # Das Bild ist im JPEG-Format
+                                    image_stream = BytesIO(data)
+                                    pil_image = PilImage.open(image_stream)
+
+                                    # OCR auf dem Bild laufen lassen
+                                    self.ocr_image(image_stream, doc, page_num + 1, image_counter)
+
+                                    # Füge das Bild zur Liste hinzu
+                                    images.append({
+                                        "page": page_num + 1,
+                                        "image_index": image_counter,
+                                        "image_data": pil_image
+                                    })
+                                else:
+                                    # Das Bild ist in einem anderen Format
+                                    mode = "RGB" if xobject["/ColorSpace"] == "/DeviceRGB" else "P"
+                                    img = PilImage.frombytes(mode, (xobject["/Width"], xobject["/Height"]), data)
+
+                                    # Speichere das Bild im BytesIO-Stream
+                                    img_stream = BytesIO()
+                                    img.save(img_stream, format="PNG")
+                                    img_stream.seek(0)
+
+                                    # OCR auf dem Bild laufen lassen
+                                    self.ocr_image(img_stream, doc, page_num + 1, image_counter)
+
+                                    # Füge das Bild zur Liste hinzu
+                                    images.append({
+                                        "page": page_num + 1,
+                                        "image_index": image_counter,
+                                        "image_data": img
+                                    })
+                                image_counter += 1
+                            except Exception as e:
+                                print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
+
         except Exception as e:
-            print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+            print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
+        return images
 
-# Helper
-    def save_image_data(self, xobject, data, pdf_name, page_num, image_counter, images_dir):
-            if xobject.get('/Filter') == '/DCTDecode':
-                image_path = os.path.join(images_dir, f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg")
-                with open(image_path, "wb") as image_file:
-                    image_file.write(data)
-            else:
-                mode = "RGB" if xobject['/ColorSpace'] == '/DeviceRGB' else "P"
-                img = Image.frombytes(mode, (xobject['/Width'], xobject['/Height']), data)
-                image_path = os.path.join(images_dir, f"{pdf_name}_page_{page_num}_image_{image_counter}.png")
-                img.save(image_path)
-            return image_path
 
     def split_text_into_chunks(self, full_text, doc, page_num):
-        # Split based on double newlines to capture paragraphs or sections
-        chunks = full_text.split('\n\n')
-        for chunk in chunks:
-            if chunk.strip():
-                text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
-                doc.textList.append(text_chunk)
+            # Split based on double newlines to capture paragraphs or sections
+            chunks = full_text.split('\n\n')
+            for chunk in chunks:
+                if chunk.strip():
+                    text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
+                    doc.textList.append(text_chunk)
+
+# OCR
+    # def ocr_image(self, image_stream, doc, page_num, image_counter):
+    #     try:         
+    #         # Here, the image is passed to OCR
+    #         ocr_result = self.ocr.ocr(image_stream)
+
+    #         if ocr_result:
+    #             img_text = "\n".join([line[1][0] for line in ocr_result[0]])
+    #             print(f"OCR result for image on page {page_num}, image {image_counter}: {img_text}")
+                
+    #             # Create an Image object
+    #             image_obj = Image(
+    #                 id=str(ObjectId()),
+    #                 link=f"page_{page_num}_image_{image_counter}.jpg",  # Placeholder, not used for file saving
+    #                 page=page_num,
+    #                 type="OCR",
+    #                 imgtext=img_text,
+    #                 llm_output=""  # Reserved for LLM output
+    #             )
+    #             doc.imgList.append(image_obj)
+    #         else:
+    #             print(f"No text found in OCR result for image on page {page_num}, image {image_counter}.")
+
+    #     except Exception as e:
+    #         print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+
+
+    def ocr_image(self, image_stream, pdf_name, page_num, image_counter):        
+        try:
+            # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
+            image_stream.seek(0)
+            
+            # Lade das Bild aus dem Stream
+            image = PilImage.open(image_stream)
+            
+            # Konvertiere das Bild in ein Format, das von PaddleOCR verarbeitet werden kann
+            image = image.convert("RGB")
+            
+            # Führe die OCR durch
+            ocr_result = self.ocr.ocr(image)
+
+            # Überprüfe das OCR-Ergebnis und befülle das Image-Objekt
+            if ocr_result:
+                imgtext = "\n".join([line[1][0] for line in ocr_result[0]])  # Extrahiere den Text
+                # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
+                image_id = str(ObjectId())  # Generiere eine ID für das Bild
+                # Setze den Link zu einer kombinierten Darstellung aus PDF-Namen und Seitenzahl
+                link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"  # Beispiel-Link, passe nach Bedarf an
+                image_obj = Image(
+                    ID=image_id,
+                    Link=link,  # Setze den Link hier
+                    Page=page_num,
+                    Type='image/jpeg',  # oder das richtige Format
+                    Imgtext=imgtext,
+                    LLM_Output=None  # Falls nötig
+                )
+                return image_obj  # Rückgabe des Image-Objekts
+
+            else:
+                print(f"No text recognized for image on page {page_num}, image {image_counter}.")
+                return None  # Rückgabe None, wenn kein Text gefunden wurde
+
+        except Exception as e:
+            print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+            return None  # Rückgabe None im Fehlerfall
 
 
 
@@ -247,5 +311,4 @@ class OCRService:
 
         except Exception as e:
             print(f"Error during PDF processing: {e}")
-
 
