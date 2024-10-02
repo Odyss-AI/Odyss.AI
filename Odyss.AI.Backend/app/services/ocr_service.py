@@ -14,6 +14,7 @@ from docx import Document as DocxDocument
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image as PilImage
+from app.config import Config
 
 
 class OCRService:
@@ -168,40 +169,37 @@ class OCRService:
                                     if xobject["/Filter"] == "/FlateDecode":
                                         data = zlib.decompress(data)
 
-                                # Entscheide das Bildformat basierend auf dem Filter
+                                # Bestimme den Dateityp basierend auf den XObject-Eigenschaften
                                 if xobject.get("/Filter") == "/DCTDecode":
-                                    # Das Bild ist im JPEG-Format
+                                    # JPEG-Bild
+                                    file_extension = "jpg"
                                     image_stream = BytesIO(data)
                                     pil_image = PilImage.open(image_stream)
-
-                                    # OCR auf dem Bild laufen lassen
-                                    self.ocr_image(image_stream, doc, page_num + 1, image_counter)
-
-                                    # Füge das Bild zur Liste hinzu
-                                    images.append({
-                                        "page": page_num + 1,
-                                        "image_index": image_counter,
-                                        "image_data": pil_image
-                                    })
+                                elif xobject.get("/Filter") in ["/JPXDecode", "/CCITTFaxDecode"]:
+                                    # JPEG2000 oder CCITT-Bild
+                                    file_extension = "jp2"  # Beispiel für JPEG2000, kann angepasst werden
+                                    image_stream = BytesIO(data)
+                                    pil_image = PilImage.open(image_stream)
                                 else:
-                                    # Das Bild ist in einem anderen Format
+                                    # Andere Formate (z.B. PNG)
+                                    file_extension = "png"
                                     mode = "RGB" if xobject["/ColorSpace"] == "/DeviceRGB" else "P"
-                                    img = PilImage.frombytes(mode, (xobject["/Width"], xobject["/Height"]), data)
+                                    pil_image = PilImage.frombytes(mode, (xobject["/Width"], xobject["/Height"]), data)
 
-                                    # Speichere das Bild im BytesIO-Stream
-                                    img_stream = BytesIO()
-                                    img.save(img_stream, format="PNG")
-                                    img_stream.seek(0)
+                                # Speichere das Bild
+                                img_path = Config.LOCAL_DOC_PATH
+                                print(img_path)
+                                pil_image.save(img_path)
 
-                                    # OCR auf dem Bild laufen lassen
-                                    self.ocr_image(img_stream, doc, page_num + 1, image_counter)
+                                # OCR auf dem Bild laufen lassen
+                                self.ocr_image(BytesIO(data), doc.name, page_num + 1, image_counter)
 
-                                    # Füge das Bild zur Liste hinzu
-                                    images.append({
-                                        "page": page_num + 1,
-                                        "image_index": image_counter,
-                                        "image_data": img
-                                    })
+                                # Füge das Bild zur Liste hinzu
+                                images.append({
+                                    "page": page_num + 1,
+                                    "image_index": image_counter,
+                                    "image_data": pil_image
+                                })
                                 image_counter += 1
                             except Exception as e:
                                 print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
