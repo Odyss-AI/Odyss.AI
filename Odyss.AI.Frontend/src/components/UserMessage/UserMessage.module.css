@@ -1,0 +1,14 @@
+/* src/components/UserMessage/UserMessage.module.css */
+.userMessage {
+    background-color: #d1e7dd; /* Hintergrundfarbe für die Benutzernachricht */
+    color: #0f5132; /* Textfarbe für die Benutzernachricht */
+    padding: 10px; /* Innenabstand */
+    border-radius: 5px; /* Abgerundete Ecken */
+    margin: 5px 0; /* Abstand zwischen den Nachrichten */
+    align-self: flex-end; /* Positioniert die Nachricht rechts */
+}
+
+.timestamp {
+    font-size: 0.8rem; /* Kleinere Schriftgröße für den Zeitstempel */
+    color: #6c757d; /* Farbe für den Zeitstempel */
+}
