@@ -152,62 +152,77 @@ class OCRService:
     def extract_images_from_pdf(self, pdf_stream, doc):
         images = []
         try:
-            # Nutze den PdfReader, um das PDF direkt aus dem Stream zu lesen
+            print("Beginne mit dem Lesen des PDF-Streams...")
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
+            
             for page_num, page in enumerate(pdf_reader.pages):
+                print(f"Verarbeite Seite {page_num + 1} von {len(pdf_reader.pages)}...")
                 resources = page.get("/Resources").get_object()
                 xobjects = resources.get("/XObject")
-
+                
                 if xobjects:
+                    print(f"Seite {page_num + 1} enthält {len(xobjects)} XObjects.")
                     xobjects = xobjects.get_object()
                     image_counter = 1  # Image counter für jede Seite zurücksetzen
+                    
                     for obj in xobjects:
                         xobject = xobjects[obj].get_object()
+                        
                         if xobject["/Subtype"] == "/Image":
                             try:
+                                print(f"Bild {image_counter} auf Seite {page_num + 1} gefunden.")
                                 data = xobject._data
+                                file_extension = "png"  # Standard auf PNG setzen
+
+                                # Überprüfe auf vorhandene Filter und dekodiere sie
                                 if "/Filter" in xobject:
                                     if xobject["/Filter"] == "/FlateDecode":
+                                        print("Filter: FlateDecode")
                                         data = zlib.decompress(data)
+                                    elif xobject["/Filter"] == "/DCTDecode":
+                                        print("Filter: DCTDecode")
+                                        file_extension = "jpg"  # JPEG benötigt keine zusätzliche Decodierung
+                                    elif xobject["/Filter"] == "/JPXDecode":
+                                        print("Filter: JPXDecode")
+                                        file_extension = "jp2"  # JPEG2000
+                                    elif xobject["/Filter"] in ["/ASCII85Decode", "/LZWDecode", "/CCITTFaxDecode"]:
+                                        print(f"Filter: {xobject['/Filter']}")
+                                        file_extension = "png"  # Behandle andere Formate als PNG
+                                    else:
+                                        print(f"Unbekannter Filter: {xobject['/Filter']}")
+                                        continue  # Ignoriere unbekannte Filter
 
-                                # Bestimme den Dateityp basierend auf den XObject-Eigenschaften
-                                if xobject.get("/Filter") == "/DCTDecode":
-                                    # JPEG-Bild
-                                    file_extension = "jpg"
-                                    image_stream = BytesIO(data)
-                                    pil_image = PilImage.open(image_stream)
-                                elif xobject.get("/Filter") in ["/JPXDecode", "/CCITTFaxDecode"]:
-                                    # JPEG2000 oder CCITT-Bild
-                                    file_extension = "jp2"  # Beispiel für JPEG2000, kann angepasst werden
-                                    image_stream = BytesIO(data)
-                                    pil_image = PilImage.open(image_stream)
-                                else:
-                                    # Andere Formate (z.B. PNG)
-                                    file_extension = "png"
-                                    mode = "RGB" if xobject["/ColorSpace"] == "/DeviceRGB" else "P"
-                                    pil_image = PilImage.frombytes(mode, (xobject["/Width"], xobject["/Height"]), data)
+                                # Speicherpfad für das Bild
+                                img_save_path = os.path.join(Config.LOCAL_DOC_PATH, f"extracted_image_{page_num+1}_{image_counter}.{file_extension}")
 
                                 # Speichere das Bild
-                                img_path = Config.LOCAL_DOC_PATH
-                                print(img_path)
-                                pil_image.save(img_path)
+                                with open(img_save_path, "wb") as img_file:
+                                    img_file.write(data)
 
                                 # OCR auf dem Bild laufen lassen
-                                self.ocr_image(BytesIO(data), doc.name, page_num + 1, image_counter)
+                                print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
+                                img_text = self.ocr_image(img_save_path, doc.name, page_num + 1, image_counter)  # OCR-Funktion hier anpassen
 
-                                # Füge das Bild zur Liste hinzu
-                                images.append({
-                                    "page": page_num + 1,
-                                    "image_index": image_counter,
-                                    "image_data": pil_image
-                                })
+                                # Erstelle ein Image-Objekt
+                                image_obj = Image(
+                                    id=str(image_counter),  # oder eine andere Logik für die ID
+                                    link=img_save_path,
+                                    page=page_num + 1,
+                                    type=file_extension,
+                                    imgtext=img_text,  # Hier die von OCR zurückgegebene Text
+                                    llm_output=""  # Platzhalter für LLM-Ausgabe
+                                )
+                                images.append(image_obj)
+
                                 image_counter += 1
+
                             except Exception as e:
-                                print(f"Error reading image data for object {obj} on page {page_num + 1}: {e}")
+                                print(f"Fehler beim Lesen der Bilddaten für Objekt {obj} auf Seite {page_num + 1}: {e}")
 
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
+        print("Bildextraktion abgeschlossen.")
         return images
 
 
@@ -219,7 +234,7 @@ class OCRService:
                     text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
                     doc.textList.append(text_chunk)
 
-    def ocr_image(self, image_stream, pdf_name, page_num, image_counter):
+    def ocr_image(self, image_stream):
         try:
             # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
             image_stream.seek(0)
@@ -234,22 +249,12 @@ class OCRService:
             generated_ids = self.model.generate(pixel_values)
             generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
             
-            # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
-            image_id = str(ObjectId())
-            link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"
-            image_obj = Image(
-                ID=image_id,
-                Link=link,
-                Page=page_num,
-                Type='image/jpeg',
-                Imgtext=generated_text,
-                LLM_Output=None
-            )
-            return image_obj
-        
+            return generated_text  # Gib nur den erkannten Text zurück
+            
         except Exception as e:
-            print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+            print(f"Fehler bei der OCR für Bild: {e}")
             return None
+
 
 
 # Sudo main
