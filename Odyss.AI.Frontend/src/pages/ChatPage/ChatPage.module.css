@@ -7,10 +7,12 @@
 .leftContainer {
     flex: 1;
     display: flex;
+    flex-direction: column; /* Flex in Spaltenrichtung, damit SelectModell oben und DragAndDrop unten */
     justify-content: center;
     align-items: center;
     padding: 20px;
     border-right: 1px solid #ccc;
+
 }
 
 .rightContainer {

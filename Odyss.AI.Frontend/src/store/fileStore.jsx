@@ -1,15 +1,15 @@
-// src/store/fileStore.js
-import {create} from 'zustand';
+import { create } from 'zustand';
 
 const useFileStore = create((set) => ({
-    files: [],  // Liste der hochgeladenen Dateien
+    files: [],  // Liste hochgeladener Dateien
 
-    uploadFiles: (newFiles) =>
-        set((state) => ({
-            files: [...state.files, ...newFiles],  // Neue Dateien zur Liste hinzufügen
-        })),
+    // Action zum Hochladen einer Datei
+    uploadFile: (file) => set((state) => ({
+        files: [...state.files, file]  // Datei zur Liste der Dateien hinzufügen
+    })),
 
-    clearFiles: () => set({ files: [] }),  // Alle Dateien entfernen
+    // Dateien zurücksetzen oder löschen
+    resetFiles: () => set({ files: [] })
 }));
 
 export default useFileStore;

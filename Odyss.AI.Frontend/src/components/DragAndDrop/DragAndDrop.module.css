@@ -3,7 +3,7 @@
     border: 2px dashed #ccc; /* Umrandung für DragAndDrop */
     padding: 20px; /* Innenabstand */
     width: 35%; /* Nimmt 80% der Breite des Containers ein */
-    height: 150px; /* Feste Höhe für das Feld */
+    height: 60px; /* Feste Höhe für das Feld */
     display: flex; /* Flexbox für die DragAndDrop-Komponente */
     justify-content: center; /* Zentriert den Inhalt horizontal */
     align-items: center; /* Zentriert den Inhalt vertikal */
