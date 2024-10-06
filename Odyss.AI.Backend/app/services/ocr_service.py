@@ -201,7 +201,7 @@ class OCRService:
 
                                 # OCR auf dem Bild laufen lassen
                                 print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
-                                img_text = self.ocr_image(img_save_path, doc.name, page_num + 1, image_counter)  # OCR-Funktion hier anpassen
+                                img_text = self.ocr_image(img_save_path)  # OCR-Funktion hier anpassen
 
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
@@ -235,10 +235,7 @@ class OCRService:
                     doc.textList.append(text_chunk)
 
     def ocr_image(self, image_stream):
-        try:
-            # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
-            image_stream.seek(0)
-            
+        try:            
             # Lade das Bild aus dem Stream
             image = PilImage.open(image_stream).convert("RGB")
             
