@@ -9,7 +9,7 @@ from bson import ObjectId
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
-from app.services.ocr_service import OCRService
+from . import OCRServic
 from app.utils.test_data_provider import get_test_document
 
 class DocumentManager:

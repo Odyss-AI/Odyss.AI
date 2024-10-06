@@ -245,44 +245,70 @@ class OCRService:
     #         print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
 
 
+    # def ocr_image(self, image_stream, pdf_name, page_num, image_counter):        
+    #     try:
+    #         # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
+    #         image_stream.seek(0)
+            
+    #         # Lade das Bild aus dem Stream
+    #         image = PilImage.open(image_stream)
+            
+    #         # Konvertiere das Bild in ein Format, das von PaddleOCR verarbeitet werden kann
+    #         image = image.convert("RGB")
+            
+    #         # Führe die OCR durch
+    #         ocr_result = self.ocr.ocr(image)
+
+    #         # Überprüfe das OCR-Ergebnis und befülle das Image-Objekt
+    #         if ocr_result:
+    #             imgtext = "\n".join([line[1][0] for line in ocr_result[0]])  # Extrahiere den Text
+    #             # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
+    #             image_id = str(ObjectId())  # Generiere eine ID für das Bild
+    #             # Setze den Link zu einer kombinierten Darstellung aus PDF-Namen und Seitenzahl
+    #             link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"  # Beispiel-Link, passe nach Bedarf an
+    #             image_obj = Image(
+    #                 ID=image_id,
+    #                 Link=link,  # Setze den Link hier
+    #                 Page=page_num,
+    #                 Type='image/jpeg',  # oder das richtige Format
+    #                 Imgtext=imgtext,
+    #                 LLM_Output=None  # Falls nötig
+    #             )
+    #             return image_obj  # Rückgabe des Image-Objekts
+
+    #         else:
+    #             print(f"No text recognized for image on page {page_num}, image {image_counter}.")
+    #             return None  # Rückgabe None, wenn kein Text gefunden wurde
+
+    #     except Exception as e:
+    #         print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
+    #         return None  # Rückgabe None im Fehlerfall
+
     def ocr_image(self, image_stream, pdf_name, page_num, image_counter):        
         try:
-            # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
-            image_stream.seek(0)
-            
-            # Lade das Bild aus dem Stream
-            image = PilImage.open(image_stream)
-            
-            # Konvertiere das Bild in ein Format, das von PaddleOCR verarbeitet werden kann
-            image = image.convert("RGB")
-            
-            # Führe die OCR durch
-            ocr_result = self.ocr.ocr(image)
+            ocr_result = self.ocr.ocr(image_stream)  # OCR-Verarbeitung
 
-            # Überprüfe das OCR-Ergebnis und befülle das Image-Objekt
             if ocr_result:
-                imgtext = "\n".join([line[1][0] for line in ocr_result[0]])  # Extrahiere den Text
-                # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
-                image_id = str(ObjectId())  # Generiere eine ID für das Bild
-                # Setze den Link zu einer kombinierten Darstellung aus PDF-Namen und Seitenzahl
-                link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"  # Beispiel-Link, passe nach Bedarf an
-                image_obj = Image(
-                    ID=image_id,
-                    Link=link,  # Setze den Link hier
-                    Page=page_num,
-                    Type='image/jpeg',  # oder das richtige Format
-                    Imgtext=imgtext,
-                    LLM_Output=None  # Falls nötig
-                )
-                return image_obj  # Rückgabe des Image-Objekts
-
+                img_text = "\n".join([line[1][0] for line in ocr_result[0]])
+                self.save_ocr_result_to_document(pdf_name, page_num, image_counter, img_text)  # Ergebnisse speichern
             else:
-                print(f"No text recognized for image on page {page_num}, image {image_counter}.")
-                return None  # Rückgabe None, wenn kein Text gefunden wurde
-
+                print(f"No text found in OCR result for image on page {page_num}, image {image_counter}.")
         except Exception as e:
             print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
-            return None  # Rückgabe None im Fehlerfall
+
+    def save_ocr_result_to_document(self, page_num, image_counter, img_text):
+        # Speichere das OCR-Ergebnis in der Dokumentklasse
+        image_obj = Image(
+            id=str(ObjectId()),
+            link=f"page_{page_num}_image_{image_counter}.jpg",  # Placeholder, not used for file saving
+            page=page_num,
+            type="OCR",
+            imgtext=img_text,
+            llm_output=""  # Reserved for LLM output
+        )
+        # Angenommen, doc ist die Dokumentinstanz, die übergeben wird
+        doc.imgList.append(image_obj)
+
 
 
 

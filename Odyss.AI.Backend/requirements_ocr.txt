@@ -1,0 +1,10 @@
+paddleocr
+transformers
+Pillow
+PyPDF2
+pdfplumber
+pptxtopdf
+docx2pdf
+datetime
+paddlepaddle
+torch==2.0.1  # Füge die gewünschte Version von PyTorch hinzu
