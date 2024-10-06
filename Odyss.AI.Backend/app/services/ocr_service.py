@@ -1,8 +1,7 @@
 from io import BytesIO
 import zlib
 from bson import ObjectId
-from paddleocr import PaddleOCR
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+from transformers import AutoProcessor, AutoModelForVision2Seq #, TrOCRProcessor, VisionEncoderDecoderModel
 import os
 import re
 import PyPDF2
@@ -19,9 +18,11 @@ from app.config import Config
 
 class OCRService:
     def __init__(self):
-        self.ocr = PaddleOCR(use_angle_cls=True, use_gpu=False, lang="de")
-        self.processor = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
-        self.model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-small-handwritten")
+        # Nougat Modell und Prozessor laden
+        self.processor = AutoProcessor.from_pretrained("facebook/nougat-small")
+        self.model = AutoModelForVision2Seq.from_pretrained("facebook/nougat-small")
+        # self.processorFormula = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
+        # self.modelFormula = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-small-handwritten")
 
     def extract_text(self, doc):
         file_extension = os.path.splitext(doc.name)[1].lower()
@@ -94,32 +95,32 @@ class OCRService:
         return pdf_stream  # Gibt den PDF-Stream zurück
 
 # handle formulas
-    def extract_formulas_from_image(self, image_path):
-        processor = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
-        model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-small-handwritten")
+    # def extract_formulas_from_image(self, image_path):
+    #     processorFormula = TrOCRProcessor.from_pretrained("microsoft/trocr-small-handwritten")
+    #     modelFormula = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-small-handwritten")
 
-        image = Image.open(image_path).convert("RGB")
-        pixel_values = processor(image, return_tensors="pt").pixel_values
-        generated_ids = model.generate(pixel_values)
-        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    #     image = Image.open(image_path).convert("RGB")
+    #     pixel_values = processorFormula(image, return_tensors="pt").pixel_values
+    #     generated_ids = modelFormula.generate(pixel_values)
+    #     generated_text = processorFormula.batch_decode(generated_ids, skip_special_tokens=True)[0]
         
-        # Example regex to identify LaTeX-like formulas from the recognized text
-        formulas = re.findall(r'\$[^\$]+\$', generated_text)
-        return formulas
+    #     # Example regex to identify LaTeX-like formulas from the recognized text
+    #     formulas = re.findall(r'\$[^\$]+\$', generated_text)
+    #     return formulas
     
-    def save_formulas_to_file(self, formulas, output_path):
-        with open(output_path, "w", encoding="utf-8") as f:
-            for formula, page_num in formulas:
-                f.write(f"Formula on Page {page_num}: {formula}\n")
+    # def save_formulas_to_file(self, formulas, output_path):
+    #     with open(output_path, "w", encoding="utf-8") as f:
+    #         for formula, page_num in formulas:
+    #             f.write(f"Formula on Page {page_num}: {formula}\n")
 
-    def extract_text_formulas_from_pdf(self, file_path):
-        formulas = []
-        with pdfplumber.open(file_path) as pdf:
-            for page_num, page in enumerate(pdf.pages):
-                text = page.extract_text()
-                matches = re.findall(r'\$[^\$]+\$', text)  # Extract LaTeX-like formulas
-                formulas.extend([(match, page_num + 1) for match in matches])
-        return formulas
+    # def extract_text_formulas_from_pdf(self, file_path):
+    #     formulas = []
+    #     with pdfplumber.open(file_path) as pdf:
+    #         for page_num, page in enumerate(pdf.pages):
+    #             text = page.extract_text()
+    #             matches = re.findall(r'\$[^\$]+\$', text)  # Extract LaTeX-like formulas
+    #             formulas.extend([(match, page_num + 1) for match in matches])
+    #     return formulas
 
 
 # extraction
@@ -218,72 +219,37 @@ class OCRService:
                     text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
                     doc.textList.append(text_chunk)
 
-# OCR
-    # def ocr_image(self, image_stream, doc, page_num, image_counter):
-    #     try:         
-    #         # Here, the image is passed to OCR
-    #         ocr_result = self.ocr.ocr(image_stream)
-
-    #         if ocr_result:
-    #             img_text = "\n".join([line[1][0] for line in ocr_result[0]])
-    #             print(f"OCR result for image on page {page_num}, image {image_counter}: {img_text}")
-                
-    #             # Create an Image object
-    #             image_obj = Image(
-    #                 id=str(ObjectId()),
-    #                 link=f"page_{page_num}_image_{image_counter}.jpg",  # Placeholder, not used for file saving
-    #                 page=page_num,
-    #                 type="OCR",
-    #                 imgtext=img_text,
-    #                 llm_output=""  # Reserved for LLM output
-    #             )
-    #             doc.imgList.append(image_obj)
-    #         else:
-    #             print(f"No text found in OCR result for image on page {page_num}, image {image_counter}.")
-
-    #     except Exception as e:
-    #         print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
-
-
-    def ocr_image(self, image_stream, pdf_name, page_num, image_counter):        
+    def ocr_image(self, image_stream, pdf_name, page_num, image_counter):
         try:
             # Setze den Stream zurück, um sicherzustellen, dass er von Anfang an gelesen wird
             image_stream.seek(0)
             
             # Lade das Bild aus dem Stream
-            image = PilImage.open(image_stream)
+            image = PilImage.open(image_stream).convert("RGB")
             
-            # Konvertiere das Bild in ein Format, das von PaddleOCR verarbeitet werden kann
-            image = image.convert("RGB")
+            # Vorverarbeitung des Bildes für das Nougat-Modell
+            pixel_values = self.processor(images=image, return_tensors="pt").pixel_values
             
-            # Führe die OCR durch
-            ocr_result = self.ocr.ocr(image)
-
-            # Überprüfe das OCR-Ergebnis und befülle das Image-Objekt
-            if ocr_result:
-                imgtext = "\n".join([line[1][0] for line in ocr_result[0]])  # Extrahiere den Text
-                # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
-                image_id = str(ObjectId())  # Generiere eine ID für das Bild
-                # Setze den Link zu einer kombinierten Darstellung aus PDF-Namen und Seitenzahl
-                link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"  # Beispiel-Link, passe nach Bedarf an
-                image_obj = Image(
-                    ID=image_id,
-                    Link=link,  # Setze den Link hier
-                    Page=page_num,
-                    Type='image/jpeg',  # oder das richtige Format
-                    Imgtext=imgtext,
-                    LLM_Output=None  # Falls nötig
-                )
-                return image_obj  # Rückgabe des Image-Objekts
-
-            else:
-                print(f"No text recognized for image on page {page_num}, image {image_counter}.")
-                return None  # Rückgabe None, wenn kein Text gefunden wurde
-
+            # OCR durchführen mit dem Nougat-Modell
+            generated_ids = self.model.generate(pixel_values)
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+            
+            # Erstelle das Image-Objekt und füge es zur imgList des Dokuments hinzu
+            image_id = str(ObjectId())
+            link = f"{pdf_name}_page_{page_num}_image_{image_counter}.jpg"
+            image_obj = Image(
+                ID=image_id,
+                Link=link,
+                Page=page_num,
+                Type='image/jpeg',
+                Imgtext=generated_text,
+                LLM_Output=None
+            )
+            return image_obj
+        
         except Exception as e:
             print(f"Error during OCR for image on page {page_num}, image {image_counter}: {e}")
-            return None  # Rückgabe None im Fehlerfall
-
+            return None
 
 
 # Sudo main
