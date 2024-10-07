@@ -148,20 +148,17 @@ class OCRService:
 
         return page_texts  # Gib die Liste von Seiten zurück
 
-# Extrahieren von Bildern aus dem PDF
+
     def extract_images_from_pdf(self, pdf_stream, doc):
         images = []
         try:
-            print("Beginne mit dem Lesen des PDF-Streams...")
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             
             for page_num, page in enumerate(pdf_reader.pages):
-                print(f"Verarbeite Seite {page_num + 1} von {len(pdf_reader.pages)}...")
                 resources = page.get("/Resources").get_object()
                 xobjects = resources.get("/XObject")
                 
                 if xobjects:
-                    print(f"Seite {page_num + 1} enthält {len(xobjects)} XObjects.")
                     xobjects = xobjects.get_object()
                     image_counter = 1  # Image counter für jede Seite zurücksetzen
                     
@@ -170,38 +167,38 @@ class OCRService:
                         
                         if xobject["/Subtype"] == "/Image":
                             try:
-                                print(f"Bild {image_counter} auf Seite {page_num + 1} gefunden.")
-                                data = xobject._data
-                                file_extension = "png"  # Standard auf PNG setzen
+                                width = xobject["/Width"]
+                                height = xobject["/Height"]
 
-                                # Überprüfe auf vorhandene Filter und dekodiere sie
+                                # Daten extrahieren
+                                data = xobject._data
+                                file_extension = "png"  # Standard PNG verwenden
+
+                                # Überprüfe auf vorhandene Filter und dekodiere entsprechend
                                 if "/Filter" in xobject:
                                     if xobject["/Filter"] == "/FlateDecode":
-                                        print("Filter: FlateDecode")
-                                        data = zlib.decompress(data)
+                                        try:
+                                            data = zlib.decompress(data)  # Dekomprimiere die FlateDecode-Daten
+                                            # Erstelle ein Bild aus den dekomprimierten Daten
+                                            img = PilImage.frombytes("RGB", (width, height), data)
+                                        except Exception as e:
+                                            continue
                                     elif xobject["/Filter"] == "/DCTDecode":
-                                        print("Filter: DCTDecode")
-                                        file_extension = "jpg"  # JPEG benötigt keine zusätzliche Decodierung
+                                        file_extension = "jpg"  # JPEG benötigt keine Decodierung
                                     elif xobject["/Filter"] == "/JPXDecode":
-                                        print("Filter: JPXDecode")
                                         file_extension = "jp2"  # JPEG2000
-                                    elif xobject["/Filter"] in ["/ASCII85Decode", "/LZWDecode", "/CCITTFaxDecode"]:
-                                        print(f"Filter: {xobject['/Filter']}")
-                                        file_extension = "png"  # Behandle andere Formate als PNG
                                     else:
-                                        print(f"Unbekannter Filter: {xobject['/Filter']}")
-                                        continue  # Ignoriere unbekannte Filter
+                                        continue  # Überspringe unbekannte Filter
 
                                 # Speicherpfad für das Bild
                                 img_save_path = os.path.join(Config.LOCAL_DOC_PATH, f"extracted_image_{page_num+1}_{image_counter}.{file_extension}")
 
-                                # Speichere das Bild
-                                with open(img_save_path, "wb") as img_file:
-                                    img_file.write(data)
+                                # Speichere das Bild basierend auf dem Filtertyp
+                                img.save(img_save_path)
 
-                                # OCR auf dem Bild laufen lassen
+                                # OCR auf dem Bild ausführen
                                 print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
-                                img_text = self.ocr_image(img_save_path)  # OCR-Funktion hier anpassen
+                                img_text = self.ocr_image(img_save_path)  # OCR-Funktion
 
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
@@ -217,7 +214,7 @@ class OCRService:
                                 image_counter += 1
 
                             except Exception as e:
-                                print(f"Fehler beim Lesen der Bilddaten für Objekt {obj} auf Seite {page_num + 1}: {e}")
+                                print(f"Fehler beim Verarbeiten des Bildes für Objekt {obj} auf Seite {page_num + 1}: {e}")
 
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
@@ -251,8 +248,6 @@ class OCRService:
         except Exception as e:
             print(f"Fehler bei der OCR für Bild: {e}")
             return None
-
-
 
 # Sudo main
     def process_pdf(self, doc):

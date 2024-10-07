@@ -35,12 +35,6 @@ class DocumentManager:
 
             print("nach extract")
 
-            # print(f"EMR Document ID: {new_doc.id}")
-            # print(f"EMR Document Name: {new_doc.name}")
-            # print(f"EMR Timestamp: {new_doc.timestamp}")
-            # print(f"EMR Document Link: {new_doc.doclink}")
-            # print(f"EMR Summary: {new_doc.summary}")
-
             # # Print text chunks
             # for idx, chunk in enumerate(new_doc.textList):
             #     print(f"EMR Text Chunk {idx+1}: {chunk.text} (Page {chunk.page})")
