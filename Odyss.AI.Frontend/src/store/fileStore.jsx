@@ -1,3 +1,4 @@
+// src/store/fileStore.js
 import { create } from 'zustand';
 
 const useFileStore = create((set) => ({
