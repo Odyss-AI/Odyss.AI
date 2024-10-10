@@ -1,11 +1,11 @@
 from io import BytesIO
 import zlib
 from bson import ObjectId
-from transformers import AutoProcessor, AutoModelForVision2Seq #, TrOCRProcessor, VisionEncoderDecoderModel
+from torch import device
+import torch
+from transformers import AutoProcessor, AutoModelForVision2Seq, StoppingCriteriaList #, TrOCRProcessor, VisionEncoderDecoderModel
 import os
-import re
 import PyPDF2
-import pdfplumber
 from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
 from app.models.user import TextChunk, Image
@@ -14,10 +14,14 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image as PilImage
 from app.config import Config
+from .StoppingCriteraScores import StoppingCriteriaScores
+import pytesseract
+from difflib import SequenceMatcher
 
 
 class OCRService:
     def __init__(self):
+        self.device = device("cuda" if torch.cuda.is_available() else "cpu")
         # Nougat Modell und Prozessor laden
         self.processor = AutoProcessor.from_pretrained("facebook/nougat-small")
         self.model = AutoModelForVision2Seq.from_pretrained("facebook/nougat-small")
@@ -135,12 +139,10 @@ class OCRService:
                     full_text += f"{page_text.strip()}\n"
                     page_texts.append((page_text.strip(), page_num + 1))  # Seitenzahl hinzufügen
                 else:
-                    print(f"No text found on page {page_num + 1}.")
                     full_text += f"No text detected on page {page_num + 1}\n"
                     page_texts.append(("", page_num + 1))  # Leeren Text hinzufügen
             
             if not full_text.strip():  # If no text was found
-                print("The document appears to contain only images.")
                 full_text = ""  # Return empty string for image-only documents
 
         except Exception as e:
@@ -150,7 +152,6 @@ class OCRService:
 
 
     def extract_images_from_pdf(self, pdf_stream, doc):
-        images = []
         try:
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             
@@ -182,12 +183,14 @@ class OCRService:
                                             # Erstelle ein Bild aus den dekomprimierten Daten
                                             img = PilImage.frombytes("RGB", (width, height), data)
                                         except Exception as e:
+                                            print(f"Fehler beim Dekomprimieren von Bild {image_counter} auf Seite {page_num + 1}: {e}")
                                             continue
                                     elif xobject["/Filter"] == "/DCTDecode":
                                         file_extension = "jpg"  # JPEG benötigt keine Decodierung
                                     elif xobject["/Filter"] == "/JPXDecode":
                                         file_extension = "jp2"  # JPEG2000
                                     else:
+                                        print(f"Unbekannter Filter {xobject['/Filter']} für Bild {image_counter} auf Seite {page_num + 1}")
                                         continue  # Überspringe unbekannte Filter
 
                                 # Speicherpfad für das Bild
@@ -195,21 +198,27 @@ class OCRService:
 
                                 # Speichere das Bild basierend auf dem Filtertyp
                                 img.save(img_save_path)
+                                print(f"Bild {image_counter} auf Seite {page_num + 1} erfolgreich gespeichert als {img_save_path}.")
 
                                 # OCR auf dem Bild ausführen
                                 print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
                                 img_text = self.ocr_image(img_save_path)  # OCR-Funktion
 
+                                # if img_text.strip() == "":
+                                #     print(f"OCR-Ergebnis leer für Bild {image_counter} auf Seite {page_num + 1}.")
+                                # else:
+                                #     print(f"OCR-Ergebnis für Bild {image_counter} auf Seite {page_num + 1}: {img_text}")
+
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
-                                    id=str(image_counter),  # oder eine andere Logik für die ID
+                                    id=str(ObjectId()),
                                     link=img_save_path,
                                     page=page_num + 1,
                                     type=file_extension,
-                                    imgtext=img_text,  # Hier die von OCR zurückgegebene Text
-                                    llm_output=""  # Platzhalter für LLM-Ausgabe
+                                    imgtext=img_text, 
+                                    llm_output="" 
                                 )
-                                images.append(image_obj)
+                                doc.imgList.append(image_obj)
 
                                 image_counter += 1
 
@@ -219,8 +228,7 @@ class OCRService:
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-        print("Bildextraktion abgeschlossen.")
-        return images
+        print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
 
     def split_text_into_chunks(self, full_text, doc, page_num):
@@ -231,35 +239,107 @@ class OCRService:
                     text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
                     doc.textList.append(text_chunk)
 
-    def ocr_image(self, image_stream):
-        try:            
+    def ocr_nougat(self, image_stream):
+        try:
+            print(f"Starte Bildverarbeitung für OCR...")
+
             # Lade das Bild aus dem Stream
             image = PilImage.open(image_stream).convert("RGB")
-            
-            # Vorverarbeitung des Bildes für das Nougat-Modell
+            print(f"Bild erfolgreich geladen und konvertiert.")
+
+            # Bild für das Modell vorbereiten
             pixel_values = self.processor(images=image, return_tensors="pt").pixel_values
-            
-            # OCR durchführen mit dem Nougat-Modell
-            generated_ids = self.model.generate(pixel_values)
-            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-            
-            return generated_text  # Gib nur den erkannten Text zurück
-            
+            print(f"Bildvorverarbeitung abgeschlossen. Größe: {pixel_values.shape}")
+
+            # Textextraktion durchführen mit benutzerdefinierter StoppingCriteria
+            outputs = self.model.generate(
+                pixel_values.to(self.device),
+                min_length=1,
+                max_length=3584,
+                bad_words_ids=[[self.processor.tokenizer.unk_token_id]],  # Filter für unbekannte Tokens
+                return_dict_in_generate=True,
+                output_scores=True,
+                stopping_criteria=StoppingCriteriaList([StoppingCriteriaScores()])  
+            )
+
+            # Überprüfen, ob Ausgabe generiert wurde
+            if not outputs or len(outputs[0]) == 0:
+                print(f"Keine Ausgabe durch das Modell generiert.")
+                return ""  # Leeren String zurückgeben, wenn nichts erkannt wurde
+
+            # Ergebnis dekodieren
+            generated_text = self.processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
+            print(f"Roherkannter Text vor Postprocessing: {generated_text}")
+
+            # Postprocess the generation (optional, je nach Anwendungsfall)
+            generated_text = self.processor.post_process_generation(generated_text, fix_markdown=False)
+            print(f"Post-processed Text: {generated_text}")
+
+            # Gebe den erkannten Text zurück, wenn vorhanden, ansonsten leeren String
+            if generated_text.strip():
+                print(f"Texterkennung abgeschlossen. Erkannt: {generated_text}")
+                return generated_text
+            else:
+                print(f"Kein Text erkannt.")
+                return ""
+
         except Exception as e:
             print(f"Fehler bei der OCR für Bild: {e}")
-            return None
+            return ""  # Stelle sicher, dass "" zurückgegeben wird, falls ein Fehler auftritt
+        
+        
+
+    def ocr_tesseract(self, image_stream):
+        try:
+            print(f"Starte Tesseract-Bildverarbeitung für OCR...")
+
+            # Lade das Bild aus dem Stream
+            image = PilImage.open(image_stream)
+            print(f"Bild erfolgreich geladen.")
+
+            # Textextraktion mit Tesseract durchführen
+            tesseract_text = pytesseract.image_to_string(image)
+            print(f"Tesseract erkannter Text: {tesseract_text}")
+
+            return tesseract_text.strip() if tesseract_text.strip() else ""
+
+        except Exception as e:
+            print(f"Fehler bei Tesseract OCR für Bild: {e}")
+            return ""
+
+
+
+    def compare_ocr_results(self, text1, text2):
+        ratio = SequenceMatcher(None, text1, text2).ratio()
+        print(f"Ähnlichkeit der OCR-Ergebnisse: {ratio*100:.2f}%")
+        return ratio
+
+    def ocr_image(self, image_stream):
+        try:
+            print(f"Starte Bildverarbeitung für OCR...")
+
+            # Nougat OCR
+            nougat_text = self.ocr_nougat(image_stream)
+
+            # Tesseract OCR
+            tesseract_text = self.ocr_tesseract(image_stream)
+
+            # Vergleich der Ergebnisse
+            similarity = self.compare_ocr_results(nougat_text, tesseract_text)
+
+            return {"nougat": nougat_text, "tesseract": tesseract_text, "similarity": similarity}
+
+        except Exception as e:
+            print(f"Fehler bei der OCR für Bild: {e}")
+            return {"nougat": "", "tesseract": "", "similarity": 0}
+
 
 # Sudo main
     def process_pdf(self, doc):
-        print(f"Starting PDF processing for document: {doc.name}")
-
         try:
             # Attempt to extract text from PDF
-            print("Attempting to extract text from PDF...")
             page_texts = self.extract_text_from_pdf(doc.doclink)
-            print(f"Extracted text from PDF.")
 
-            # Split extracted text into chunks
             print("Splitting extracted text into chunks...")
             for text, page_num in page_texts:
                 self.split_text_into_chunks(text, doc, page_num)  # page_num wird jetzt korrekt übergeben
@@ -268,7 +348,6 @@ class OCRService:
             # Always attempt image extraction regardless of text outcome
             print("Attempting to extract images from PDF...")
             self.extract_images_from_pdf(doc.doclink, doc)
-            print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
         except Exception as e:
             print(f"Error during PDF processing: {e}")

@@ -36,3 +36,6 @@ python-docx
 reportlab
 torch
 tiktoken
+python-Levenshtein
+nltk
+pytesseract
