@@ -211,13 +211,13 @@ class OCRService:
 
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
-                                    id=str(ObjectId()),
-                                    link=img_save_path,
-                                    page=page_num + 1,
-                                    type=file_extension,
-                                    imgtext=img_text, 
-                                    llm_output="" 
-                                )
+                                id=str(ObjectId()),
+                                link=img_save_path,
+                                page=page_num + 1,
+                                type=file_extension,
+                                imgtext=img_text if isinstance(img_text, str) else "",
+                                llm_output=""
+                            )
                                 doc.imgList.append(image_obj)
 
                                 image_counter += 1
@@ -245,11 +245,9 @@ class OCRService:
 
             # Lade das Bild aus dem Stream
             image = PilImage.open(image_stream).convert("RGB")
-            print(f"Bild erfolgreich geladen und konvertiert.")
 
             # Bild für das Modell vorbereiten
             pixel_values = self.processor(images=image, return_tensors="pt").pixel_values
-            print(f"Bildvorverarbeitung abgeschlossen. Größe: {pixel_values.shape}")
 
             # Textextraktion durchführen mit benutzerdefinierter StoppingCriteria
             outputs = self.model.generate(
@@ -264,16 +262,13 @@ class OCRService:
 
             # Überprüfen, ob Ausgabe generiert wurde
             if not outputs or len(outputs[0]) == 0:
-                print(f"Keine Ausgabe durch das Modell generiert.")
                 return ""  # Leeren String zurückgeben, wenn nichts erkannt wurde
 
             # Ergebnis dekodieren
             generated_text = self.processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
-            print(f"Roherkannter Text vor Postprocessing: {generated_text}")
 
             # Postprocess the generation (optional, je nach Anwendungsfall)
             generated_text = self.processor.post_process_generation(generated_text, fix_markdown=False)
-            print(f"Post-processed Text: {generated_text}")
 
             # Gebe den erkannten Text zurück, wenn vorhanden, ansonsten leeren String
             if generated_text.strip():
@@ -289,7 +284,7 @@ class OCRService:
         
         
 
-    def ocr_tesseract(self, image_stream):
+    def ocr_image(self, image_stream):
         try:
             print(f"Starte Tesseract-Bildverarbeitung für OCR...")
 
@@ -314,24 +309,38 @@ class OCRService:
         print(f"Ähnlichkeit der OCR-Ergebnisse: {ratio*100:.2f}%")
         return ratio
 
-    def ocr_image(self, image_stream):
-        try:
-            print(f"Starte Bildverarbeitung für OCR...")
+    # def ocr_image(self, image_stream):
+    #     try:
+    #         print(f"Starte Bildverarbeitung für OCR...")
 
-            # Nougat OCR
-            nougat_text = self.ocr_nougat(image_stream)
+    #         # Nougat OCR
+    #         nougat_text = self.ocr_nougat(image_stream)
 
-            # Tesseract OCR
-            tesseract_text = self.ocr_tesseract(image_stream)
+    #         # Tesseract OCR
+    #         tesseract_text = self.ocr_tesseract(image_stream)
 
-            # Vergleich der Ergebnisse
-            similarity = self.compare_ocr_results(nougat_text, tesseract_text)
+    #         # Vergleich der Ergebnisse
+    #         similarity = self.compare_ocr_results(nougat_text, tesseract_text)
 
-            return {"nougat": nougat_text, "tesseract": tesseract_text, "similarity": similarity}
+    #         return {"nougat": nougat_text, "tesseract": tesseract_text, "similarity": similarity}
 
-        except Exception as e:
-            print(f"Fehler bei der OCR für Bild: {e}")
-            return {"nougat": "", "tesseract": "", "similarity": 0}
+    #     except Exception as e:
+    #         print(f"Fehler bei der OCR für Bild: {e}")
+    #         return {"nougat": "", "tesseract": "", "similarity": 0}
+
+    # def ocr_image(self, image_stream):
+
+            # Nur Nougat OCR
+            # self.ocr_nougat(image_stream)
+
+            #
+            # self.ocr_tesseract(image_stream)
+
+            # Extrahiere nur den Text
+            # imgtext = nougat_result if isinstance(nougat_result, str) else nougat_result.get("imgtext", "")
+
+            # Speichere nur den erkannten Text im imgtext-Feld
+            # return {"imgtext": imgtext}
 
 
 # Sudo main
