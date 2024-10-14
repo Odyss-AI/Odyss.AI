@@ -1,15 +1,8 @@
 // src/components/Sidebar/Sidebar.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import styles from './Sidebar.module.css';
 
-function Sidebar({ chats, onSelectChat }) {
-    const [selectedChat, setSelectedChat] = useState(null);
-
-    const handleChatClick = (chat) => {
-        setSelectedChat(chat.id);
-        onSelectChat(chat); // Informiere die ChatPage über den neuen Chat
-    };
-
+function Sidebar({ chats, onSelectChat, selectedChatId, onDeleteChat }) {
     return (
         <div className={styles.sidebar}>
             <h2>Chats</h2>
@@ -17,10 +10,14 @@ function Sidebar({ chats, onSelectChat }) {
                 {chats.map((chat) => (
                     <li
                         key={chat.id}
-                        className={`${styles.chatItem} ${selectedChat === chat.id ? styles.active : ''}`}
-                        onClick={() => handleChatClick(chat)}
+                        className={`${styles.chatItem} ${selectedChatId === chat.id ? styles.active : ''}`}
                     >
-                        {chat.name}
+                        <span onClick={() => onSelectChat(chat)} className={styles.chatName}>
+                          {chat.name}
+                        </span>
+                        <button onClick={() => onDeleteChat(chat.id)} className={styles.deleteButton}>
+                            Löschen
+                        </button>
                     </li>
                 ))}
             </ul>

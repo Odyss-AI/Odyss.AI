@@ -13,10 +13,24 @@
 }
 
 .chatItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 10px;
     margin: 5px 0;
     cursor: pointer;
     transition: background-color 0.3s;
+}
+
+.chatName {
+    flex-grow: 1;
+}
+
+.deleteButton {
+    background: transparent;
+    border: none;
+    color: #ff4d4d;
+    cursor: pointer;
 }
 
 .chatItem:hover {
