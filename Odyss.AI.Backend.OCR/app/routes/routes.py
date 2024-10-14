@@ -46,10 +46,12 @@ async def tesseractocr():
 
     # Hier musst du sicherstellen, dass `extract_text` die Datei vom Dateipfad lesen kann
     try:
-        doc = ocrtesseract.extract_text(doc, document_path)
+        # Übergebe den Dateipfad direkt an die extract_text-Methode
+        ocrtesseract.extract_text(doc, document_path)  # Richtig: nur doc und document_path übergeben
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
     # Das fertige Dokument als JSON zurückgeben
     return jsonify(doc.model_dump()), 200
+
 

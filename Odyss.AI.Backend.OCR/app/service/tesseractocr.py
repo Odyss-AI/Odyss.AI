@@ -7,70 +7,48 @@ from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
 from app.user import TextChunk, Image
 from docx import Document as DocxDocument
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 from PIL import Image as PilImage
 from app.config import Config
 import pytesseract
 
-
 class OCRTesseract:
-    def extract_text(self, doc):
-        file_extension = os.path.splitext(doc.name)[1].lower()
+    def extract_text(self, doc, document_path):
+        # Prüfe den Typ des Dokuments basierend auf dem Dateipfad
+        file_extension = os.path.splitext(document_path)[1].lower()
 
         if file_extension == ".pdf":
-            self.process_pdf(doc)  # PDF-Verarbeitung aufrufen
+            self.process_pdf(document_path, doc)  
         elif file_extension in [".docx", ".pptx"]:
-            self.convert_docx_or_pptx_to_pdf(doc)  # Konvertiere DOCX/PPTX zu PDF
-            self.process_pdf(doc)  # PDF-Verarbeitung aufrufen
+            self.convert_docx_or_pptx_to_pdf(document_path)  
+            self.process_pdf(document_path, doc) 
         else:
-            print("Unsupported file type")  # Überprüfen, ob der Dateityp nicht unterstützt wird
+            print("Unsupported file type") 
 
         return doc
 
-    def convert_docx_or_pptx_to_pdf(self, doc):
+    def process_pdf(self, document_path, doc):
+        with open(document_path, 'rb') as pdf_file:
+            pdf_stream = BytesIO(pdf_file.read())
+            page_texts = self.extract_text_from_pdf(pdf_stream)
+            for page_text, page_num in page_texts:
+                self.split_text_into_chunks(page_text, doc, page_num) 
+
+            self.extract_images_from_pdf(pdf_stream, doc)
+
+    def convert_docx_or_pptx_to_pdf(self, document_path):
         try:
-            if doc.name.endswith(".docx"):
-                docx_to_pdf(doc.doclink)  # Convert DOCX to PDF
-            elif doc.name.endswith(".pptx"):
-                pptx_to_pdf(doc.doclink)  # Convert PPTX to PDF
+            if document_path.endswith(".docx"):
+                docx_to_pdf(document_path)  
+            elif document_path.endswith(".pptx"):
+                pptx_to_pdf(document_path)  
         except Exception as e:
             raise Exception(f"Error during conversion: {e}")
 
-        doc.name = doc.name.replace('.docx', '.pdf').replace('.pptx', '.pdf')
-        return doc
-
-    def convert_docx_to_pdf(self, doc):
-        print(f"Starting DOCX to PDF conversion for: {doc.doclink}")
-        
-        try:
-            doc_content = DocxDocument(doc.doclink)
-            print(f"Number of paragraphs in DOCX: {len(doc_content.paragraphs)}")
-            
-            pdf_stream = BytesIO()
-            pdf_canvas = canvas.Canvas(pdf_stream, pagesize=letter)
-
-            for idx, paragraph in enumerate(doc_content.paragraphs):
-                print(f"Writing Paragraph {idx + 1} to PDF: {paragraph.text}")
-                pdf_canvas.drawString(100, 750, paragraph.text)
-                pdf_canvas.showPage()
-
-            pdf_canvas.save()
-            pdf_stream.seek(0)
-
-            pdf_length = pdf_stream.getbuffer().nbytes
-            print(f"PDF Stream created with length: {pdf_length} bytes")
-
-            doc.doclink = pdf_stream
-            return pdf_stream
-
-        except Exception as e:
-            print(f"Error during DOCX to PDF conversion: {e}")
-            raise
+        return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
     def extract_text_from_pdf(self, pdf_stream):
         full_text = ""
-        page_texts = []  # Liste, um Text pro Seite zu speichern
+        page_texts = []
         try:
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
@@ -190,4 +168,4 @@ class OCRTesseract:
 
         except Exception as e:
             print(f"Fehler bei der Tesseract OCR: {e}")
-            return ""  # Stelle sicher, dass "" zurückgegeben wird, falls ein Fehler auftritt
+            return ""  
