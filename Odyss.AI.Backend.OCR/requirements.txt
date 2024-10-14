@@ -10,3 +10,10 @@ pptxtopdf
 docx2pdf
 datetime
 python-dotenv
+python-docx
+reportlab
+torch
+tiktoken
+python-Levenshtein
+nltk
+pytesseract
