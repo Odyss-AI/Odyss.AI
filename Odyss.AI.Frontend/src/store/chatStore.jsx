@@ -4,7 +4,7 @@ import { create } from 'zustand';
 const useChatStore = create((set) => ({
     messages: [],  // Liste aller Nachrichten im Chat
 
-    sendMessage: (message) =>
+    sendMessage: (message) => // Funktion um Nachrichten zu versenden
         set((state) => ({
             messages: [...state.messages, { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }],  // Neue Benutzer-Nachricht mit Zeitstempel hinzufügen
         })),

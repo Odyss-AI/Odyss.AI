@@ -1,16 +1,9 @@
-// src/store/fileStore.js
-import { create } from 'zustand';
+import {create} from 'zustand';
 
+// Zustand Store zur Verwaltung der hochgeladenen PDF-Datei
 const useFileStore = create((set) => ({
-    files: [],  // Liste hochgeladener Dateien
-
-    // Action zum Hochladen einer Datei
-    uploadFile: (file) => set((state) => ({
-        files: [...state.files, file]  // Datei zur Liste der Dateien hinzufügen
-    })),
-
-    // Dateien zurücksetzen oder löschen
-    resetFiles: () => set({ files: [] })
+    file: null, // Der Zustand, um die Datei zu speichern
+    setFile: (file) => set({ file }), // Methode, um die Datei zu setzen
 }));
 
 export default useFileStore;

@@ -4,6 +4,11 @@
     height: 100vh; /* Füllt die gesamte Höhe des Viewports */
 }
 
+.mainContent {
+    display: flex;
+    flex: 1;
+}
+
 .leftContainer {
     flex: 1;
     display: flex;
@@ -12,11 +17,10 @@
     align-items: center;
     padding: 20px;
     border-right: 1px solid #ccc;
-
 }
 
 .rightContainer {
-    flex: 1;
+    flex: 2; /* Größere Breite für den Chat-Bereich */
     display: flex;
     flex-direction: column;
     padding: 20px;

@@ -1,28 +1,56 @@
 // src/pages/ChatPage/ChatPage.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import ChatWindow from '../../components/ChatWindow/ChatWindow.jsx';
 import UserInput from '../../components/UserInput/UserInput.jsx';
 import DragAndDrop from '../../components/DragAndDrop/DragAndDrop.jsx';
 import SelectModell from '../../components/SelectModell/SelectModell.jsx';
+import Sidebar from '../../components/Sidebar/Sidebar.jsx';
 import styles from './ChatPage.module.css';
-import useChatStore from '../../store/chatStore'; // Beispiel, um Nachrichten zu bekommen
+import useChatStore from '../../store/chatStore';
+import PDFPreview from "../../components/PDFPreview/PDFPreview.jsx";
 
 function ChatPage() {
-    const messages = useChatStore((state) => state.messages); // Holt die Nachrichten aus dem Zustand
-    const sendMessage = useChatStore((state) => state.sendMessage); // Holt die sendMessage-Funktion
+    const [selectedChat, setSelectedChat] = useState(null);
+
+    // Beispiel-Chats, die angezeigt werden
+    const chats = [
+        { id: 1, name: 'Chat mit Bot A' },
+        { id: 2, name: 'Chat mit Bot B' },
+        { id: 3, name: 'Chat mit Bot C' },
+    ];
+
+    const messages = useChatStore((state) => state.messages); // Nachrichten aus Zustand
+    const sendMessage = useChatStore((state) => state.sendMessage); // Nachricht senden
+
+    const handleSelectChat = (chat) => {
+        setSelectedChat(chat);
+        // Hier könntest du auch Logik hinzufügen, um die Nachrichten für den ausgewählten Chat zu laden
+    };
 
     return (
         <div className={styles.chatPage}>
-            {/* Linke Seite: SelectModell und Drag and Drop Container */}
-            <div className={styles.leftContainer}>
-                <SelectModell /> {/* Oben platziert */}
-                <DragAndDrop /> {/* Mittig platziert */}
-            </div>
+            {/* Sidebar auf der linken Seite */}
+            <Sidebar chats={chats} onSelectChat={handleSelectChat} />
 
-            {/* Rechte Seite: Chat Fenster und User Input */}
-            <div className={styles.rightContainer}>
-                <ChatWindow messages={messages} />  {/* Nachrichtenliste übergeben */}
-                <UserInput onSendMessage={sendMessage} /> {/* Nachricht senden */}
+            {/* Hauptinhalt: links Drag & Drop, rechts der Chat */}
+            <div className={styles.mainContent}>
+                <div className={styles.leftContainer}>
+                    <SelectModell /> {/* Oben platziert */}
+                    <h1>PDF Drag and Drop</h1>
+                    <DragAndDrop />
+                    <PDFPreview />
+                </div>
+
+                <div className={styles.rightContainer}>
+                    {selectedChat ? (
+                        <>
+                            <ChatWindow messages={messages} />  {/* Nachrichtenliste übergeben */}
+                            <UserInput onSendMessage={sendMessage} /> {/* Nachricht senden */}
+                        </>
+                    ) : (
+                        <p>Wähle einen Chat aus der Seitenleiste aus, um zu starten</p>
+                    )}
+                </div>
             </div>
         </div>
     );
