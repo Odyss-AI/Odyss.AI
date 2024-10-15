@@ -17,3 +17,5 @@ tiktoken
 python-Levenshtein
 nltk
 pytesseract
+paddleocr
+paddlepaddle

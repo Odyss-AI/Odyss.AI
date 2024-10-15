@@ -6,7 +6,6 @@ import PyPDF2
 from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
 from app.user import TextChunk, Image
-from docx import Document as DocxDocument
 from PIL import Image as PilImage
 from app.config import Config
 import pytesseract
@@ -17,12 +16,17 @@ class OCRTesseract:
         file_extension = os.path.splitext(document_path)[1].lower()
 
         if file_extension == ".pdf":
-            self.process_pdf(document_path, doc)  
+            # Direkt PDF verarbeiten
+            self.process_pdf(document_path, doc)
         elif file_extension in [".docx", ".pptx"]:
-            self.convert_docx_or_pptx_to_pdf(document_path)  
-            self.process_pdf(document_path, doc) 
+            # Konvertiere zu PDF und dann verarbeite das konvertierte PDF
+            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)  # Pfad zur konvertierten PDF erhalten
+            self.process_pdf(converted_pdf_path, doc)  # Verarbeite das konvertierte PDF
+
+            # Lösche das konvertierte PDF nach der Verarbeitung (optional)
+            os.remove(converted_pdf_path)
         else:
-            print("Unsupported file type") 
+            print("Unsupported file type")
 
         return doc
 
@@ -38,12 +42,15 @@ class OCRTesseract:
     def convert_docx_or_pptx_to_pdf(self, document_path):
         try:
             if document_path.endswith(".docx"):
-                docx_to_pdf(document_path)  
+                # Konvertiere .docx zu PDF
+                docx_to_pdf(document_path)
             elif document_path.endswith(".pptx"):
-                pptx_to_pdf(document_path)  
+                # Konvertiere .pptx zu PDF
+                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
         except Exception as e:
             raise Exception(f"Error during conversion: {e}")
 
+        # Rückgabe des Pfads zur neuen PDF-Datei
         return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
     def extract_text_from_pdf(self, pdf_stream):
