@@ -6,6 +6,8 @@ import asyncio
 import uuid
 import logging
 
+from bson import ObjectId
+
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
@@ -23,7 +25,8 @@ class DocumentManager:
 
     def __init__(self):
         self.local_file_path = Config.LOCAL_DOC_PATH
-        self.sim_search = SimailaritySearchService()
+        self.tei_url = Config.TEI_URL + "/embed"
+        self.ocr_service = OCRService()
 
     async def handle_document_async(self, file, username, is_local = True):
         """
@@ -42,16 +45,15 @@ class DocumentManager:
             db = get_db()
             filename, id = self.generate_filename(file.filename)
             filepath = await self.save_document_local_async(file, filename) if is_local else self.save_document_onedrive(file, filename)
-            # if filepath is None:
-            #     return None, "File already exists"
+            if filepath is None:
+                return None, "File already exists"
             
             # Create a new document object with necessary metadata
-            # new_doc = self.get_new_doc(filename, filepath, file.filename)
+            new_doc = self.get_new_doc(filename, filepath, file.filename)
 
             # Send new_doc to OCR, where the text is read out and the images are recognized
             # The object with the text split up and images (here the URLs are stored) comes back
-            # new_doc = self.ocr_service.extract_text(new_doc)
-            new_doc = get_test_document(id)
+            new_doc = self.ocr_service.extract_text(new_doc)
 
             # Check if the document already exists in DB
             # user_docs = await db.get_documents_of_user_async(username)
@@ -82,6 +84,12 @@ class DocumentManager:
                 logging.error(f"Error creating summary: {file.filename} from user {username}")
                 return None, "Error creating summary"
 
+
+            # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
+            #embeddings = await self.create_text_embedding_async(new_doc)
+
+            # Summary is generated from the text through LLM
+
             # Save new_doc in the database
             doc_id = await db.add_document_to_user_async(username, new_doc)
 
@@ -108,7 +116,7 @@ class DocumentManager:
         file_hash = hashlib.sha256(original_filename.encode('utf-8')).hexdigest()
         # Save the file extension
         _, file_extension = os.path.splitext(original_filename)
-        return f"{file_hash}{file_extension}", file_hash
+        return f"{file_hash}{file_extension}"
 
     async def save_document_local_async(self, file, filename):
         """
@@ -149,7 +157,8 @@ class DocumentManager:
         """
         
         return Document(
-            id = name,
+            id = str(ObjectId()),
+            doc_id=name,
             name = original_name,
             timestamp = datetime.now(),
             doclink = path,
@@ -157,7 +166,26 @@ class DocumentManager:
             imgList = [],
             textList = []
         )
-
+    
+    async def fetch_embedding_async(self, to_embed: str):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
+                if response.status == 200:
+                    return await response.json().get("embedding")
+                return None
+    
+    async def create_text_embedding_async(self, doc: Document):
+        tasks = []
+        for chunk in doc.textList:
+            tasks.append(self.fetch_embedding_async(doc.id, chunk.text))
+        
+        embeddings = await asyncio.gather(*tasks)
+        
+        return embeddings
+    
+    async def save_embedding_async(self, doc_id: str, embedding: str):
+        # Speichere das Embedding in der VektorDb
+        pass
 
         
     
