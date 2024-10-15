@@ -7,7 +7,7 @@ from app.service.tesseractocr import OCRTesseract
 from app.routes import main
 
 @main.route("/ocr/paddleocr", methods=["POST"])
-async def paddleocr() : 
+async def paddleocr(): 
     # JSON-Daten von der Anfrage abrufen
     data = await request.json
     doc = Document(**data)
@@ -26,12 +26,16 @@ async def paddleocr() :
     # Tesseract OCR verwenden, um Text aus dem Dokument zu extrahieren
     ocrpaddle = OCRPaddle()
 
-    # Hier musst du sicherstellen, dass `extract_text` die Datei vom Dateipfad lesen kann
     try:
         # Übergebe den Dateipfad direkt an die extract_text-Methode
-        ocrpaddle.extract_text(doc, document_path)  # Richtig: nur doc und document_path übergeben
+        extracted_text = ocrpaddle.extract_text(doc, document_path)
+        
+        # Rückgabe des extrahierten Texts oder eine Erfolgsmeldung
+        return jsonify({"extracted_text": extracted_text}), 200  # Rückgabe des extrahierten Texts
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 
 @main.route("/ocr/nougatocr", methods=["POST"])
 async def nougatocr() : 

@@ -24,11 +24,9 @@ class OCRPaddle:
             self.process_pdf(document_path, doc)
         elif file_extension in [".docx", ".pptx"]:
             # Konvertiere zu PDF und dann verarbeite das konvertierte PDF
-            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)  # Pfad zur konvertierten PDF erhalten
-            self.process_pdf(converted_pdf_path, doc)  # Verarbeite das konvertierte PDF
-
-            # Lösche das konvertierte PDF nach der Verarbeitung (optional)
-            os.remove(converted_pdf_path)
+            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)
+            self.process_pdf(converted_pdf_path, doc)
+            os.remove(converted_pdf_path)  # Lösche das konvertierte PDF nach der Verarbeitung
         else:
             print("Unsupported file type")
 
@@ -46,11 +44,9 @@ class OCRPaddle:
     def convert_docx_or_pptx_to_pdf(self, document_path):
         try:
             if document_path.endswith(".docx"):
-                # Konvertiere .docx zu PDF
                 docx_to_pdf(document_path)
             elif document_path.endswith(".pptx"):
-                # Konvertiere .pptx zu PDF
-                pptx_to_pdf(document_path)
+                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
         except Exception as e:
             raise Exception(f"Error during conversion: {e}")
 
@@ -66,10 +62,9 @@ class OCRPaddle:
                 page_text = page.extract_text()
                 if page_text:
                     full_text += f"{page_text.strip()}\n"
-                    page_texts.append((page_text.strip(), page_num + 1))  # Seitenzahl hinzufügen
+                    page_texts.append((page_text.strip(), page_num + 1))
                 else:
-                    full_text += f"No text detected on page {page_num + 1}\n"
-                    page_texts.append(("", page_num + 1))  # Leeren Text hinzufügen
+                    page_texts.append(("", page_num + 1))
             
             if not full_text.strip():  # If no text was found
                 full_text = ""  # Return empty string for image-only documents
@@ -77,7 +72,7 @@ class OCRPaddle:
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
 
-        return page_texts  # Gib die Liste von Seiten zurück
+        return page_texts
 
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
@@ -89,7 +84,7 @@ class OCRPaddle:
                 
                 if xobjects:
                     xobjects = xobjects.get_object()
-                    image_counter = 1  # Image counter für jede Seite zurücksetzen
+                    image_counter = 1
                     
                     for obj in xobjects:
                         xobject = xobjects[obj].get_object()
@@ -101,40 +96,35 @@ class OCRPaddle:
 
                                 # Daten extrahieren
                                 data = xobject._data
-                                file_extension = "png"  # Standard PNG verwenden
+                                file_extension = "png"
 
                                 # Überprüfe auf vorhandene Filter und dekodiere entsprechend
                                 if "/Filter" in xobject:
                                     if xobject["/Filter"] == "/FlateDecode":
                                         try:
-                                            data = zlib.decompress(data)  # Dekomprimiere die FlateDecode-Daten
+                                            data = zlib.decompress(data)
                                             img = PilImage.frombytes("RGB", (width, height), data)
                                         except Exception as e:
                                             print(f"Fehler beim Dekomprimieren von Bild {image_counter} auf Seite {page_num + 1}: {e}")
                                             continue
                                     elif xobject["/Filter"] == "/DCTDecode":
                                         file_extension = "jpg"
+                                        img = PilImage.open(BytesIO(data))
                                     elif xobject["/Filter"] == "/JPXDecode":
                                         file_extension = "jp2"
+                                        img = PilImage.open(BytesIO(data))
                                     else:
                                         print(f"Unbekannter Filter {xobject['/Filter']} für Bild {image_counter} auf Seite {page_num + 1}")
                                         continue
 
-                                # Speicherpfad für das Bild
-                                img_save_path = os.path.join(Config.LOCAL_DOC_PATH, f"extracted_image_{page_num+1}_{image_counter}.{file_extension}")
-
-                                # Speichere das Bild basierend auf dem Filtertyp
-                                img.save(img_save_path)
-                                print(f"Bild {image_counter} auf Seite {page_num + 1} erfolgreich gespeichert als {img_save_path}.")
-
                                 # OCR auf dem Bild ausführen
                                 print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
-                                img_text = self.ocr_image(img_save_path)  # PaddleOCR-Funktion
+                                img_text = self.ocr_image(img)  # PaddleOCR-Funktion
 
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
                                     id=str(ObjectId()),
-                                    link=img_save_path,
+                                    link=f"extracted_image_{page_num + 1}_{image_counter}.{file_extension}",
                                     page=page_num + 1,
                                     type=file_extension,
                                     imgtext=img_text if isinstance(img_text, str) else "",
@@ -159,16 +149,12 @@ class OCRPaddle:
                 text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
                 doc.textList.append(text_chunk)
 
-    def ocr_image(self, image_stream):
+    def ocr_image(self, image):
         try:
             print(f"Starte PaddleOCR-Bildverarbeitung für OCR...")
 
-            # Lade das Bild aus dem Stream
-            image = PilImage.open(image_stream)
-            print(f"Bild erfolgreich geladen.")
-
             # Textextraktion mit PaddleOCR durchführen
-            ocr_result = self.ocr.ocr(image_stream)
+            ocr_result = self.ocr.ocr(image)
 
             extracted_text = "\n".join([line[1][0] for line in ocr_result])
 
@@ -182,3 +168,4 @@ class OCRPaddle:
         except Exception as e:
             print(f"Fehler bei der PaddleOCR: {e}")
             return ""
+        
