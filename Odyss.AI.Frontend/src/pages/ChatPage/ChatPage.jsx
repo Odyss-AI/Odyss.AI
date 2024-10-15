@@ -19,8 +19,6 @@ function ChatPage() {
     const addChat = useChatStore((state) => state.addChat);
     const deleteChat = useChatStore((state) => state.deleteChat);
 
-
-    // Verwende useMemo, um die Nachrichten für den ausgewählten Chat nur dann zu berechnen, wenn sich selectedChat oder allChats ändern.
     const chatMessages = selectedChat ? allChats[selectedChat.id] || [] : [];
 
     const handleSelectChat = (chat) => {
@@ -52,7 +50,7 @@ function ChatPage() {
             {/* Sidebar auf der linken Seite */}
             <Sidebar chats={chats} onSelectChat={handleSelectChat} selectedChatId={selectedChat?.id} onDeleteChat={handleDeleteChat} />
 
-            {/* Hauptinhalt: links Drag & Drop, rechts der Chat */}
+            {/* Hauptinhalt */}
             <div className={styles.mainContent}>
                 <div className={styles.leftContainer}>
                     <SelectModell /> {/* Oben platziert */}

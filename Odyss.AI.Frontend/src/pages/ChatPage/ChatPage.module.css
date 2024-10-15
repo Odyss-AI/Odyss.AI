@@ -9,6 +9,12 @@
     flex: 1;
 }
 
+.mainContentFullWidth {
+    display: flex;
+    flex: 1;
+    margin-left: 0; /* Füllt den gesamten Platz */
+}
+
 .leftContainer {
     flex: 1;
     display: flex;
@@ -30,4 +36,20 @@
     flex: 1; /* ChatWindow nimmt den verfügbaren Platz ein */
     overflow-y: auto; /* Scrollen bei zu vielen Nachrichten */
     margin-bottom: 10px; /* Abstand zum UserInput */
+}
+.toggleButton {
+    position: absolute; /* Positioniert die Schaltfläche am linken Rand */
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggleButton:hover {
+    background-color: #0056b3;
 }

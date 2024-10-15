@@ -1,5 +1,7 @@
+// src/components/DragAndDrop/DragAndDrop.jsx
 import React, { useState } from 'react';
 import useFileStore from '../../store/fileStore.jsx';
+import styles from './DragAndDrop.module.css';
 
 const DragAndDrop = () => {
     const [dragging, setDragging] = useState(false);
@@ -43,13 +45,32 @@ const DragAndDrop = () => {
 
     return (
         <div
-            className={`drag-drop-zone ${dragging ? 'dragging' : ''}`}
+            className={`${styles.dragDropZone} ${dragging ? styles.dragging : ''}`}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
         >
-            <p>{dragging ? "Loslassen zum Hochladen" : "PDF-Datei hierhin ziehen"}</p>
+            <div className={styles.content}>
+                <p>{dragging ? "Loslassen zum Hochladen" : "PDF-Datei hierhin ziehen oder klicken, um eine Datei auszuwählen"}</p>
+                <button onClick={() => document.getElementById('fileInput').click()} className={styles.uploadButton}>
+                    Datei auswählen
+                </button>
+                <input
+                    id="fileInput"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file && file.type === 'application/pdf') {
+                            setFile(file);
+                        } else {
+                            alert("Bitte nur PDF-Dateien hochladen!");
+                        }
+                    }}
+                    className={styles.fileInput}
+                />
+            </div>
         </div>
     );
 };
