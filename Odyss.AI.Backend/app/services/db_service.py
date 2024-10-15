@@ -1,5 +1,6 @@
 import os
 import asyncio
+import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
@@ -33,6 +34,16 @@ class MongoDBService:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """
+        Ensures that only one instance of the class is created (singleton pattern).
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            MongoDBService: The singleton instance of the MongoDBService class.
+        """
         if cls._instance is None:
             cls._instance = super(MongoDBService, cls).__new__(cls)
         return cls._instance
@@ -46,6 +57,16 @@ class MongoDBService:
 
 
     async def create_user_async(self, username):
+        """
+        Creates a new user in the database asynchronously.
+
+        Args:
+            username (str): The username of the new user.
+
+        Returns:
+            User: The created user object, or None if the username already exists or an error occurs.
+        """
+        
         try:
             existing_user = await self.user_collection.find_one({"username": username})
             if existing_user:
@@ -54,35 +75,67 @@ class MongoDBService:
             await self.user_collection.insert_one(user.model_dump(by_alias=True))
             return user
         except Exception as e:
-            print(f"Error creating user: {e}")
+            logging.error(f"Error creating user: {e}")
             return None
 
     async def get_user_async(self, username):
+        """
+        Retrieves a user from the database by username asynchronously.
+
+        Args:
+            username (str): The username of the user to retrieve.
+
+        Returns:
+            dict: The user document, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if user:
                 return user
             return None
         except asyncio.CancelledError:
-            print("Die Operation wurde abgebrochen.")
+            logging.error("Die Operation wurde abgebrochen.")
             raise
         except Exception as e:
-            print(f"Error getting user: {e}")
+            logging.error(f"Error getting user: {e}")
             return None
     
     async def get_documents_of_user_async(self, username):
+        """
+        Retrieves all documents associated with a user asynchronously.
+
+        Args:
+            username (str): The username of the user whose documents are to be retrieved.
+
+        Returns:
+            list: A list of Document objects, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if not user:
-                print(f"User {username} not found.")
+                logging.info(f"User {username} not found.")
                 return None
             documents = user.get("documents", [])
             return [Document(**doc) for doc in documents]
         except Exception as e:
-            print(f"Error getting documents of user {username}: {e}")
+            logging.error(f"Error getting documents of user {username}: {e}")
             return None
     
     async def get_chunks_by_ids_async(self, username: str, chunk_ids: list, doc_ids=None):
+        """
+        Retrieves text chunks by their IDs asynchronously.
+
+        Args:
+            username (str): The username of the user whose chunks are to be retrieved.
+            chunk_ids (list): A list of chunk IDs to retrieve.
+            doc_ids (list, optional): A list of document IDs to filter the chunks. Defaults to None.
+
+        Returns:
+            list: A list of chunks and their scores, or None if the user is not found or an error occurs.
+        """
+        
         try:
             user = await self.user_collection.find_one({"username": username})
             if not user:
@@ -99,10 +152,21 @@ class MongoDBService:
             
             return chunks
         except Exception as e:
-            print(f"Error getting chunks by IDs: {e}")
+            logging.error(f"Error getting chunks by IDs: {e}")
             return None
 
     async def add_document_to_user_async(self, username, document: Document):
+        """
+        Adds a document to a user's document list asynchronously.
+
+        Args:
+            username (str): The username of the user to add the document to.
+            document (Document): The document to add.
+
+        Returns:
+            str: The ID of the added document, or None if the user is not found or an error occurs.
+        """
+        
         try:
             async with await self.client.start_session() as session:
                 async with session.start_transaction():
@@ -124,14 +188,25 @@ class MongoDBService:
 
                     return document.id
         except asyncio.CancelledError:
-            print("Die Operation wurde abgebrochen.")
+            logging.error("Die Operation wurde abgebrochen.")
             raise
         except Exception as e:
-            print(f"Fehler beim Hinzufügen des Dokuments: {e}")
+            logging.error(f"Fehler beim Hinzufügen des Dokuments: {e}")
             return None
 
 
     async def delete_document_of_user_async(self, username, document_id):
+        """
+        Deletes a document from a user's document list asynchronously.
+
+        Args:
+            username (str): The username of the user to delete the document from.
+            document_id (str): The ID of the document to delete.
+
+        Returns:
+            bool: True if the document was successfully deleted, False otherwise.
+        """
+        
         try:
             result = await self.user_collection.update_one(
                 {"username": username},
@@ -139,20 +214,40 @@ class MongoDBService:
             )
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error deleting document of user: {e}")
+            logging.error(f"Error deleting document of user: {e}")
             return False
     
     async def get_chat_async(self, chat_id):
+        """
+        Retrieves a chat from the database by chat ID asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve.
+
+        Returns:
+            Chat: The chat object, or None if the chat is not found or an error occurs.
+        """
+        
         try:
             chat = await self.chat_collection.find_one({"id": chat_id})
             if chat:
                 return Chat(**chat) 
             return None
         except Exception as e:
-            print(f"Error getting chat: {e}")
+            logging.error(f"Error getting chat: {e}")
             return None
     
     async def get_chats_by_user_async(self, user):
+        """
+        Retrieves all chats associated with a user asynchronously.
+
+        Args:
+            user (str): The user ID whose chats are to be retrieved.
+
+        Returns:
+            list: A list of Chat objects, or None if an error occurs.
+        """
+        
         try:
             chats_cursor = self.chat_collection.find({"user_id": user})
             chats = []
@@ -160,10 +255,21 @@ class MongoDBService:
                 chats.append(Chat(**chat))
             return chats
         except Exception as e:
-            print(f"Error getting chats by user: {e}")
+            logging.error(f"Error getting chats by user: {e}")
             return None
     
     async def create_chat_async(self, user: str, message: Message):
+        """
+        Creates a new chat in the database asynchronously.
+
+        Args:
+            user (str): The user ID associated with the chat.
+            message (Message): The initial message of the chat.
+
+        Returns:
+            Chat: The created chat object, or None if an error occurs.
+        """
+        
         try:
             chat = Chat( 
                 id=str(ObjectId()),
@@ -173,10 +279,21 @@ class MongoDBService:
             await self.chat_collection.insert_one(chat.model_dump(by_alias=True))
             return chat
         except Exception as e:
-            print(f"Error creating chat: {e}")
+            logging.error(f"Error creating chat: {e}")
             return None
     
     async def add_message_to_chat_async(self, chat_id: str, message: Message):
+        """
+        Adds a message to a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to add the message to.
+            message (Message): The message to add.
+
+        Returns:
+            bool: True if the message was successfully added, False otherwise.
+        """
+        
         try:
             chat = await self.get_chat_async(chat_id)
             if not chat:
@@ -191,17 +308,27 @@ class MongoDBService:
 
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error adding message to chat: {e}")
+            logging.error(f"Error adding message to chat: {e}")
             return None
 
     async def get_messages_from_chat_async(self, chat_id):
+        """
+        Retrieves all messages from a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve messages from.
+
+        Returns:
+            list: A list of messages, or an empty list if the chat is not found or an error occurs.
+        """
+        
         try:
             chat = await self.get_chat(chat_id)
             if chat:
                 return chat.get("messages", [])
             return []
         except Exception as e:
-            print(f"Error getting messages from chat: {e}")
+            logging.error(f"Error getting messages from chat: {e}")
             return []
 
     
@@ -221,5 +348,5 @@ class MongoDBService:
                 document["_id"] = str(document["_id"])
             return document
         except Exception as e:
-            print(f"Error converting ObjectId: {e}")
+            logging.error(f"Error converting ObjectId: {e}")
             return document
