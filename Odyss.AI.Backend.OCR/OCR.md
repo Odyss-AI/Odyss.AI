@@ -10,7 +10,6 @@ In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und 
 
 Die folgenden Kriterien werden zur Bewertung herangezogen.
 
-
 ## Allgemeine Informationen (Fall 1)
 
 - **Dokument:** Paper (normales Dokument)
@@ -18,23 +17,22 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 1)
 
-| Kriterium                                              | Tesseract       | Paddle                     | Nougat                     |
-| ------------------------------------------------------ | --------------- | -------------------------- | -------------------------- |
-| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P]            | [Genauigkeit N]            |
-| **Verarbeitungszeit (min)**                      | 0:05            | [Zeit P]                   | [Zeit N]                   |
-| **Formatierung (ja/nein)**                       | ?               | [Format P]                 | [Format N]                 |
-| **Bilderkennung (Anzahl)**                       | 5               | [Anzahl P]                 | [Anzahl N]                 |
-| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]             | [Skalierung N]             |
-| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]                 | [Fehler N]                 |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | [Benutzerfreundlichkeit P] | [Benutzerfreundlichkeit N] |
-| **Sonderzeichen/Formeln (%)**                    | [Formeln T]     | [Formeln P]                | [Formeln N]                |
+| Kriterium                                              | Tesseract       | Paddle          | Nougat                     |
+| ------------------------------------------------------ | --------------- | --------------- | -------------------------- |
+| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P] | [Genauigkeit N]            |
+| **Verarbeitungszeit (min)**                      | 0:05            | 0:04            | [Zeit N]                   |
+| **Formatierung (ja/nein)**                       | ?               | [Format P]      | [Format N]                 |
+| **Bilderkennung (Anzahl)**                       | 5               | 5               | 5                          |
+| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]  | [Skalierung N]             |
+| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]      | [Fehler N]                 |
+| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | gut/mittel      | [Benutzerfreundlichkeit N] |
+| **Sonderzeichen/Formeln (%)**                    | [Formeln T]     | [Formeln P]     | [Formeln N]                |
 
 ## Ergebnisse im Detail (Seite 1, Fall 1)
 
 ### Tesseract
 
-- **Textgenauigkeit:** "DOCLLM: A LAYOUT -AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\nDongsheng Wang∗, Natraj Raman∗, Mathieu Sibue∗\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\nJPMorgan AI Research\n{first.last}@jpmchase.com\nABSTRACT\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records,\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\npaper, we present DocLLM , a lightweight extension to traditional large language models (LLMs) for\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically,\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\nKeywords DocAI ·VRDU ·LLM·GPT·Spatial Attention\n1 Introduction\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [ 1],\nwhich has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge [2].\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [ 3], Llama [ 4], Falcon [ 5] or PaLM [ 6] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [7, 8] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [ 9] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal [10, 11].\nIn this paper we present DocLLM , a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n*These authors contributed equally to this work.arXiv:2401.00908v1  [cs.CL]  31 Dec 2023"
-- **Verarbeitungszeit:** [Details]
+- **Verarbeitungszeit:** 0:05 min
 - **Formatierung:** [Details]
 - **Bilderkennung (1. Bild):** "1\nWho is the “Supplier”?\nneem ante 7 Analytic Insight Inc\nINFILL, What is the doc type?\nPurchase Order\np=\nB Is the year 1995?\nae 2,0 Yes\nOCRed Document LLM Extension Pre-training Instruction Tuning\n\nText tokens + Bounding boxes Disentangled Spatial Attention Blocks + Infilling Objective KIE + NLI + VQA + Classify\n"
 - **Skalierbarkeit:** [Details]
@@ -44,14 +42,17 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ### Paddle
 
-- **Textgenauigkeit:** [Details]
-- **Verarbeitungszeit:** [Details]
+- **Verarbeitungszeit:** 0:04 min
 - **Formatierung:** [Details]
-- **Bilderkennung:** [Details]
+- **Bilderkennung (1. Bild):** "Who is the \"Supplier\"?\n(DOMEST\n(Recommended Props\nAnalytic Insight Inc\nate\nMarch3.199\nescription\nLUCKY STRIKE QUALITATIVE ADV\nCITIES\n INFILL\nWhat is the doc type?\nequested byz\nA.A.Strobel\nResearch Req\nBudgeted:\nPurchase Order\nOriginal Budgeted\nwntract.\nIs the year 1995?\nYes\nOCRed Document\nLLM Extension\nPre-training\nInstruction Tuning\nText tokens + Bounding boxes\nDisentangled Spatial Attention\nBlocks + Infilling Objective\nKIE + NLI + VQA+ Classify"
 - **Skalierbarkeit:** [Details]
 - **Fehlerrate:** [Details]
 - **Benutzerfreundlichkeit:** [Details]
 - **Sonderzeichen/Formeln:** [Details]
+
+"Who is the \"Supplier\"?\n(DOMEST\n(Recommended Props\nAnalytic Insight Inc\nate\nMarch3.199\nescription\nLUCKY STRIKE QUALITATIVE ADV\nCITIES\n INFILL\nWhat is the doc type?\nequested byz\nA.A.Strobel\nResearch Req\nBudgeted:\nPurchase Order\nOriginal Budgeted\nwntract.\nIs the year 1995?\nYes\nOCRed Document\nLLM Extension\nPre-training\nInstruction Tuning\nText tokens + Bounding boxes\nDisentangled Spatial Attention\nBlocks + Infilling Objective\nKIE + NLI + VQA+ Classify",
+
+    "link":"C:\\Users\\ramaz\\Documents\\extracted_image_2_1.png"
 
 ### Nougat
 
@@ -71,26 +72,22 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 2)
 
-| Kriterium                                              | Tesseract       | Paddle                     | Nougat                     |
-| ------------------------------------------------------ | --------------- | -------------------------- | -------------------------- |
-| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P]            | [Genauigkeit N]            |
-| **Verarbeitungszeit (min)**                      | 0:30            | [Zeit P]                   | [Zeit N]                   |
-| **Formatierung (ja/nein)**                       | ja              | [Format P]                 | [Format N]                 |
-| **Bilderkennung (Anzahl)**                       | 16              | [Anzahl P]                 | [Anzahl N]                 |
-| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]             | [Skalierung N]             |
-| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]                 | [Fehler N]                 |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | [Benutzerfreundlichkeit P] | [Benutzerfreundlichkeit N] |
-| **Sonderzeichen/Formeln (%)**                    | [Formeln T]     | [Formeln P]                | [Formeln N]                |
+| Kriterium                                              | Tesseract       | Paddle          | Nougat                     |
+| ------------------------------------------------------ | --------------- | --------------- | -------------------------- |
+| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P] | [Genauigkeit N]            |
+| **Verarbeitungszeit (min)**                      | 0:30            | 0:22            | [Zeit N]                   |
+| **Formatierung (ja/nein)**                       | ja              | ?               | [Format N]                 |
+| **Bilderkennung (Anzahl)**                       | 16              | 16              | 16                         |
+| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]  | [Skalierung N]             |
+| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]      | [Fehler N]                 |
+| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | gut/mittel      | [Benutzerfreundlichkeit N] |
+| **Sonderzeichen/Formeln (%)**                    | schlecht        | mittel          | [Formeln N]                |
 
 ## Ergebnisse im Detail (Seite 1, Fall 2)
 
 ### Tesseract
 
 - **Textgenauigkeit:** "401.00908v1 [cs.CL] 31 Dec 2023\n\nDOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\n\nDongsheng Wang”, Natraj Raman*, Mathieu Sibue*\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\nJPMorgan Al Research\n{first .last}@jpmchase.com\n\nABSTRACT\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records,\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nPaper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically,\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nKeywords DocAl- VRDU - LLM - GPT - Spatial Attention\n\n1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [I],\nwhich has spurred the development of Al-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [3], Llama [4], Falcon [5]] or PaLM [6] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [[71|8]] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal (70,(11).\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n\n“These authors contributed equally to this work.\n"
-- 
-- **Verarbeitungszeit:** [Details]
-- **Formatierung:** [Details]
-- **Bilderkennung:** [Details]
 - **Skalierbarkeit:** [Details]
 - **Fehlerrate:** [Details]
 - **Benutzerfreundlichkeit:** [Details]
@@ -98,7 +95,7 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ### Paddle
 
-- **Textgenauigkeit:** [Details]
+- **Textgenauigkeit:** "DOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\nDongsheng Wang*, Natraj Raman\", Mathieu Sibue\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\n JPMorgan AI Research\n 2023\n{first.last}@jpmchase.com\nDec '\nABSTRACT\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records.\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically.\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\n00908v1\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\nKeywords DocAI - VRDU - LLM - GPT - Spatial Attention\n1\n Introduction\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [].\nwhich has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAIl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge [2].\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [l, Llama [41, Falcon [ll or PaLM [] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [7] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal [L0 I].\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n* These authors contributed equally to this work"
 - **Verarbeitungszeit:** [Details]
 - **Formatierung:** [Details]
 - **Bilderkennung:** [Details]
@@ -125,24 +122,22 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 3)
 
-| Kriterium                                              | Tesseract       | Paddle                     | Nougat                     |
-| ------------------------------------------------------ | --------------- | -------------------------- | -------------------------- |
-| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P]            | [Genauigkeit N]            |
-| **Verarbeitungszeit (min)**                      | 0:30            | [Zeit P]                   | [Zeit N]                   |
-| **Formatierung (ja/nein)**                       | ja              | [Format P]                 | [Format N]                 |
-| **Bilderkennung (Anzahl)**                       | 16              | [Anzahl P]                 | [Anzahl N]                 |
-| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]             | [Skalierung N]             |
-| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]                 | [Fehler N]                 |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | [Benutzerfreundlichkeit P] | [Benutzerfreundlichkeit N] |
-| **Sonderzeichen/Formeln (%)**                    | [Formeln T]     | [Formeln P]                | [Formeln N]                |
+| Kriterium                                              | Tesseract       | Paddle          | Nougat                     |
+| ------------------------------------------------------ | --------------- | --------------- | -------------------------- |
+| **Textgenauigkeit (%)**                          | [Genauigkeit T] | [Genauigkeit P] | [Genauigkeit N]            |
+| **Verarbeitungszeit (min)**                      | 0:30            | 0:28            | [Zeit N]                   |
+| **Formatierung (ja/nein)**                       | ja              | [Format P]      | [Format N]                 |
+| **Bilderkennung (Anzahl)**                       | 16              | 16              | [Anzahl N]                 |
+| **Skalierbarkeit**                               | [Skalierung T]  | [Skalierung P]  | [Skalierung N]             |
+| **Fehlerrate (%)**                               | [Fehler T]      | [Fehler P]      | [Fehler N]                 |
+| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut             | gut/mittel      | [Benutzerfreundlichkeit N] |
+| **Sonderzeichen/Formeln (%)**                    | [Formeln T]     | [Formeln P]     | [Formeln N]                |
 
 ## Ergebnisse im Detail (Seite 1, Fall 3)
 
 ### Tesseract
 
 - **Textgenauigkeit:** "401.00908v1 [cs.CL] 31 Dec 2023\n\nDOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\n\nDongsheng Wang”, Natraj Raman*, Mathieu Sibue*\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\nJPMorgan Al Research\n{first .last}@jpmchase.com\n\nABSTRACT\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records,\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nPaper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically,\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nKeywords DocAl- VRDU - LLM - GPT - Spatial Attention\n\n1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [I],\nwhich has spurred the development of Al-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [3], Llama [4], Falcon [5]] or PaLM [6] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [[71|8]] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal (70,(11).\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n\n“These authors contributed equally to this work.\n"
-- 
-- **Verarbeitungszeit:** [Details]
 - **Formatierung:** [Details]
 - **Bilderkennung:** [Details]
 - **Skalierbarkeit:** [Details]
@@ -152,7 +147,7 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ### Paddle
 
-- **Textgenauigkeit:** [Details]
+- **Textgenauigkeit:** "DOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\nDongsheng Wang*, Natraj Raman\", Mathieu Sibue\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\n JPMorgan AI Research\n 2023\n{first.last}@jpmchase.com\nDec '\nABSTRACT\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records.\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically.\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\n00908v1\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\nKeywords DocAI - VRDU - LLM - GPT - Spatial Attention\n1\n Introduction\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [].\nwhich has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAIl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge [2].\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [l, Llama [41, Falcon [ll or PaLM [] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [7] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal [L0 I].\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n* These authors contributed equally to this work"
 - **Verarbeitungszeit:** [Details]
 - **Formatierung:** [Details]
 - **Bilderkennung:** [Details]

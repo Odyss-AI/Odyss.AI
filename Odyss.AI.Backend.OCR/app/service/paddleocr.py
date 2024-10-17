@@ -189,19 +189,20 @@ class OCRPaddle:
 
             # Prüfen, ob OCR-Ergebnisse vorhanden sind, und extrahieren des Textes
             if ocr_result:
-                extracted_text = "\n".join([line[1][0] for line in ocr_result])
+                # Extrahiere den Text aus der verschachtelten Struktur
+                extracted_text = "\n".join([result[1][0] for result in ocr_result[0]])
                 if extracted_text.strip():
-                    print(f"OCR erfolgreich. Erkannt: {extracted_text}")
+                    # print(f"OCR erfolgreich. Erkannt: {extracted_text}")
                     return extracted_text
                 else:
-                    print("Kein Text erkannt.")
+                    # print("Kein Text erkannt.")
                     return ""
             else:
-                print("OCR hat kein Ergebnis geliefert.")
+                # print("Keine OCR-Ergebnisse.")
                 return ""
 
         except Exception as e:
-            # Abfangen und Ausgeben von allgemeinen Fehlern
             print(f"Fehler bei der PaddleOCR: {e}")
             return ""
+
 
