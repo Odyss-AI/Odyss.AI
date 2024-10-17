@@ -143,6 +143,10 @@ class OCRPaddle:
                                 print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
                                 img_text = self.ocr_image(img_save_path)  # Tesseract OCR-Funktion
 
+                                # Erstelle ein TextChunk für den OCR-Text und füge es zur textList hinzu
+                                if img_text.strip():  # Nur hinzufügen, wenn Text erkannt wurde
+                                    self.split_text_into_chunks(img_text, doc, page_num)  # OCR-Text in Chunks speichern
+
                                 # Erstelle ein Image-Objekt
                                 image_obj = Image(
                                     id=str(ObjectId()),
@@ -162,15 +166,24 @@ class OCRPaddle:
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-        print(f"Bilderextraktion abgeschlossen. Gefundene Bilder: {len(doc.imgList)}")
+        print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
-    def split_text_into_chunks(self, full_text, doc, page_num):
-        print(f"Text von Seite {page_num} wird in Chunks aufgeteilt.")
-        chunks = full_text.split('\n\n')
-        for chunk in chunks:
-            if chunk.strip():
-                text_chunk = TextChunk(id=str(ObjectId()), text=chunk.strip(), page=page_num)
-                print(f"Chunk auf Seite {page_num} hinzugefügt: {chunk.strip()[:30]}...")  # Truncated for readability
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
+        # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
+        sections = full_text.split('\n\n')
+
+        for section in sections:
+            if enable_chunking:
+                # Teile den Abschnitt weiter auf, wenn er länger als max_chunk_size ist
+                while len(section) > max_chunk_size:
+                    # Füge einen TextChunk mit max_chunk_size hinzu
+                    text_chunk = TextChunk(id=str(ObjectId()), text=section[:max_chunk_size].strip(), page=page_num)
+                    doc.textList.append(text_chunk)
+                    section = section[max_chunk_size:]  # Rest des Abschnitts
+                
+            # Füge den verbleibenden Abschnitt hinzu, wenn nicht leer
+            if section.strip():
+                text_chunk = TextChunk(id=str(ObjectId()), text=section.strip(), page=page_num)
                 doc.textList.append(text_chunk)
 
 
