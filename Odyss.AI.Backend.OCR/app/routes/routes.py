@@ -31,11 +31,9 @@ async def paddleocr():
         extracted_text = ocrpaddle.extract_text(doc, document_path)
         
         # Rückgabe des extrahierten Texts oder eine Erfolgsmeldung
-        return jsonify({"extracted_text": extracted_text}), 200  # Rückgabe des extrahierten Texts
+        return jsonify(doc.model_dump()), 200 # Rückgabe des extrahierten Texts
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 
 @main.route("/ocr/nougatocr", methods=["POST"])
 async def nougatocr() : 
