@@ -1,7 +1,17 @@
 /* src/pages/ChatPage/ChatPage.module.css */
+
 .chatPage {
-    display: flex; /* Flexbox für das Layout */
-    height: 100vh; /* Füllt die gesamte Höhe des Viewports */
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 1.5rem;
 }
 
 .mainContent {
@@ -9,47 +19,49 @@
     flex: 1;
 }
 
-.mainContentFullWidth {
-    display: flex;
-    flex: 1;
-    margin-left: 0; /* Füllt den gesamten Platz */
-}
-
-.leftContainer {
-    flex: 1;
-    display: flex;
-    flex-direction: column; /* Flex in Spaltenrichtung, damit SelectModell oben und DragAndDrop unten */
-    justify-content: center;
-    align-items: center;
+.sidebarContainer {
+    flex: 0 0 auto;
     padding: 20px;
     border-right: 1px solid #ccc;
+    background-color: #f8f8f8;
+}
+
+.middleContainer {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: #ffffff;
 }
 
 .rightContainer {
-    flex: 2; /* Größere Breite für den Chat-Bereich */
+    flex: 1;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    justify-content: space-between;
+    gap: 20px;
+    background-color: #f0f0f0;
 }
 
-.chatWindow {
-    flex: 1; /* ChatWindow nimmt den verfügbaren Platz ein */
-    overflow-y: auto; /* Scrollen bei zu vielen Nachrichten */
-    margin-bottom: 10px; /* Abstand zum UserInput */
-}
-.toggleButton {
-    position: absolute; /* Positioniert die Schaltfläche am linken Rand */
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+.newChatContainer {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-.toggleButton:hover {
-    background-color: #0056b3;
+.chatWindowContainer {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #ffffff;
+}
+
+.userInput {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
 }

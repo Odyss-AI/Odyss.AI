@@ -1,13 +1,14 @@
-// src/pages/ChatPage/ChatPage.jsx
+/* src/pages/ChatPage/ChatPage.jsx */
 import React, { useState } from 'react';
 import ChatWindow from '../../components/ChatWindow/ChatWindow.jsx';
 import UserInput from '../../components/UserInput/UserInput.jsx';
 import DragAndDrop from '../../components/DragAndDrop/DragAndDrop.jsx';
 import SelectModell from '../../components/SelectModell/SelectModell.jsx';
 import Sidebar from '../../components/Sidebar/Sidebar.jsx';
+import Footer from '../../components/Footer/Footer.jsx';
 import styles from './ChatPage.module.css';
 import useChatStore from '../../store/chatStore';
-import PDFPreview from "../../components/PDFPreview/PDFPreview.jsx";
+import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
 
 function ChatPage() {
     const [selectedChat, setSelectedChat] = useState(null);
@@ -47,18 +48,10 @@ function ChatPage() {
 
     return (
         <div className={styles.chatPage}>
-            {/* Sidebar auf der linken Seite */}
-            <Sidebar chats={chats} onSelectChat={handleSelectChat} selectedChatId={selectedChat?.id} onDeleteChat={handleDeleteChat} />
-
-            {/* Hauptinhalt */}
+            <header className={styles.header}></header>
             <div className={styles.mainContent}>
-                <div className={styles.leftContainer}>
-                    <SelectModell /> {/* Oben platziert */}
-                    <h1>PDF Drag and Drop</h1>
-                    <DragAndDrop />
-                    <PDFPreview />
-
-                    {/* Eingabefeld und Button zum Hinzufügen eines neuen Chats */}
+                {/* Linke Spalte: Neuer Chat hinzufügen und Sidebar */}
+                <div className={styles.sidebarContainer}>
                     <div className={styles.newChatContainer}>
                         <input
                             type="text"
@@ -68,19 +61,29 @@ function ChatPage() {
                         />
                         <button onClick={handleAddChat}>Hinzufügen</button>
                     </div>
+                    <Sidebar chats={chats} onSelectChat={handleSelectChat} selectedChatId={selectedChat?.id} onDeleteChat={handleDeleteChat} />
                 </div>
 
+                {/* Mittlere Spalte: SelectModell, DragAndDrop, PDFPreview */}
+                <div className={styles.middleContainer}>
+                    <SelectModell />
+                    <DragAndDrop />
+                    <PDFPreview />
+                </div>
+
+                {/* Rechte Spalte: ChatWindow, UserInput */}
                 <div className={styles.rightContainer}>
-                    {selectedChat ? (
-                        <>
-                            <ChatWindow messages={chatMessages} />  {/* Nachrichtenliste übergeben */}
-                            <UserInput onSendMessage={handleSendMessage} /> {/* Nachricht senden */}
-                        </>
-                    ) : (
-                        <p>Wähle einen Chat aus der Seitenleiste aus, um zu starten</p>
-                    )}
+                    <div className={styles.chatWindowContainer}>
+                        {selectedChat ? (
+                            <ChatWindow messages={chatMessages} />
+                        ) : (
+                            <p>Wähle einen Chat aus der Seitenleiste aus, um zu starten</p>
+                        )}
+                    </div>
+                    <UserInput onSendMessage={handleSendMessage} />
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }
