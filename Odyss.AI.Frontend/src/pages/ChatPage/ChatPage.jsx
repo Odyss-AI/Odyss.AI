@@ -48,7 +48,6 @@ function ChatPage() {
 
     return (
         <div className={styles.chatPage}>
-            <header className={styles.header}></header>
             <div className={styles.mainContent}>
                 {/* Linke Spalte: Neuer Chat hinzufügen und Sidebar */}
                 <div className={styles.sidebarContainer}>

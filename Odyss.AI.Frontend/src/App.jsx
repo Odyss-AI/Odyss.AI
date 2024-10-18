@@ -12,7 +12,6 @@ function App() {
     return (
         <div>
             <Header />
-            {isLoggedIn && <Logout />}  {/* Logout-Komponente anzeigen, wenn eingeloggt */}
             {/* Zeige entweder die Login-Seite oder die Chat-Seite basierend auf dem Login-Status */}
             {isLoggedIn ? <ChatPage /> : <LoginPage />}
         </div>

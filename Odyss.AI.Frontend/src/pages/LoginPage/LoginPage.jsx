@@ -4,6 +4,7 @@ import Login from '../../components/Login/Login';
 import styles from './LoginPage.module.css';  // Import des spezifischen CSS Modules
 import videoBg from '../../assets/Videos/background1.mp4';  // Beispielhafter Import des Videos
 import { useState } from 'react';
+import Header from '../../components/Header/Header'; // Import des Headers
 
 function LoginPage() {
     const [isRegister, setIsRegister] = useState(false);
