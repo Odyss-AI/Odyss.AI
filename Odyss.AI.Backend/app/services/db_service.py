@@ -54,6 +54,9 @@ class MongoDBService:
             self.db = self.client[db_name]
             self.user_collection = self.db["users"]
             self.chat_collection = self.db["chats"]
+            self.files_collection = self.db["files"]
+            self.extracted_images_collection = self.db["extracted_images"]
+            
 
 
     async def create_user_async(self, username):
