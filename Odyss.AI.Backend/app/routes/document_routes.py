@@ -51,4 +51,20 @@ async def upload_document():
 
     except Exception as e:
         return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {str(e)}"}), 500
+    
+@main.route('/docs/uploadfilepath', methods=['GET'])
+async def upload_document_path():
+    try:
+        db = get_db()
+        filepath = request.args.get('filepath')
+
+        id = await db.upload_pdf(filepath)
+
+        if id:
+            file = await db.get_files(id)
+
+        return jsonify({"message": "Dokument erfolgreich hochgeladen", "id": id}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {str(e)}"}), 500
 

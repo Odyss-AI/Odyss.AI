@@ -11,7 +11,6 @@ from bson import ObjectId
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
-from app.services.ocr_service import OCRService
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
 from app.utils.helpers import call_mistral_api_async
@@ -26,7 +25,7 @@ class DocumentManager:
     def __init__(self):
         self.local_file_path = Config.LOCAL_DOC_PATH
         self.tei_url = Config.TEI_URL + "/embed"
-        self.ocr_service = OCRService()
+        self.sim_search = SimailaritySearchService()
 
     async def handle_document_async(self, file, username, is_local = True):
         """
@@ -44,16 +43,16 @@ class DocumentManager:
         try:
             db = get_db()
             filename, id = self.generate_filename(file.filename)
-            filepath = await self.save_document_local_async(file, filename) if is_local else self.save_document_onedrive(file, filename)
-            if filepath is None:
-                return None, "File already exists"
+            fileid = await db.upload_pdf(file, file.filename)
+            if fileid is None:
+                return None, "Error while saving document in DB"
             
+            get_file = await db.get_pdf_async(fileid)
             # Create a new document object with necessary metadata
-            new_doc = self.get_new_doc(filename, filepath, file.filename)
+            new_doc = self.get_new_doc(filename, fileid, file.filename)
 
             # Send new_doc to OCR, where the text is read out and the images are recognized
             # The object with the text split up and images (here the URLs are stored) comes back
-            new_doc = self.ocr_service.extract_text(new_doc)
 
             # Check if the document already exists in DB
             # user_docs = await db.get_documents_of_user_async(username)
@@ -116,7 +115,7 @@ class DocumentManager:
         file_hash = hashlib.sha256(original_filename.encode('utf-8')).hexdigest()
         # Save the file extension
         _, file_extension = os.path.splitext(original_filename)
-        return f"{file_hash}{file_extension}"
+        return f"{file_hash}{file_extension}", file_hash
 
     async def save_document_local_async(self, file, filename):
         """
@@ -143,7 +142,7 @@ class DocumentManager:
         
         return filepath
     
-    def get_new_doc(self, name, path, original_name):
+    def get_new_doc(self, name: str, dbId: str, original_name: str):
         """
         Creates a new Document object with the provided metadata.
 
@@ -161,7 +160,7 @@ class DocumentManager:
             doc_id=name,
             name = original_name,
             timestamp = datetime.now(),
-            doclink = path,
+            doclink = str(dbId),
             summary = "",
             imgList = [],
             textList = []
