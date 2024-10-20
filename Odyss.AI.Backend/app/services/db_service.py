@@ -356,14 +356,14 @@ class MongoDBService:
             return document
 
  
-    async def upload_pdf(self, file):
+    async def upload_pdf(self, file, hashedFilename: str):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
-        fs = gridfs.GridFS(db, collection=self.files_collection)
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
-        file_id = fs.put(file, filename=file.name, contentType='application/pdf')
+        file_id = fs.put(file, filename=hashedFilename, contentType='application/pdf')
         logging.info(f'File uploaded successfully with ObjectID: {file_id}')
         return file_id
     
@@ -372,19 +372,19 @@ class MongoDBService:
         db = db_service.db
         If in other file retrieve db like this.
         """
-        fs = gridfs.GridFS(db, collection=self.extracted_images_collection)
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         
         file_id = fs.put(file, filename=file.name, contentType='image/jpeg')
         logging.info(f'Image uploaded successfully with ObjectID: {file_id}')
         return file_id
 
 
-    async def retrieve_pdf(self, file_id):
+    async def get_pdf_async(self, file_id):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
-        fs = gridfs.GridFS(db, collection=self.files_collection)
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
         try:
             file = fs.get(file_id)
@@ -394,12 +394,12 @@ class MongoDBService:
             return None
 
 
-    async def retrieve_image(self, file_id):
+    async def get_image_async(self, file_id):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
-        fs = gridfs.GridFS(db, collection=self.extracted_images_collection)
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         
         try:
             file = fs.get(file_id)
