@@ -19,3 +19,4 @@ nltk
 pytesseract
 paddleocr
 paddlepaddle
+quart-cors
