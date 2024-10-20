@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import gridfs
+import hashlib
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
@@ -355,12 +356,23 @@ class MongoDBService:
             logging.error(f"Error converting ObjectId: {e}")
             return document
 
- 
+    def hash_filename_and_file(self, filename: str, file_content: bytes) -> str:
+        combined_data = filename.encode() + file_content    
+        return hashlib.sha256(combined_data).hexdigest()
+
     async def upload_pdf(self, file, filename: str):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
+        file_content = await file.read()
+        hashed_filename_and_file = self.hash_filename_and_file(filename, file_content)
+
+        user = await self.users_collection.find_one({"username": username})
+        if user and hashed_filename_and_file in user.get("pdf_list", []):
+            logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
+            return None
+        
         fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
         file_id = fs.put(file, filename=filename, contentType='application/pdf')
@@ -369,7 +381,12 @@ class MongoDBService:
     
     async def upload_image(self, file):
         """db_service = get_db()
+    async def upload_image(self, file):
+        """db_service = get_db()
         db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         If in other file retrieve db like this.
         """
         fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
