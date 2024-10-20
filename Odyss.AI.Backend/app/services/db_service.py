@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import gridfs
 import hashlib
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -380,7 +381,12 @@ class MongoDBService:
     
     async def upload_image(self, file):
         """db_service = get_db()
+    async def upload_image(self, file):
+        """db_service = get_db()
         db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         If in other file retrieve db like this.
         """
         fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
