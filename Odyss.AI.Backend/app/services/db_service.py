@@ -360,7 +360,7 @@ class MongoDBService:
         combined_data = filename.encode() + file_content    
         return hashlib.sha256(combined_data).hexdigest()
 
-    async def upload_pdf(self, file, filename: str):
+    async def upload_pdf(self, file, filename: str, username  = ""):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
@@ -380,15 +380,6 @@ class MongoDBService:
         return file_id
     
     async def upload_image(self, file):
-        """db_service = get_db()
-    async def upload_image(self, file):
-        """db_service = get_db()
-        db = db_service.db
-        If in other file retrieve db like this.
-        """
-        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
-        If in other file retrieve db like this.
-        """
         fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         
         file_id = fs.put(file, filename=file.name, contentType='image/jpeg')
@@ -397,10 +388,6 @@ class MongoDBService:
 
 
     async def get_pdf_async(self, file_id):
-        """db_service = get_db()
-        db = db_service.db
-        If in other file retrieve db like this.
-        """
         fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
         try:
@@ -412,10 +399,6 @@ class MongoDBService:
 
 
     async def get_image_async(self, file_id):
-        """db_service = get_db()
-        db = db_service.db
-        If in other file retrieve db like this.
-        """
         fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
         
         try:
