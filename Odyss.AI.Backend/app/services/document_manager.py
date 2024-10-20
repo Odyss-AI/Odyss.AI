@@ -43,7 +43,7 @@ class DocumentManager:
         try:
             db = get_db()
             filename, id = self.generate_filename(file.filename)
-            fileid = await db.upload_pdf(file, filename)
+            fileid = await db.upload_pdf(file, file.filename)
             if fileid is None:
                 return None, "Error while saving document in DB"
             

@@ -356,14 +356,14 @@ class MongoDBService:
             return document
 
  
-    async def upload_pdf(self, file, hashedFilename: str):
+    async def upload_pdf(self, file, filename: str):
         """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
         fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
-        file_id = fs.put(file, filename=hashedFilename, contentType='application/pdf')
+        file_id = fs.put(file, filename=filename, contentType='application/pdf')
         logging.info(f'File uploaded successfully with ObjectID: {file_id}')
         return file_id
     
