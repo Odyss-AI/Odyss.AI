@@ -168,7 +168,7 @@ class OCRPaddle:
 
         print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
         # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
         sections = full_text.split('\n\n')
 
