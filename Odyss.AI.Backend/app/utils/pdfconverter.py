@@ -1,17 +1,17 @@
+from io import BytesIO
 from pptxtopdf import convert as pptx_to_pdf
 from docx2pdf import convert as docx_to_pdf
 from app.config import Config
 
-def convert_docx_or_pptx_to_pdf(self, document_path):
+
+def convert_docx_or_pptx_to_pdf(self, doc):
     try:
-        if document_path.endswith(".docx"):
-            # Konvertiere .docx zu PDF
-            docx_to_pdf(document_path)
-        elif document_path.endswith(".pptx"):
-            # Konvertiere .pptx zu PDF
-            pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
+        if doc.name.endswith(".docx"):
+            docx_to_pdf(doc.doclink)  # Convert DOCX to PDF
+        elif doc.name.endswith(".pptx"):
+            pptx_to_pdf(doc.doclink)  # Convert PPTX to PDF
     except Exception as e:
         raise Exception(f"Error during conversion: {e}")
 
-    # Rückgabe des Pfads zur neuen PDF-Datei
-    return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
+    doc.name = doc.name.replace('.docx', '.pdf').replace('.pptx', '.pdf')
+    return doc
