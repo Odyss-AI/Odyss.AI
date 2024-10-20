@@ -357,7 +357,7 @@ class MongoDBService:
 
  
     async def upload_pdf(self, file):
-         """db_service = get_db()
+        """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
@@ -368,7 +368,7 @@ class MongoDBService:
         return file_id
     
     async def upload_image(self, file):
-         """db_service = get_db()
+        """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
@@ -395,7 +395,7 @@ class MongoDBService:
 
 
     async def retrieve_image(self, file_id):
-         """db_service = get_db()
+        """db_service = get_db()
         db = db_service.db
         If in other file retrieve db like this.
         """
