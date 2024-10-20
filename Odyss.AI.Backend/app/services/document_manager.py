@@ -11,7 +11,6 @@ from bson import ObjectId
 from app.config import Config
 from datetime import datetime
 from app.models.user import Document
-from app.services.ocr_service import OCRService
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
 from app.utils.helpers import call_mistral_api_async
@@ -26,7 +25,6 @@ class DocumentManager:
     def __init__(self):
         self.local_file_path = Config.LOCAL_DOC_PATH
         self.tei_url = Config.TEI_URL + "/embed"
-        self.ocr_service = OCRService()
 
     async def handle_document_async(self, file, username, is_local = True):
         """
@@ -53,7 +51,6 @@ class DocumentManager:
 
             # Send new_doc to OCR, where the text is read out and the images are recognized
             # The object with the text split up and images (here the URLs are stored) comes back
-            new_doc = self.ocr_service.extract_text(new_doc)
 
             # Check if the document already exists in DB
             # user_docs = await db.get_documents_of_user_async(username)

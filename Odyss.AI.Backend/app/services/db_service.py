@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import gridfs
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
@@ -355,20 +356,21 @@ class MongoDBService:
             return document
 
     async def upload_pdf(self, file_path):
-        db_service = get_db()
-        db = db_service.db
-        fs = gridfs.GridFS(db, collection=self.files_collection)
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
         with open(file_path, 'rb') as file:
             file_id = fs.put(file, filename=os.path.basename(file_path), contentType='application/pdf')
             logging.info(f'File uploaded successfully with ObjectID: {file_id}')
             return file_id
+        
+    async def get_files(self, file_id):
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
+        file = fs.get(ObjectId(file_id))
+        return file.read()
     
     
     async def upload_image(self, file_path):
-        db_service = get_db()
-        db = db_service.db
-        fs = gridfs.GridFS(db, collection=self.extracted_images_collection)
+        fs = gridfs.GridFS(self.db, collection=self.extracted_images_collection)
         
         with open(file_path, 'rb') as file:
             file_id = fs.put(file, filename=os.path.basename(file_path), contentType='image/jpeg')
