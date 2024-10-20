@@ -24,3 +24,5 @@ aiocache
 aiocache[redis]
 quart-cors
 openai
+mistralai
+python-dotenv

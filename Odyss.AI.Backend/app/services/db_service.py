@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import gridfs
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
@@ -54,6 +55,9 @@ class MongoDBService:
             self.db = self.client[db_name]
             self.user_collection = self.db["users"]
             self.chat_collection = self.db["chats"]
+            self.files_collection = self.db["files"]
+            self.extracted_images_collection = self.db["extracted_images"]
+            
 
 
     async def create_user_async(self, username):
@@ -350,3 +354,56 @@ class MongoDBService:
         except Exception as e:
             logging.error(f"Error converting ObjectId: {e}")
             return document
+
+ 
+    async def upload_pdf(self, file, filename: str):
+        """db_service = get_db()
+        db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
+        
+        file_id = fs.put(file, filename=filename, contentType='application/pdf')
+        logging.info(f'File uploaded successfully with ObjectID: {file_id}')
+        return file_id
+    
+    async def upload_image(self, file):
+        """db_service = get_db()
+        db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
+        
+        file_id = fs.put(file, filename=file.name, contentType='image/jpeg')
+        logging.info(f'Image uploaded successfully with ObjectID: {file_id}')
+        return file_id
+
+
+    async def get_pdf_async(self, file_id):
+        """db_service = get_db()
+        db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
+        
+        try:
+            file = fs.get(file_id)
+            return file.read()
+        except gridfs.errors.NoFile:
+            logging.error(f'No file found with ObjectID: {file_id}')
+            return None
+
+
+    async def get_image_async(self, file_id):
+        """db_service = get_db()
+        db = db_service.db
+        If in other file retrieve db like this.
+        """
+        fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
+        
+        try:
+            file = fs.get(file_id)
+            return file.read()
+        except gridfs.errors.NoFile:
+            logging.error(f'No file found with ObjectID: {file_id}')
+            return None
