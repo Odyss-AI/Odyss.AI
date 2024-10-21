@@ -53,6 +53,7 @@ class MongoDBService:
     def __init__(self, db_name, uri=Config.MONGODB_CONNECTION_STRING):
         if not hasattr(self, 'client'):
             self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=10000)
+            self.shared_volume_path ="/shared_data"
             self.db = self.client[db_name]
             self.user_collection = self.db["users"]
             self.chat_collection = self.db["chats"]
@@ -356,27 +357,44 @@ class MongoDBService:
             logging.error(f"Error converting ObjectId: {e}")
             return document
 
-    def hash_filename_and_file(self, filename: str, file_content: bytes) -> str:
-        combined_data = filename.encode() + file_content    
-        return hashlib.sha256(combined_data).hexdigest()
+        
 
-    async def upload_pdf(self, file, filename: str, username  = ""):
-        """db_service = get_db()
-        db = db_service.db
-        If in other file retrieve db like this.
+    async def upload_pdf(self, converted_file, filename: str, fileId_hash):
+
         """
-        file_content = await file.read()
-        hashed_filename_and_file = self.hash_filename_and_file(filename, file_content)
+        Uploads a PDF file to the database asynchronously. Before upload it checks if the hash of the file ID already exists in the user's documents.
+
+        Args:
+            converted_file: The PDF file to upload.
+            filename (str): The name of the file.
+            fileId_hash (str): The hash of the file ID.
+        
+        Returns:
+            str: The ObjectID of the uploaded file, or None if an error occurs.
+        
+        """
+
+        username = filename.split('_')[0]
 
         user = await self.users_collection.find_one({"username": username})
-        if user and hashed_filename_and_file in user.get("pdf_list", []):
-            logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
-            return None
+        if user:
+            for document in user.get("documents", []):
+                if document.get("doc_id") == fileId_hash:
+                    logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
+                    return None
         
-        fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
-        
-        file_id = fs.put(file, filename=filename, contentType='application/pdf')
+
+        file_content = await converted_file.read()
+
+        fs = gridfs.GridFS(self.db, collection=self.files_collection.name)
+        file_id = fs.put(file_content, filename=filename, contentType='application/pdf')
         logging.info(f'File uploaded successfully with ObjectID: {file_id}')
+
+        await self.users_collection.update_one(
+            {"username": username},
+            {"$push": {"documents": {"doc_id": fileId_hash, "name": filename}}}
+        )
+
         return file_id
     
     async def upload_image(self, file):
@@ -387,15 +405,53 @@ class MongoDBService:
         return file_id
 
 
-    async def get_pdf_async(self, file_id):
+    async def get_pdf_async(self, file_id_hash: str, filename: str):
+        """
+        Downloads a PDF file from the database asynchronously. The file is saved to a shared Docker volume.
+        
+        Args: 
+            file_id_hash (str): The hash of the file ID.
+            filename (str): The name of the file containing the username.
+
+        Returns:
+            str: The path to the downloaded file, or None if the file is not found.
+        """
+        username = filename.split('_')[0]
+
         fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
         
         try:
-            file = fs.get(file_id)
-            return file.read()
+            # Check if the user has the file_id_hash in their documents object
+            user = await self.users_collection.find_one({"username": username})
+            if not user:
+                logging.error(f'User {username} not found')
+                return None
+            document = next((doc for doc in user.get("documents", []) if doc.get("doc_id") == file_id_hash), None)
+            if not document:
+                logging.error(f'File with hash {file_id_hash} not found in user {username} documents')
+                return None
+            # Retrieve the file using the hash value
+
+            
+            file = fs.find_one({"md5": file_id_hash})
+            if not file:
+                logging.error(f'No file found with hash: {file_id_hash}')
+                return None
+            # Read the file content
+            file_content = file.read()
+            # Define the file path in the shared Docker volume with .pdf extension
+            file_path = os.path.join(self.shared_volume_path, f"{file_id_hash}.pdf")
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            # Save the file to the shared Docker volume
+            with open(file_path, "wb") as f:
+                f.write(file_content)
+            logging.info(f'File saved successfully to {file_path}')
+            return file_path
+        
         except gridfs.errors.NoFile:
-            logging.error(f'No file found with ObjectID: {file_id}')
-            return None
+                    logging.error(f'No file found with hash: {file_id_hash}')
+                    return None 
 
 
     async def get_image_async(self, file_id):
