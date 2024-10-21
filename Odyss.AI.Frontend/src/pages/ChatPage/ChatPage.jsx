@@ -9,6 +9,7 @@ import Footer from '../../components/Footer/Footer.jsx';
 import styles from './ChatPage.module.css';
 import useChatStore from '../../store/chatStore';
 import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
+import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 
 function ChatPage() {
     const [selectedChat, setSelectedChat] = useState(null);
@@ -68,6 +69,8 @@ function ChatPage() {
                     <SelectModell />
                     <DragAndDrop />
                     <PDFPreview />
+                    <PDFPreviewList />
+
                 </div>
 
                 {/* Rechte Spalte: ChatWindow, UserInput */}

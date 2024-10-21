@@ -5,7 +5,7 @@ import styles from './DragAndDrop.module.css';
 
 const DragAndDrop = () => {
     const [dragging, setDragging] = useState(false);
-    const setFile = useFileStore((state) => state.setFile);
+    const setFiles = useFileStore((state) => state.setFiles); // Zugriff auf die setFiles-Funktion
 
     // Drag & Drop Event-Handler
     const handleDragEnter = (e) => {
@@ -25,7 +25,7 @@ const DragAndDrop = () => {
         e.stopPropagation();
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         setDragging(false);
@@ -33,14 +33,62 @@ const DragAndDrop = () => {
         const files = e.dataTransfer.files;
 
         if (files && files.length > 0) {
-            const file = files[0];
+            let pdfFiles = [];
+            for (const file of files) {
+                if (file.type === 'application/pdf') {
+                    pdfFiles.push(file);
+                } else if (file.type === 'application/zip') {
+                    const extractedFiles = await extractPDFsFromZip(file);
+                    pdfFiles = pdfFiles.concat(extractedFiles);
+                } else {
+                    alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
+                    return;
+                }
+            }
+            setFiles(pdfFiles); // Mehrere Dateien in den Zustand-Store legen
 
+        }
+    };
+
+    // Funktion zum Extrahieren von PDF-Dateien aus einem Zip-Ordner
+    const extractPDFsFromZip = async (zipFile) => {
+        const pdfFiles = [];
+        try {
+            const JSZip = await import('jszip'); // Dynamischer Import von JSZip
+            const zip = await JSZip.loadAsync(zipFile);
+
+            for (const fileName of Object.keys(zip.files)) {
+                // Filtert Dateien, die mit "__MACOSX/" oder "._" beginnen, heraus
+                if (fileName.startsWith('__MACOSX/') || fileName.startsWith('._')) {
+                    continue; // Ignorieren dieser Dateien
+                }
+
+                if (fileName.endsWith('.pdf')) {
+                    const fileData = await zip.files[fileName].async('blob');
+                    pdfFiles.push(new File([fileData], fileName, { type: 'application/pdf' }));
+                }
+            }
+        } catch (error) {
+            console.error("Fehler beim Extrahieren der PDF-Dateien aus dem Zip-Ordner:", error);
+        }
+        return pdfFiles;
+    };
+
+    const handleFileInputChange = async (e) => {
+        const files = Array.from(e.target.files);
+        let pdfFiles = [];
+        for (const file of files) {
             if (file.type === 'application/pdf') {
-                setFile(file); // Datei in den Zustand-Store legen
+                pdfFiles.push(file);
+            } else if (file.type === 'application/zip') {
+                const extractedFiles = await extractPDFsFromZip(file);
+                pdfFiles = pdfFiles.concat(extractedFiles);
             } else {
-                alert("Bitte nur PDF-Dateien hochladen!");
+                alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
+                return;
             }
         }
+        setFiles(pdfFiles);
     };
 
     return (
@@ -52,22 +100,16 @@ const DragAndDrop = () => {
             onDrop={handleDrop}
         >
             <div className={styles.content}>
-                <p>{dragging ? "Loslassen zum Hochladen" : "PDF-Datei hierhin ziehen oder klicken, um eine Datei auszuwählen"}</p>
+                <p>{dragging ? "Loslassen zum Hochladen" : "PDF-Dateien oder ZIP-Ordner hierhin ziehen oder klicken, um eine Datei auszuwählen"}</p>
                 <button onClick={() => document.getElementById('fileInput').click()} className={styles.uploadButton}>
                     Datei auswählen
                 </button>
                 <input
                     id="fileInput"
                     type="file"
-                    accept="application/pdf"
-                    onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file && file.type === 'application/pdf') {
-                            setFile(file);
-                        } else {
-                            alert("Bitte nur PDF-Dateien hochladen!");
-                        }
-                    }}
+                    accept=".pdf,.zip"
+                    multiple
+                    onChange={handleFileInputChange}
                     className={styles.fileInput}
                 />
             </div>
