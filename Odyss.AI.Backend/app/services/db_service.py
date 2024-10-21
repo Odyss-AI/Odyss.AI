@@ -363,6 +363,7 @@ class MongoDBService:
 
         """
         Uploads a PDF file to the database asynchronously. Before upload it checks if the hash of the file ID already exists in the user's documents.
+        Also it checks if this user has already uploaded the file content (hashed) under another filename.
 
         Args:
             converted_file: The PDF file to upload.
@@ -373,21 +374,30 @@ class MongoDBService:
             str: The ObjectID of the uploaded file, or None if an error occurs.
         
         """
+        
+        file_content = await converted_file.read()
+        
+        file_hash = hashlib.md5(file_content).hexdigest()
 
         username = filename.split('_')[0]
 
+
+        #Check if user already uploaded the file with this filename
         user = await self.users_collection.find_one({"username": username})
         if user:
             for document in user.get("documents", []):
                 if document.get("doc_id") == fileId_hash:
                     logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
                     return None
-        
+        #Check if the file_content is already uploaded with other filename
+        existing_file = await self.files_collection.find_one({"metadata.hash": file_hash})
+        if existing_file:
+            logging.info(f'File with hash {file_hash} already exists. Skipping upload.')
+            return None
 
-        file_content = await converted_file.read()
 
         fs = gridfs.GridFS(self.db, collection=self.files_collection.name)
-        file_id = fs.put(file_content, filename=filename, contentType='application/pdf')
+        file_id = fs.put(file_content, filename=filename, contentType='application/pdf', metadata={"hash": file_hash})
         logging.info(f'File uploaded successfully with ObjectID: {file_id}')
 
         await self.users_collection.update_one(
