@@ -13,7 +13,7 @@ async def paddleocr():
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):
@@ -42,7 +42,7 @@ async def nougatocr() :
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):
@@ -72,7 +72,7 @@ async def tesseractocr():
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):

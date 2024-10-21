@@ -25,6 +25,7 @@ class Document(BaseModel):
     summary: str
     imgList: List[Image]
     textList: List[TextChunk]
+    path: str
 
 class User(BaseModel):
     id: str

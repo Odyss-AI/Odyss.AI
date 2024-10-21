@@ -1,0 +1,99 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: odyss
+      MONGO_INITDB_ROOT_PASSWORD: odyss1
+    networks:
+      - odyss.ai
+
+  backend:
+    build:
+      context: ./Odyss.AI.Backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - shared_data:/shared_data
+    depends_on:
+      - mongodb
+      - qdrant
+      - text_embeddings_inference
+      - ocr
+    networks:
+      - odyss.ai
+  
+  ocr:
+    build:
+      context: ./Odyss.AI.Backend.OCR
+    container_name: ocr
+    volumes:
+      - shared_data:/shared_data
+    ports:
+      - "5050:5050"
+    networks:
+      - odyss.ai
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - odyss.ai
+
+
+  frontend:
+    build:
+      context: ./Odyss.AI.Frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - odyss.ai
+
+  ##llm:
+  #  build:
+  #    context: ./Odyss.AI.Backend.LLM
+  #  container_name: llm
+  #  ports:
+  #    - "4000:4000"
+  #  depends_on:
+  #    - mongodb
+  #    - qdrant
+  #    - text_embeddings_inference
+  #  networks:
+  #    - odyss.ai
+
+  text_embeddings_inference:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    container_name: text_embeddings_inference
+    ports:
+      - "8080:80"
+    volumes:
+      - /c/Users/efitt/source/TEI/data:/data
+    command: --model-id BAAI/bge-large-en-v1.5
+    networks:
+      - odyss.ai
+
+  
+volumes:
+  mongo_data:
+    driver: local
+  qdrant_storage:
+    driver: local
+  shared_data:
+    driver: local
+
+networks:
+  odyss.ai:
+    driver: bridge
