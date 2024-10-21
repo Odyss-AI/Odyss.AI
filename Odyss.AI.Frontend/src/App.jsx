@@ -4,7 +4,7 @@ import ChatPage from './pages/ChatPage/ChatPage.jsx';
 import LoginPage from './pages/LoginPage/LoginPage.jsx';
 import useAuthStore from './store/authStore';
 import Header from './components/Header/Header.jsx';
-import Logout from './components/Logout/Logout.jsx';
+
 
 function App() {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);  // Authentifizierungsstatus holen
