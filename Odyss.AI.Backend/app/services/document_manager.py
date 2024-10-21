@@ -44,28 +44,23 @@ class DocumentManager:
         try:
             db = get_db()
             filename, id = self.generate_filename(file.filename)
+
+            # Convert file to PDF, OCR just uses PDFs
             converted_file = convert_docx_or_pptx_to_pdf(file)
+
+            # Save PDF temporarly on shared volume for give OCR service access to the file
             path = "shared_data/" + username + "_" + filename 
             with open(path, "w") as file:
                 file.write(converted_file)
             fileid = await db.upload_pdf(converted_file, file.filename, id)
+
             if fileid is None:
                 return None, "Error while saving document in DB"
             
             # Create a new document object with necessary metadata
             new_doc = self.get_new_doc(filename, fileid, file.filename, path)
 
-            # Aufruf auf das OCR bauen
-
-            # Send new_doc to OCR, where the text is read out and the images are recognized
-            # The object with the text split up and images (here the URLs are stored) comes back
-
-            # Check if the document already exists in DB
-            # user_docs = await db.get_documents_of_user_async(username)
-            # if user_docs is not None:
-            #     for doc in user_docs:
-            #         if doc.name == id:
-            #             return None, "File already exists"
+            # TODO: Aufruf auf das OCR bauen
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
