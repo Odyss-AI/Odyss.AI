@@ -13,7 +13,8 @@ from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.helpers import call_mistral_api_async
+from app.utils.ml_connection import call_mistral_api_async
+from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
 from app.utils.pdfconverter import convert_docx_or_pptx_to_pdf
@@ -60,7 +61,10 @@ class DocumentManager:
             # Create a new document object with necessary metadata
             new_doc = self.get_new_doc(filename, fileid, file.filename, path)
 
-            # TODO: Aufruf auf das OCR bauen
+            # Get all PDF informations (text/images)
+            new_doc = await extract_pdf_information_with_ocr(new_doc)
+
+            # TODO: Upload extracted prictures to mongoDB
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
