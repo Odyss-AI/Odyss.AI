@@ -26,3 +26,4 @@ quart-cors
 openai
 mistralai
 python-dotenv
+bson
