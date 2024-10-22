@@ -31,7 +31,7 @@ class DocumentManager:
 
     async def handle_document_async(self, file, username, is_local = True):
         """
-        Handles the document upload, processing, and storage asynchronously.
+        Handles the document upload, processing, and storage asynchronously. Refer software architecture pattern Integration Operation Segregation Principle (IOSP)
 
         Args:
             file: The file object to be processed.
