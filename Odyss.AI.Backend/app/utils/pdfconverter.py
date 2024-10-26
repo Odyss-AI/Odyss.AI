@@ -1,17 +1,33 @@
-from io import BytesIO
-from pptxtopdf import convert as pptx_to_pdf
-from docx2pdf import convert as docx_to_pdf
+import os
+import subprocess
+import platform
+
 from app.config import Config
 
+def save_and_convert_file(file, namehash) -> str:
+    
+    os.makedirs(Config['UPLOAD_FOLDER'], exist_ok=True)
 
-def convert_docx_or_pptx_to_pdf(self, doc):
+    filename = namehash
+    file_path = os.path.join(Config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    # Prüfen, ob die Datei bereits eine PDF ist
+    if file_path.lower().endswith('.pdf'):
+        return file_path  # Datei ist bereits PDF, Rückgabe des Pfads
+
+    # Temp-Ausgabepfad für die konvertierte PDF-Datei
+    output_path = os.path.join(Config['UPLOAD_FOLDER'], os.path.splitext(filename)[0] + '.pdf')
+
+    # Erkennen des Betriebssystems
+    os_command = 'soffice' if platform.system() == 'Windows' else 'libreoffice'
     try:
-        if doc.name.endswith(".docx"):
-            docx_to_pdf(doc.doclink)  # Convert DOCX to PDF
-        elif doc.name.endswith(".pptx"):
-            pptx_to_pdf(doc.doclink)  # Convert PPTX to PDF
-    except Exception as e:
-        raise Exception(f"Error during conversion: {e}")
+        subprocess.run([
+            os_command, '--headless', '--convert-to', 'pdf', file_path, '--outdir', output_folder
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during conversion: {e}")
+        return None
 
-    doc.name = doc.name.replace('.docx', '.pdf').replace('.pptx', '.pdf')
-    return doc
+    # Rückgabe des PDF-Pfads, wenn die Konvertierung erfolgreich war
+    return output_path if os.path.exists(output_path) else None

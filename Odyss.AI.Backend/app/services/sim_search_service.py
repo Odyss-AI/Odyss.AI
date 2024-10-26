@@ -22,9 +22,9 @@ class SimailaritySearchService:
 
     def __init__(self):
         if not hasattr(self, '_initialized'):  # Verhindert mehrfache Initialisierung
-            self.tei_url = Config.TEI_URL + "/embed"
-            self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
-            self.collection_name = 'doc_embeddings'
+            # self.tei_url = Config.TEI_URL + "/embed"
+            # self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
+            # self.collection_name = 'doc_embeddings'
             self._initialize_collection()
             self._initialized = True
 
