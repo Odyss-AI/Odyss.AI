@@ -11,3 +11,24 @@ class Config:
     QDRANT_HOST= os.getenv("QDRANT_HOST")
     QDRANT_PORT = os.getenv("QDRANT_PORT")
     MISTRAL_KEY = os.getenv("MISTRAL_KEY")
+    DEBUG = False
+    TESTING = False
+
+class DevConfig:
+    MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING")
+    LOCAL_DOC_PATH = os.getenv("LOCAL_DOC_PATH")
+    TEI_URL = os.getenv("TEI_URL")
+    QDRANT_HOST= os.getenv("QDRANT_HOST")
+    QDRANT_PORT = os.getenv("QDRANT_PORT")
+    MISTRAL_KEY = os.getenv("MISTRAL_KEY")
+    DEBUG = True
+
+class ProdConfig:
+    MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING")
+    LOCAL_DOC_PATH = os.getenv("LOCAL_DOC_PATH")
+    TEI_URL = os.getenv("TEI_URL")
+    QDRANT_HOST= os.getenv("QDRANT_HOST")
+    QDRANT_PORT = os.getenv("QDRANT_PORT")
+    MISTRAL_KEY = os.getenv("MISTRAL_KEY")
+    DEBUG = False
+    TESTING = False
