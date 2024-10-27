@@ -1,5 +1,5 @@
 /* src/pages/ChatPage/ChatPage.jsx */
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import ChatWindow from '../../components/ChatWindow/ChatWindow.jsx';
 import UserInput from '../../components/UserInput/UserInput.jsx';
 import DragAndDrop from '../../components/DragAndDrop/DragAndDrop.jsx';
@@ -10,10 +10,25 @@ import styles from './ChatPage.module.css';
 import useChatStore from '../../store/chatStore';
 import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
 import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
+import useFileStore from '../../store/fileStore.jsx';
 
 function ChatPage() {
-    const [selectedChat, setSelectedChat] = useState(null);
-    const [newChatName, setNewChatName] = useState("");
+    const [selectedChat, setSelectedChat] = React.useState(null);
+    const [newChatName, setNewChatName] = React.useState("");
+
+    // Zugriff auf den Zustand für PDF-Dateien und die aktuelle Auswahl
+    const files = useFileStore((state) => state.files);
+    const setFiles = useFileStore((state) => state.setFiles);
+    const selectedFile = useFileStore((state) => state.selectedFile);
+    const setSelectedFile = useFileStore((state) => state.setSelectedFile);
+
+    // Setze die erste Datei als Standardauswahl, wenn noch keine Datei ausgewählt wurde
+    useEffect(() => {
+        if (files.length > 0 && !selectedFile) {
+            setSelectedFile(files[0]);
+            console.log("Setting default seleceted File",files[0])
+        }
+    }, [files, selectedFile, setSelectedFile]);
 
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
@@ -47,6 +62,11 @@ function ChatPage() {
         }
     };
 
+    const handleSelectPDF = (pdf) => {
+        setSelectedFile(pdf); // Setze die neue ausgewählte PDF für die Hauptanzeige
+        console.log("Selected PDF", pdf)
+    };
+
     return (
         <div className={styles.chatPage}>
             <div className={styles.mainContent}>
@@ -61,16 +81,20 @@ function ChatPage() {
                         />
                         <button onClick={handleAddChat}>Hinzufügen</button>
                     </div>
-                    <Sidebar chats={chats} onSelectChat={handleSelectChat} selectedChatId={selectedChat?.id} onDeleteChat={handleDeleteChat} />
+                    <Sidebar
+                        chats={chats}
+                        onSelectChat={handleSelectChat}
+                        selectedChatId={selectedChat?.id}
+                        onDeleteChat={handleDeleteChat}
+                    />
                 </div>
 
                 {/* Mittlere Spalte: SelectModell, DragAndDrop, PDFPreview */}
                 <div className={styles.middleContainer}>
                     <SelectModell />
                     <DragAndDrop />
-                    <PDFPreview />
-                    <PDFPreviewList />
-
+                    {selectedFile && <PDFPreview />} {/* Zeigt die ausgewählte PDF-Datei */}
+                    <PDFPreviewList onSelectPDF={handleSelectPDF} /> {/* PDF-Liste zum Auswählen */}
                 </div>
 
                 {/* Rechte Spalte: ChatWindow, UserInput */}

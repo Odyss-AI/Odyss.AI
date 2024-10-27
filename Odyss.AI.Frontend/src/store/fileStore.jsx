@@ -4,24 +4,30 @@ import { create } from 'zustand';
 // Zustand Store zur Verwaltung der hochgeladenen PDF-Dateien
 const useFileStore = create((set) => ({
     files: [], // Der Zustand, um mehrere Dateien zu speichern
-    firstFile: null, // Speichert die erste Datei zur Vorschau
+    selectedFile: null, // Speichert die aktuell ausgewählte Datei zur Vorschau
+
+    // Setzt neue Dateien, ohne `selectedFile` zu überschreiben, wenn bereits eine Datei ausgewählt ist
     setFiles: (newFiles) => {
-        set({ files: newFiles, firstFile: newFiles[0] || null }); // Speichert alle Dateien und die erste Datei separat
+        set((state) => ({
+            files: newFiles,
+            selectedFile: state.selectedFile ? state.selectedFile : newFiles[0] || null, // Behalte die ausgewählte Datei bei oder setze die erste Datei, wenn keine ausgewählt ist
+        }));
     },
+
+    // Funktion zum Setzen der ausgewählten Datei
+    setSelectedFile: (file) => {
+        set({ selectedFile: file });
+    },
+
+    // Funktion zum Leeren der Dateien
     clearFiles: () => {
         set((state) => {
-            if (state.firstFile) {
-                URL.revokeObjectURL(URL.createObjectURL(state.firstFile));
+            if (state.selectedFile) {
+                URL.revokeObjectURL(URL.createObjectURL(state.selectedFile));
             }
-            return { files: [], firstFile: null };
+            return { files: [], selectedFile: null };
         });
     },
-
 }));
-
-// Füge dies hinzu, um den Store global zugänglich zu machen
-if (typeof window !== 'undefined') {
-    window.store = useFileStore;
-}
 
 export default useFileStore;
