@@ -18,15 +18,7 @@ def create_app():
 
     logging.debug("Starting Odyss.AI backend ...")
 
-    # environment = os.getenv('QUART_ENV', 'development')
-
-    # if environment == 'development':
-    #     app.config.from_object('config.DevConfig')
-    # elif environment == 'production':
-    #     app.config.from_object('config.ProdConfig')
-
-    # Initialize the database service
-    # init_db_service()
+    init_db_service()
 
     app.register_blueprint(main)
 

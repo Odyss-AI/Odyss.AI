@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
 from app.models.user import User, Document
 from app.models.chat import Message, Chat
-from app.config import Config
+from app.config import config
 
 class MongoDBService:
     """
@@ -50,7 +50,7 @@ class MongoDBService:
             cls._instance = super(MongoDBService, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, db_name, uri=Config.MONGODB_CONNECTION_STRING):
+    def __init__(self, db_name, uri=config.mongodb_connection_string):
         if not hasattr(self, 'client'):
             self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=10000)
             self.shared_volume_path ="/shared_data"

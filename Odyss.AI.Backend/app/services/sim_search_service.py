@@ -6,7 +6,7 @@ import logging
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
 from app.models.user import Document
-from app.config import Config
+from app.config import config
 
 class SimailaritySearchService:
     """
@@ -22,9 +22,9 @@ class SimailaritySearchService:
 
     def __init__(self):
         if not hasattr(self, '_initialized'):  # Verhindert mehrfache Initialisierung
-            # self.tei_url = Config.TEI_URL + "/embed"
-            # self.qdrant_client = QdrantClient(host=Config.QDRANT_HOST, port=Config.QDRANT_PORT)
-            # self.collection_name = 'doc_embeddings'
+            self.tei_url = config.tei_url + "/embed"
+            self.qdrant_client = QdrantClient(host=config.qdrant_host, port=config.qdrant_port)
+            self.collection_name = 'doc_embeddings'
             self._initialize_collection()
             self._initialized = True
 

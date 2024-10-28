@@ -1,23 +1,46 @@
 import os
-
 from dotenv import load_dotenv
 
-load_dotenv()
-
-def get_ocr_url(base: str):
-        url_selection = os.getenv("OCR", "default")
-
-        if url_selection == "nougat":
-            return base + "ocr/nougatocr"
-        elif url_selection == "paddle":
-            return "http://ocr:5050/ocr/paddleocr" 
-        elif url_selection == "prod":
-            return "http://ocr:5050/ocr/tesseractocr"
-
 class Config:
-    MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING")
-    TEI_URL = os.getenv("TEI_URL")
-    OCR_URL = get_ocr_url(os.getenv("BASE_DOC_PATH"))
-    QDRANT_HOST= os.getenv("QDRANT_HOST")
-    QDRANT_PORT = os.getenv("QDRANT_PORT")
-    MISTRAL_KEY = os.getenv("MISTRAL_KEY")
+    def __init__(self, env_file=None):
+        # Lade die spezifische .env-Datei oder die Standard-.env-Datei
+        if env_file:
+            load_dotenv(env_file)
+        else:
+            load_dotenv()  # Lädt .env standardmäßig
+
+        # Allgemeine Konfigurationen
+        self.environment = os.getenv("ENVIRONMENT", "linux")
+
+        # MongoDB Konfiguration
+        self.mongodb_connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+
+        # Lokale Dokumentpfade und URLs
+        self.local_doc_path = os.getenv("LOCAL_DOC_PATH")
+        self.tei_url = os.getenv("TEI_URL")
+
+        # Qdrant Konfiguration
+        self.qdrant_host = os.getenv("QDRANT_HOST")
+        self.qdrant_port = os.getenv("QDRANT_PORT")
+
+        # Mistral Key
+        self.mistral_key = os.getenv("MISTRAL_KEY")
+
+        # OCR Endpunkte
+        self.service_endpoint_selection = os.getenv("SERVICE_ENDPOINT_SELECTION", "TESERACT")
+        self.ocr_endpoint = self._get_ocr_endpoint()
+
+    def _get_ocr_endpoint(self):
+        """Wählt den OCR-Service-Endpunkt basierend auf der Auswahl in der .env."""
+        selection = self.service_endpoint_selection.upper()
+        if selection == "NOUGAT":
+            return os.getenv("NOUGAT_OCR")
+        elif selection == "PADDLE":
+            return os.getenv("PADDLE_OCR")
+        elif selection == "TESERACT":
+            return os.getenv("TESERACT_OCR")
+        else:
+            raise ValueError("Ungültiger OCR-Endpunkt gewählt")
+        
+env_file = f".env.{os.getenv('ENVIRONMENT', 'linux')}"
+config = Config(env_file)
