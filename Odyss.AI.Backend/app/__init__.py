@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 
 from quart import Quart
 from quart_cors import cors
@@ -17,10 +18,7 @@ def create_app():
 
     logging.debug("Starting Odyss.AI backend ...")
 
-    # Initialize the database service
     init_db_service()
-
-    app.config.from_object('app.config.Config')
 
     app.register_blueprint(main)
 

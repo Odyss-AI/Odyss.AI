@@ -3,14 +3,14 @@ import asyncio
 from openai import OpenAI
 from app.models.enum import ALLOWED_EXTENSIONS
 from mistralai import Mistral
-from app.config import Config
+from app.config import config
 from app.utils.prompts import summary_prompt_builder
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 async def call_mistral_api_async(prompt: list):
-    api_key = Config.MISTRAL_KEY
+    api_key = config.mistral_key
     model = "mistral-large-latest"
 
     client = Mistral(api_key=api_key)

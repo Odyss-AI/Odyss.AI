@@ -1,10 +1,10 @@
 import os
 from quart import Quart, request, jsonify
-from app.utils.helpers import allowed_file
+from app.utils.ml_connection import allowed_file
 from app.routes import main
 from app.utils.db import get_db
 from app.services.document_manager import DocumentManager
-from app.config import Config
+from app.config import config
 
 # Document Manager initialisieren
 doc_manager = DocumentManager()
@@ -37,7 +37,7 @@ async def upload_document():
         
         # Prüfen, ob der Benutzername in der Datenbank vorhanden ist
         if await db.get_user_async(username) is None:
-            return jsonify({"error": "Benutzer nicht gefunden"}), 404
+            return jsonify({"error": "Benutzer nicht gefunden"}), 400
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):

@@ -25,5 +25,5 @@ EXPOSE 5050
 # Define environment variable
 ENV PYTHONUNBUFFERED=1
 
-# Run the application
-CMD ["python", "run.py"]
+# Run the application within the virtual environment
+CMD ["/bin/bash", "-c", "source venv/bin/activate && python run.py"]
