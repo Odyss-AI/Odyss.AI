@@ -30,6 +30,13 @@ class Config:
         self.service_endpoint_selection = os.getenv("SERVICE_ENDPOINT_SELECTION", "TESERACT")
         self.ocr_endpoint = self.get_ocr_endpoint()
 
+        #Image Tagger Endpunkt
+        self.image_tagger = os.getenv("IMAGE_TAGGER")
+
+        #OpenAI API Key
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_api_base = os.getenv("OPENAI_API_BASE")
+
     def get_ocr_endpoint(self):
         """Wählt den OCR-Service-Endpunkt basierend auf der Auswahl in der .env."""
         selection = self.service_endpoint_selection.upper()
