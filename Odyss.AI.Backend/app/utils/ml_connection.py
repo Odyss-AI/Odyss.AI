@@ -4,7 +4,6 @@ import requests
 
 from openai import OpenAI
 from app.models.enum import ALLOWED_EXTENSIONS
-from mistralai import Mistral
 from app.config import config
 from app.utils.prompts import summary_prompt_builder
 from io import BytesIO
@@ -14,18 +13,7 @@ from app.models.user import Image
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-async def call_mistral_api_async(prompt: list):
-    api_key = config.mistral_key
-    model = "mistral-large-latest"
 
-    client = Mistral(api_key=api_key)
-
-    chat_response = client.chat.complete(
-        model = model,
-        messages = prompt
-    )
-
-    return chat_response.choices[0].message.content
 
 async def call_chatgpt_api_async(prompt: list):
     client = OpenAI()
@@ -39,6 +27,10 @@ async def call_chatgpt_api_async(prompt: list):
 
 
 client = OpenAI(api_key=config.openai_api_key, base_url=config.openai_api_base)
+
+
+models = client.models.list()
+model = models.data[0].id
 
 # Funktion zum Abrufen der Bildklasse vom Image Tagger Service
 async def get_image_class_async(image_path):
@@ -77,7 +69,7 @@ async def query_pixtral_async(image:Image):
                 },
             ],
         }],
-        model="pixtral-model-id",  # Anpassen an den korrekten Modellnamen
+        model=model,  # Anpassen an den korrekten Modellnamen
         max_tokens=256,
     )
 
@@ -85,3 +77,16 @@ async def query_pixtral_async(image:Image):
     result = chat_completion_from_base64.choices[0].message.content
     image.llm_output = result
     return image
+
+async def query_mixtral_async(prompt: list):
+    # Mixtral-Anfrage mit der eingebetteten Klasse
+    chat_completion_from_base64 = client.chat.completions.create(
+       messages = prompt,
+        model=model,  # Anpassen an den korrekten Modellnamen
+        max_tokens=256,
+    )
+
+    # Ergebnis anzeigen
+    result = chat_completion_from_base64.choices[0].message.content
+    
+    return result

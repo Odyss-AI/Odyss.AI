@@ -24,7 +24,7 @@ class Config:
         self.qdrant_port = os.getenv("QDRANT_PORT")
 
         # Mistral Key
-        self.mistral_key = os.getenv("MISTRAL_KEY")
+        self.mistral_api_base = os.getenv("MISTRAL_API_BASE")
 
         # OCR Endpunkte
         self.service_endpoint_selection = os.getenv("SERVICE_ENDPOINT_SELECTION", "TESERACT")
