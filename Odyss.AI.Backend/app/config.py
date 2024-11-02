@@ -28,9 +28,9 @@ class Config:
 
         # OCR Endpunkte
         self.service_endpoint_selection = os.getenv("SERVICE_ENDPOINT_SELECTION", "TESERACT")
-        self.ocr_endpoint = self._get_ocr_endpoint()
+        self.ocr_endpoint = self.get_ocr_endpoint()
 
-    def _get_ocr_endpoint(self):
+    def get_ocr_endpoint(self):
         """Wählt den OCR-Service-Endpunkt basierend auf der Auswahl in der .env."""
         selection = self.service_endpoint_selection.upper()
         if selection == "NOUGAT":

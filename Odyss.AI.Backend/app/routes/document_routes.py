@@ -37,7 +37,7 @@ async def upload_document():
         
         # Prüfen, ob der Benutzername in der Datenbank vorhanden ist
         if await db.get_user_async(username) is None:
-            return jsonify({"error": "Benutzer nicht gefunden"}), 404
+            return jsonify({"error": "Benutzer nicht gefunden"}), 400
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):
