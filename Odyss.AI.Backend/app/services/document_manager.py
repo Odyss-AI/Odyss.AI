@@ -59,29 +59,29 @@ class DocumentManager:
             # TODO: Delete the converted file
 
             # Create embeddings for the document
-            # embeddings = await self.sim_search.create_embeddings_async(new_doc)
-            # if embeddings is None:
-            #     logging.error(f"Error creating embeddings: {file.filename} from user {username}")
-            #     return None, "Error creating embeddings"
+            embeddings = await self.sim_search.create_embeddings_async(new_doc)
+            if embeddings is None:
+                logging.error(f"Error creating embeddings: {file.filename} from user {username}")
+                return None, "Error creating embeddings"
             
             # # Save the embeddings in QDrant
-            # is_save_successfull = await self.sim_search.save_embedding_async(id, embeddings)
-            # if not is_save_successfull:
-            #     logging.error(f"Error saving embeddings: {file.filename} from user {username}")
-            #     return None, "Error saving embeddings"
+            is_save_successfull = await self.sim_search.save_embedding_async(id, embeddings)
+            if not is_save_successfull:
+                logging.error(f"Error saving embeddings: {file.filename} from user {username}")
+                return None, "Error saving embeddings"
 
             # # Create a summary for the document
-            # prompt = summary_prompt_builder(new_doc.textList)
-            # new_doc.summary = await call_mistral_api_async(prompt)
-            # if new_doc.summary is None:
-            #     logging.error(f"Error creating summary: {file.filename} from user {username}")
-            #     return None, "Error creating summary"
+            prompt = summary_prompt_builder(new_doc.textList)
+            new_doc.summary = await call_mistral_api_async(prompt)
+            if new_doc.summary is None:
+                logging.error(f"Error creating summary: {file.filename} from user {username}")
+                return None, "Error creating summary"
 
             # # Save new_doc in the database
-            # doc_id = await db.add_document_to_user_async(username, new_doc)
-            # if doc_id is None:
-            #     logging.error(f"Error saving document: {file.filename} from user {username}")
-            #     return None, "Error saving document"
+            doc_id = await db.add_document_to_user_async(username, new_doc)
+            if doc_id is None:
+                logging.error(f"Error saving document: {file.filename} from user {username}")
+                return None, "Error saving document"
             
             return new_doc, "File uploaded successfully"
         except Exception as e:

@@ -6,8 +6,6 @@ transformers
 Pillow
 PyPDF2
 pdfplumber
-pptxtopdf
-docx2pdf
 datetime
 python-dotenv
 python-docx
