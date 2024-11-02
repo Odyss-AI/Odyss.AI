@@ -27,7 +27,7 @@ class ImageTaggerService:
 
 image_tagger = ImageTaggerService()
 
-@app.route('/tag-image', methods=['POST'])
+@app.route('/tag/image', methods=['POST'])
 def tag_image():
     # Überprüfe, ob überhaupt eine Datei im POST-Request enthalten ist
     if not request.files:
@@ -53,4 +53,4 @@ def tag_image():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+        app.run(port="5150",debug=True)
