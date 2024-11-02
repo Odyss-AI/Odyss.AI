@@ -6,7 +6,7 @@ from app.models.chat import Chat
 from app.utils.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
 
 # Benutzer hinzufügen
-@main.route('/users/adduser', methods=['POST'])
+@main.route('/users/add', methods=['POST'])
 async def add_user():
     try:
         db = get_db()

@@ -6,8 +6,6 @@ import torch
 from transformers import AutoProcessor, AutoModelForVision2Seq, StoppingCriteriaList 
 import os
 import PyPDF2
-from pptxtopdf import convert as pptx_to_pdf
-from docx2pdf import convert as docx_to_pdf
 from app.user import Document, TextChunk, Image
 from PIL import Image as PilImage
 from app.config import Config
@@ -20,27 +18,9 @@ class OCRNougat:
         self.processor = AutoProcessor.from_pretrained("facebook/nougat-base")
         self.model = AutoModelForVision2Seq.from_pretrained("facebook/nougat-base")
 
-    def extract_text(self, doc, document_path):
-        print(f"Extrahiere Text aus Dokument: {document_path}")
-        
-        # Prüfe den Typ des Dokuments basierend auf dem Dateipfad
-        file_extension = os.path.splitext(document_path)[1].lower()
-        print(f"Dokumenttyp erkannt: {file_extension}")
-
-        if file_extension == ".pdf":
-            # Direkt PDF verarbeiten
-            print(f"Starte Verarbeitung des PDF-Dokuments: {document_path}")
-            self.process_pdf(document_path, doc)
-        elif file_extension in [".docx", ".pptx"]:
-            # Konvertiere zu PDF und dann verarbeite das konvertierte PDF
-            print(f"Konvertiere {file_extension}-Dokument zu PDF...")
-            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)
-            print(f"Verarbeite konvertiertes PDF: {converted_pdf_path}")
-            self.process_pdf(converted_pdf_path, doc)
-            os.remove(converted_pdf_path)  # Lösche das konvertierte PDF nach der Verarbeitung
-            print(f"Lösche temporäre Datei: {converted_pdf_path}")
-        else:
-            print("Nicht unterstützter Dateityp")
+    def extract_text(self, doc: Document):
+        self.process_pdf(doc.path, doc)
+        os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
 
         return doc
 

@@ -4,7 +4,7 @@ import logging
 from app.utils.db import get_db
 from app.models.chat import Chat, Message
 from app.models.user import TextChunk, Document
-from app.utils.helpers import call_mistral_api_async, call_chatgpt_api_async
+from app.utils.ml_connection import call_mistral_api_async, call_chatgpt_api_async
 from app.utils.prompts import qna_prompt_builder
 from bson.objectid import ObjectId
 from app.services.caching import CachingService

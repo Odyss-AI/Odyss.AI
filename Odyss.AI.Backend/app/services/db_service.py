@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
 from app.models.user import User, Document
 from app.models.chat import Message, Chat
-from app.config import Config
+from app.config import config
 
 class MongoDBService:
     """
@@ -50,7 +50,7 @@ class MongoDBService:
             cls._instance = super(MongoDBService, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, db_name, uri=Config.MONGODB_CONNECTION_STRING):
+    def __init__(self, db_name, uri=config.mongodb_connection_string):
         if not hasattr(self, 'client'):
             self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=10000)
             self.shared_volume_path ="/shared_data"
@@ -359,7 +359,7 @@ class MongoDBService:
 
         
 
-    async def upload_pdf(self, converted_file, filename: str, fileId_hash):
+    async def upload_pdf_async(self, converted_file, filename: str, fileId_hash: str, user: str):
 
         """
         Uploads a PDF file to the database asynchronously. Before upload it checks if the hash of the file ID already exists in the user's documents.
@@ -374,38 +374,36 @@ class MongoDBService:
             str: The ObjectID of the uploaded file, or None if an error occurs.
         
         """
+        try:
+            file_content = converted_file.read()
+            
+            file_hash = hashlib.md5(file_content).hexdigest()
+
+            username = filename.split('_')[0]
+
+            #Check if user already uploaded the file with this filename
+            user = await self.get_user_async(user)
+            if user:
+                for document in user.get("documents", []):
+                    if document.get("doc_id") == fileId_hash:
+                        logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
+                        return None
+                    
+            #Check if the file_content is already uploaded with other filename
+            existing_file = await self.files_collection.find_one({"metadata.hash": file_hash})
+            if existing_file:
+                logging.info(f'File with hash {file_hash} already exists. Skipping upload.')
+                return None
+
+            fs = gridfs.GridFS(self.db.delegate, collection=self.files_collection.name)
+            file_id = fs.put(file_content, filename=filename, contentType='application/pdf', metadata={"hash": file_hash})
+            logging.info(f'File uploaded successfully with ObjectID: {file_id}')
+
+            return file_id
         
-        file_content = await converted_file.read()
-        
-        file_hash = hashlib.md5(file_content).hexdigest()
-
-        username = filename.split('_')[0]
-
-
-        #Check if user already uploaded the file with this filename
-        user = await self.users_collection.find_one({"username": username})
-        if user:
-            for document in user.get("documents", []):
-                if document.get("doc_id") == fileId_hash:
-                    logging.info(f'File {filename} already exists for user {username}. Skipping upload.')
-                    return None
-        #Check if the file_content is already uploaded with other filename
-        existing_file = await self.files_collection.find_one({"metadata.hash": file_hash})
-        if existing_file:
-            logging.info(f'File with hash {file_hash} already exists. Skipping upload.')
+        except Exception as e:
+            logging.error(f"Error uploading PDF: {e}")
             return None
-
-
-        fs = gridfs.GridFS(self.db, collection=self.files_collection.name)
-        file_id = fs.put(file_content, filename=filename, contentType='application/pdf', metadata={"hash": file_hash})
-        logging.info(f'File uploaded successfully with ObjectID: {file_id}')
-
-        await self.users_collection.update_one(
-            {"username": username},
-            {"$push": {"documents": {"doc_id": fileId_hash, "name": filename}}}
-        )
-
-        return file_id
     
     async def upload_image(self, file):
         fs = gridfs.GridFS(self.db.delegate, collection=self.extracted_images_collection.name)
