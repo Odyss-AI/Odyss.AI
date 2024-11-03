@@ -43,6 +43,7 @@ class DocumentManager:
         
         try:
             db = get_db()
+            # Generate a unique name for the document
             hash_doc, hash = self.generate_filename(file.filename)
 
             # Convert file to PDF, OCR just uses PDFs
@@ -50,6 +51,7 @@ class DocumentManager:
             if self.handle_error(converted_file_path is None, "Error converting file", file, username):
                 return None, "Error converting file"
 
+            # Upload the PDF to MongoDB and get the file objectID back
             mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
             if self.handle_error(mongo_file_id is None, "Error uploading file on MongoDB", file, username):
                 return None, "Error uploading file on MongoDB"
@@ -61,6 +63,8 @@ class DocumentManager:
                 return None, "Error extracting information while using ocr"
 
             # TODO: Upload extracted pictures to mongoDB
+            
+            # TODO: Tag Images
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
