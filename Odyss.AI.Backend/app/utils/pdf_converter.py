@@ -15,6 +15,7 @@ async def save_and_convert_file(file, hash_filename: str, db) -> str:
     # Wenn es sich bereits um ein PDF handelt, keine Konvertierung notwendig
     if file_extension == 'pdf':
         converted_file = await asyncio.to_thread(open, file_path_original, 'rb')
+        return file_path_original, converted_file
         
     elif file_extension in ('docx', 'pptx'):
         # Zielpfad für konvertierte Datei

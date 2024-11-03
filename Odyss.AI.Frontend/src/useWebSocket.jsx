@@ -13,6 +13,7 @@ const useWebSocket = (isUser, chatsCalled) => {
             message: message,
             username: user,
             chat_id: chatId,
+            model: 'mistral'
         };
         socket.send(JSON.stringify(msg));
       } else {
