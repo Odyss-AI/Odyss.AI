@@ -65,10 +65,11 @@ class DocumentManager:
 
             # TODO: Upload extracted pictures to mongoDB
             
-            # Tag Images
+            # Tag Images and delete them after processing
             new_doc = await query_pixtral_async(new_doc)
-
-            # TODO: Delete all images on filesystem
+            for img in new_doc.imgList:
+                if os.path.exists(img.link):
+                    os.remove(img.link)
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
@@ -81,9 +82,6 @@ class DocumentManager:
                 return None, "Error saving embeddings"
 
             # Create a summary for the document
-            # TODO: Get a input which do not get over the token limit
-            # prompt = summary_prompt_builder(new_doc.textList)
-            # new_doc.summary = await query_mixtral_async(prompt)
             new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
                 return None, "Error creating summary"
