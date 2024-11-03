@@ -44,8 +44,6 @@ async def query_pixtral_async(image:Image):
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
 
-    openai_api_base = f"http://127.0.0.1:8092/v1"
-
     image_class = get_image_class_async(image.link)
 
     with SSHTunnelForwarder(
