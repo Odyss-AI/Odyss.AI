@@ -63,13 +63,14 @@ class DocumentManager:
             if self.handle_error(new_doc is None, "Error extracting information while using ocr", file, username):
                 return None, "Error extracting information while using ocr"
 
-            # TODO: Upload extracted pictures to mongoDB
+            # TODO: Upload extracted pictures to mongoDB (maybe not necessary anymore)
             
             # Tag Images and delete them after processing
             new_doc = await query_pixtral_async(new_doc)
             for img in new_doc.imgList:
                 if os.path.exists(img.link):
                     os.remove(img.link)
+                    img.link = "Image is successfully evaluated and deleted"
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
@@ -82,6 +83,7 @@ class DocumentManager:
                 return None, "Error saving embeddings"
 
             # Create a summary for the document
+            # TODO: Fix batching loop so ssh tunnel is not opened for every batch
             new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
                 return None, "Error creating summary"
