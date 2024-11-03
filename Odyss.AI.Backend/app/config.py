@@ -31,6 +31,11 @@ class Config:
         self.remote_port = int(os.getenv("REMOTE_PORT"))
         self.mistral_api_base = os.getenv("MISTRAL_API_BASE")
 
+        #Pixtral Konfiguration
+        self.local_port_pixtral = int(os.getenv("LOCAL_PORT_PIXTRAL"))
+        self.remote_port_pixtral = int(os.getenv("REMOTE_PORT_PIXTRAL"))
+        self.pixtral_api_base = os.getenv("PIXTRAL_API_BASE")
+
         # OCR Endpunkte
         self.service_endpoint_selection = os.getenv("SERVICE_ENDPOINT_SELECTION", "TESERACT")
         self.ocr_endpoint = self.get_ocr_endpoint()

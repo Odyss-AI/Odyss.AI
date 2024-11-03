@@ -13,13 +13,6 @@ from PIL import Image
 from app.models.user import Image
 from sshtunnel import SSHTunnelForwarder
 
-#SSH-Verbindungsdetailss
-ssh_host = "141.75.89.10"
-ssh_port = 22
-ssh_username = "oppelfe89127"
-local_port = 8093
-remote_port = 8093
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -50,43 +43,61 @@ async def get_image_class_async(image_path):
             return response.json().get('tag')  # Rückgabe der Bildklasse
         else:
             raise Exception(f"Error: {response.status_code} - {response.text}")
-# Anfrage an das Pixtral-Modell
 
+# Anfrage an das Pixtral-Modell
 async def query_pixtral_async(image:Image):
+    # OpenAI-API-Einstellungen
+    openai_api_key = config.openai_api_key
+    openai_api_base = config.openai_api_base  # Pixtral-Modell-URL
+    client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
     image_class = get_image_class_async(image.link)
 
-    # Bild laden und in Base64 kodieren
-    image = Image.open(image.link)
-    buffered = BytesIO()
-    image.save(buffered, format="PNG")  # Speichern im PNG-Format
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    with SSHTunnelForwarder(
+    (config.ssh_host, config.ssh_port),
+    ssh_username=config.ssh_username,
+    local_bind_address=('localhost', config.local_port_pixtral),
+    remote_bind_address=('localhost', config.remote_port_pixtral)
+) as tunnel:
+        print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
+        tunnel.start()  # Ensure tunnel is started
+        models = client.models.list()
+        model = models.data[0].id
 
-    # Pixtral-Anfrage mit der eingebetteten Klasse
-    chat_completion_from_base64 = client.chat.completions.create(
-        messages=[{
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"The image shows a {image_class}. Please describe what I see."
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{img_str}"
+        print(model)
+        # Bild laden und in Base64 kodieren
+        image = Image.open(image.link)
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")  # Speichern im PNG-Format
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        # Pixtral-Anfrage mit der eingebetteten Klasse
+        chat_completion_from_base64 = client.chat.completions.create(
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"The image shows a {image_class}. Please describe what I see."
                     },
-                },
-            ],
-        }],
-        model=model,  # Anpassen an den korrekten Modellnamen
-        max_tokens=256,
-    )
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{img_str}"
+                        },
+                    },
+                ],
+            }],
+            model=model,  # Anpassen an den korrekten Modellnamen
+            max_tokens=256,
+        )
 
-    # Ergebnis anzeigen
-    result = chat_completion_from_base64.choices[0].message.content
-    image.llm_output = result
-    return image
+        # Ergebnis anzeigen
+        result = chat_completion_from_base64.choices[0].message.content
+        
+        return result
+    
+    
 
 async def query_mixtral_async(prompt: list):
     # Sondertokens definieren
