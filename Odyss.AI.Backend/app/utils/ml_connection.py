@@ -43,7 +43,6 @@ async def query_pixtral_async(image:Image):
     openai_api_base = config.openai_api_base  # Pixtral-Modell-URL
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
-    ssh_client, ssh_tunnel = create_ssh_tunnel()
 
     openai_api_base = f"http://127.0.0.1:8092/v1"
 
