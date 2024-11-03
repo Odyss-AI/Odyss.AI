@@ -126,7 +126,6 @@ async def query_mixtral_async(prompt: list):
             if response.status_code == 200:
                 result = json.loads(response.text)
                 answer = result[0]['generated_text']
-                print("Antwort des Modells:", answer)
                 return answer
             else:
                 print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)

@@ -182,7 +182,7 @@ class MongoDBService:
                     
                     docs = await self.get_documents_of_user_async(username)
                     for doc in docs:
-                        if doc.get('doc_id') == document.doc_id:
+                        if doc.doc_id == document.doc_id:
                             return doc.id
                     
                     document.id = str(ObjectId())  # Generiere eine eindeutige ID für das Dokument
