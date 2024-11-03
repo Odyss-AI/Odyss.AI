@@ -66,13 +66,15 @@ class DocumentManager:
             
             # TODO: Tag Images
 
+            # TODO: Delete all images on filesystem
+
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
             if self.handle_error(embeddings is None, "Error creating embeddings", file, username):
                 return None, "Error creating embeddings"
 
             # Save the embeddings in QDrant
-            is_save_successfull = await self.sim_search.save_embedding_async(id, embeddings)
+            is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
             if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
                 return None, "Error saving embeddings"
 
