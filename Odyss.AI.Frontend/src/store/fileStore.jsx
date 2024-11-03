@@ -5,13 +5,18 @@ import { create } from 'zustand';
 const useFileStore = create((set) => ({
     files: [], // Der Zustand, um mehrere Dateien zu speichern
     selectedFile: null, // Speichert die aktuell ausgewählte Datei zur Vorschau
+    hasUploadedFiles: false, // Neu: Boolean, um zu wissen, ob bereits Dateien hochgeladen sind
 
     // Setzt neue Dateien, ohne `selectedFile` zu überschreiben, wenn bereits eine Datei ausgewählt ist
     setFiles: (newFiles) => {
-        set((state) => ({
-            files: newFiles,
-            selectedFile: state.selectedFile ? state.selectedFile : newFiles[0] || null, // Behalte die ausgewählte Datei bei oder setze die erste Datei, wenn keine ausgewählt ist
-        }));
+        set((state) => {
+            const combinedFiles = [...state.files, ...newFiles]; // Bestehende Dateien und neue Dateien kombinieren
+            return {
+                files: combinedFiles,
+                selectedFile: state.selectedFile ? state.selectedFile : combinedFiles[0] || null, // Behalte die ausgewählte Datei bei oder setze die erste Datei, wenn keine ausgewählt ist
+                hasUploadedFiles: combinedFiles.length > 0,
+            };
+        });
     },
 
     // Funktion zum Setzen der ausgewählten Datei
@@ -25,7 +30,11 @@ const useFileStore = create((set) => ({
             if (state.selectedFile) {
                 URL.revokeObjectURL(URL.createObjectURL(state.selectedFile));
             }
-            return { files: [], selectedFile: null };
+            return {
+                files: [],
+                selectedFile: null,
+                hasUploadedFiles: false,
+            };
         });
     },
 }));

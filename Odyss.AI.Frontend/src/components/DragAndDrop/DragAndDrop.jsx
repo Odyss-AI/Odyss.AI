@@ -4,7 +4,10 @@ import useFileStore from '../../store/fileStore.jsx';
 import styles from './DragAndDrop.module.css';
 
 const DragAndDrop = () => {
+    // Lokaler Zustand
     const [dragging, setDragging] = useState(false);
+
+    // Globaler Zustand aus dem File Store
     const setFiles = useFileStore((state) => state.setFiles); // Zugriff auf die setFiles-Funktion
 
     // Drag & Drop Event-Handler
@@ -45,8 +48,7 @@ const DragAndDrop = () => {
                     return;
                 }
             }
-            setFiles(pdfFiles); // Mehrere Dateien in den Zustand-Store legen
-
+            setFiles(pdfFiles); // Füge die neuen Dateien hinzu, anstatt die bestehenden zu überschreiben
         }
     };
 
