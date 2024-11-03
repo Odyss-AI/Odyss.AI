@@ -24,3 +24,6 @@ aiocache[redis]
 quart-cors
 openai
 python-dotenv
+Pillow
+paramiko
+sshtunnel

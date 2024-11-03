@@ -7,30 +7,9 @@ from app.utils.db import get_db
 from app.models.chat import Chat, Message
 from app.services.message_manager import MessageManager
 from bson.objectid import ObjectId
+from app.utils.converters import convert_datetime, convert_to_model
 
 msg_manager = MessageManager()
-
-class ChunkModel:
-    def __init__(self, chunk):
-        self.chunk = chunk
-
-    def model_dump(self, by_alias=False):
-        # Beispielhafte Implementierung der model_dump Methode
-        return {"chunk": self.chunk}
-
-def convert_to_model(chunk):
-    # Konvertiere chunk in ein Objekt der Klasse ChunkModel
-    return ChunkModel(chunk)
-
-def convert_datetime(obj):
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            obj[key] = convert_datetime(value)
-    elif isinstance(obj, list):
-        obj = [convert_datetime(item) for item in obj]
-    elif isinstance(obj, datetime.datetime):
-        obj = obj.isoformat()
-    return obj
 
 @main.route('/', methods=['GET'])
 def home():

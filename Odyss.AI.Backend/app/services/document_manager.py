@@ -13,7 +13,7 @@ from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.ml_connection import call_mistral_api_async
+from app.utils.ml_connection import query_mixtral_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
@@ -74,7 +74,7 @@ class DocumentManager:
 
             # Create a summary for the document
             prompt = summary_prompt_builder(new_doc.textList)
-            new_doc.summary = await call_mistral_api_async(prompt)
+            new_doc.summary = await query_mixtral_async(prompt)
             if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
                 return None, "Error creating summary"
 

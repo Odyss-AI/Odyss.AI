@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 import logging
+import json
 
 from app.config import config
 from app.models.user import Document
@@ -8,7 +9,8 @@ from app.models.user import Document
 async def extract_pdf_information_with_ocr(doc: Document):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(config.get_ocr_endpoint(), json=doc.model_dump(by_alias=True)) as response:
+            payload = doc.model_dump_json()
+            async with session.post(config.get_ocr_endpoint(), data=payload) as response:
                 response_data = await response.json()
                 return Document(**response_data)
     except Exception as e:
