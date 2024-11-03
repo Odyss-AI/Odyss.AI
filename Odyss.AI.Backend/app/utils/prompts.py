@@ -10,7 +10,7 @@ def summary_prompt_builder(chunks: List[TextChunk]):
         {
             "role": "system",
             "content": f"""
-                You are a teacher tasked with summarizing an text. After reading the text, give a short summary in max five sentences about the content in the essay.
+                You are a teacher tasked with summarizing an text. After reading the text, give a short summary in one or two sentences about the content in the essay.
 
                 # Text:
                 {context}

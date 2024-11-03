@@ -13,11 +13,12 @@ from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.ml_connection import query_mixtral_async
+from app.utils.ml_connection import query_mixtral_async, query_pixtral_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
 from app.utils.pdf_converter import save_and_convert_file
+from app.utils.batching import create_summary_with_batches
 
 class DocumentManager:
     """
@@ -64,7 +65,8 @@ class DocumentManager:
 
             # TODO: Upload extracted pictures to mongoDB
             
-            # TODO: Tag Images
+            # Tag Images
+            new_doc = await query_pixtral_async(new_doc)
 
             # TODO: Delete all images on filesystem
 
@@ -79,8 +81,10 @@ class DocumentManager:
                 return None, "Error saving embeddings"
 
             # Create a summary for the document
-            prompt = summary_prompt_builder(new_doc.textList)
-            new_doc.summary = await query_mixtral_async(prompt)
+            # TODO: Get a input which do not get over the token limit
+            # prompt = summary_prompt_builder(new_doc.textList)
+            # new_doc.summary = await query_mixtral_async(prompt)
+            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
                 return None, "Error creating summary"
 

@@ -1,0 +1,5 @@
+flask
+quart
+tensorflow
+numpy
+opencv-python

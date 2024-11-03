@@ -3,15 +3,15 @@ import base64
 import requests
 import json
 
-
+from tqdm import tqdm
 from openai import OpenAI
 from sshtunnel import SSHTunnelForwarder
 from app.models.enum import ALLOWED_EXTENSIONS
 from app.config import config
 from app.utils.prompts import summary_prompt_builder
 from io import BytesIO
-from PIL import Image
-from app.models.user import Image
+from PIL import Image as PILImage
+from app.models.user import Document
 from sshtunnel import SSHTunnelForwarder
 
 def allowed_file(filename):
@@ -30,21 +30,19 @@ async def call_chatgpt_api_async(prompt: list):
 # Funktion zum Abrufen der Bildklasse vom Image Tagger Service
 async def get_image_class_async(image_path):
     with open(image_path, "rb") as image_file:
-        response = await requests.post(config.image_tagger, files={"file": image_file})  # URL zum Image Tagger Service
+        response = requests.post(config.image_tagger, files={"file": image_file})  # URL zum Image Tagger Service
         if response.status_code == 200:
             return response.json().get('tag')  # Rückgabe der Bildklasse
         else:
             raise Exception(f"Error: {response.status_code} - {response.text}")
 
 # Anfrage an das Pixtral-Modell
-async def query_pixtral_async(image:Image):
+async def query_pixtral_async(doc:Document):
     # OpenAI-API-Einstellungen
     openai_api_key = config.openai_api_key
     openai_api_base = config.openai_api_base  # Pixtral-Modell-URL
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
-
-    image_class = get_image_class_async(image.link)
 
     with SSHTunnelForwarder(
     (config.ssh_host, config.ssh_port),
@@ -58,37 +56,41 @@ async def query_pixtral_async(image:Image):
         model = models.data[0].id
 
         print(model)
-        # Bild laden und in Base64 kodieren
-        image = Image.open(image.link)
-        buffered = BytesIO()
-        image.save(buffered, format="PNG")  # Speichern im PNG-Format
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-        # Pixtral-Anfrage mit der eingebetteten Klasse
-        chat_completion_from_base64 = client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"The image shows a {image_class}. Please describe what I see."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{img_str}"
+        for img in tqdm(doc.imgList, desc="Processing images"):
+            image_class = await get_image_class_async(img.link)
+
+            # Bild laden und in Base64 kodieren
+            image = PILImage.open(img.link)
+            buffered = BytesIO()
+            image.save(buffered, format="PNG")  # Speichern im PNG-Format
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+            # Pixtral-Anfrage mit der eingebetteten Klasse
+            chat_completion_from_base64 = client.chat.completions.create(
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"The image shows a {image_class}. Please describe what I see."
                         },
-                    },
-                ],
-            }],
-            model=model,  # Anpassen an den korrekten Modellnamen
-            max_tokens=256,
-        )
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{img_str}"
+                            },
+                        },
+                    ],
+                }],
+                model=model,  # Anpassen an den korrekten Modellnamen
+                max_tokens=256,
+            )
 
-        # Ergebnis anzeigen
-        result = chat_completion_from_base64.choices[0].message.content
+            # Ergebnis anzeigen
+            img.llm_output = chat_completion_from_base64.choices[0].message.content
         
-        return result
+        return doc
     
     
 
