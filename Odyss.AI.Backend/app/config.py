@@ -23,7 +23,12 @@ class Config:
         self.qdrant_host = os.getenv("QDRANT_HOST")
         self.qdrant_port = os.getenv("QDRANT_PORT")
 
-        # Mistral Key
+        #Mistral Konfiguration
+        self.ssh_host = os.getenv("SSH_HOST")
+        self.ssh_port = int(os.getenv("SSH_PORT"))
+        self.ssh_username = os.getenv("SSH_USERNAME")
+        self.local_port = int(os.getenv("LOCAL_PORT"))
+        self.remote_port = int(os.getenv("REMOTE_PORT"))
         self.mistral_api_base = os.getenv("MISTRAL_API_BASE")
 
         # OCR Endpunkte

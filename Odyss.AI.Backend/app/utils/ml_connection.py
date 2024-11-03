@@ -1,6 +1,8 @@
 import asyncio
 import base64
 import requests
+import json
+
 
 from openai import OpenAI
 from app.models.enum import ALLOWED_EXTENSIONS
@@ -9,6 +11,14 @@ from app.utils.prompts import summary_prompt_builder
 from io import BytesIO
 from PIL import Image
 from app.models.user import Image
+from sshtunnel import SSHTunnelForwarder
+
+#SSH-Verbindungsdetailss
+ssh_host = "141.75.89.10"
+ssh_port = 22
+ssh_username = "oppelfe89127"
+local_port = 8093
+remote_port = 8093
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -79,14 +89,41 @@ async def query_pixtral_async(image:Image):
     return image
 
 async def query_mixtral_async(prompt: list):
-    # Mixtral-Anfrage mit der eingebetteten Klasse
-    chat_completion_from_base64 = client.chat.completions.create(
-       messages = prompt,
-        model=model,  # Anpassen an den korrekten Modellnamen
-        max_tokens=256,
-    )
-
-    # Ergebnis anzeigen
-    result = chat_completion_from_base64.choices[0].message.content
+    # Sondertokens definieren
+    BOS_ID = "<s>"
+    EOS_ID = "</s>"
+    INST_ID = "[INST]"
+    END_INST_ID = "[/INST]"
     
-    return result
+    # JSON-Format für den API-Aufruf
+    data = {
+        "inputs": f"{BOS_ID} {INST_ID} {str(prompt)} {END_INST_ID} Model answer {EOS_ID}"
+    }
+
+    try:
+        # SSH-Tunnel-Forwarder einrichten
+        with SSHTunnelForwarder(
+            (config.ssh_host, config.ssh_port),
+            ssh_username=config.ssh_username,
+            local_bind_address=('localhost', config.local_port),
+            remote_bind_address=('localhost', config.remote_port)
+        ) as tunnel:
+            
+            print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
+            
+            # Warte, bis der Tunnel aktiv ist
+            tunnel.start()
+            
+            # Sende die Anfrage über den Tunnel
+            response = requests.post(config.mistral_api_base, json=data)
+            
+            if response.status_code == 200:
+                result = json.loads(response.text)
+                answer = result[0]['generated_text']
+                print("Antwort des Modells:", answer)
+                return answer
+            else:
+                print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)
+
+    except Exception as e:
+        print("Verbindungsfehler:", e)    
