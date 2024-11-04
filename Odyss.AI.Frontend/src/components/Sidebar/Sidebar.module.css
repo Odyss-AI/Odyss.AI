@@ -1,0 +1,70 @@
+/* src/components/Sidebar/Sidebar.module.css */
+.sidebar {
+    background-color: #f8f8f8;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+    height: 100vh; /* Sidebar über die ganze Höhe */
+    transition: width 0.3s ease; /* Smooth transition */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.open {
+    width: 250px; /* Standardbreite der offenen Sidebar */
+}
+
+.closed {
+    width: 50px; /* Schmale Breite, wenn Sidebar geschlossen ist */
+}
+
+.toggleButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    align-self: center; /* Button in der Mitte der Sidebar */
+    transition: all 0.3s ease;
+}
+
+.toggleButton:hover {
+    background-color: #0056b3;
+}
+
+.chatList {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.chatItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.chatName {
+    flex-grow: 1;
+}
+
+.deleteButton {
+    background: transparent;
+    border: none;
+    color: #ff4d4d;
+    cursor: pointer;
+}
+
+.chatItem:hover {
+    background-color: #e0e0e0;
+}
+
+.chatItem.active {
+    background-color: #d0d0d0;
+    font-weight: bold;
+}
