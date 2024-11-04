@@ -1,0 +1,67 @@
+/* src/pages/ChatPage/ChatPage.module.css */
+
+.chatPage {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.header {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.mainContent {
+    display: flex;
+    flex: 1;
+}
+
+.sidebarContainer {
+    flex: 0 0 auto;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    background-color: #f8f8f8;
+}
+
+.middleContainer {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: #ffffff;
+}
+
+.rightContainer {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+    background-color: #f0f0f0;
+}
+
+.newChatContainer {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chatWindowContainer {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #ffffff;
+}
+
+.userInput {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}

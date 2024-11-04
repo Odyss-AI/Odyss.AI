@@ -1,0 +1,17 @@
+/* src/components/ChatWindow/ChatWindow.module.css */
+.chatWindow {
+    display: flex;
+    flex-direction: column; /* Nachrichten untereinander anordnen */
+    height: 100%; /* Füllt den verfügbaren Platz */
+    overflow-y: auto; /* Scrollen, wenn zu viele Nachrichten vorhanden sind */
+}
+
+.userMessageContainer {
+    align-self: flex-end; /* Benutzer-Nachricht rechts ausrichten */
+    margin: 5px 0; /* Abstand zwischen den Nachrichten */
+}
+
+.botMessageContainer {
+    align-self: flex-start; /* Bot-Nachricht links ausrichten */
+    margin: 5px 0; /* Abstand zwischen den Nachrichten */
+}

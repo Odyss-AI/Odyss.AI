@@ -1,0 +1,16 @@
+/* src/components/UserInput/UserInput.module.css */
+.userInput {
+    display: flex; /* Flexbox für die Anordnung des Inputs und des Buttons */
+    justify-content: flex-end; /* Button und Input nach rechts ausrichten */
+    margin-top: 10px; /* Abstand zum ChatWindow */
+}
+
+.userInput input {
+    flex: 1; /* Input nimmt den verfügbaren Platz ein */
+    padding: 10px;
+    margin-right: 10px; /* Abstand zwischen Input und Button */
+}
+
+.userInput button {
+    padding: 10px;
+}
