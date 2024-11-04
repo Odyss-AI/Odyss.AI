@@ -264,7 +264,7 @@ class MongoDBService:
             logging.error(f"Error getting chats by user: {e}")
             return None
     
-    async def create_chat_async(self, user: str, message: Message = "", doc_ids: list = []):
+    async def create_chat_async(self, user: str, name: str, message: Message = "", doc_ids: list = []):
         """
         Creates a new chat in the database asynchronously.
 
@@ -281,6 +281,7 @@ class MongoDBService:
                 id=str(ObjectId()),
                 user_id=user,
                 messages=[message],
+                chat_name=name,
                 doc_ids=doc_ids )
             await self.chat_collection.insert_one(chat.model_dump(by_alias=True))
             return chat

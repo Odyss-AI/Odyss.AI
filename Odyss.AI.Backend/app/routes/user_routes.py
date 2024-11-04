@@ -77,6 +77,7 @@ async def add_chat():
         data = await request.get_json()
         username = data.get('username')
         docs = data.get('docs')
+        chat_name = data.get('name')
 
         if not username:
             return jsonify({"error": "Username ist erforderlich"}), 400

@@ -67,19 +67,4 @@ const getChats = async (user) => {
     }
   };
 
-const createChat = (user, chat, doc = []) => {
-    axios.post(`${BaseUrl}/users/addchat`, {
-        username: user,
-        chat: chat,
-        doc: doc
-    })
-    .then(response => {
-        console.log(response.data);
-        return response.data;
-    })
-    .catch(error => {
-        console.error(error);
-    });
-}
-
 export { getUser, createUser, uploadDocument, getChats };
