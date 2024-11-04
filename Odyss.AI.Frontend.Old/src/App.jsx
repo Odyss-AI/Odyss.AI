@@ -15,6 +15,8 @@ function App() {
   const [chatId, setChatId] = useState('66e5930ac00137d9fa4c3782');
   const [message, setMessage] = useState('');
   const [file, setFile] = useState(null);
+  const [document, setDocument] = useState(null);
+  const [selectedChat, setSelectedChat] = useState(null);
 
   useEffect(() => {
     console.log('Chat changed:', chats);

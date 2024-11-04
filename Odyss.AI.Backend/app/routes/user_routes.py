@@ -67,3 +67,24 @@ async def get_chats():
         return jsonify({"error": "Chats nicht gefunden"}), 404
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen der Chats: {e}"}), 500
+
+# Chat hinzufügen
+@main.route('/users/addchat', methods=['POST'])
+async def add_chat():
+    try:
+        db = get_db()
+
+        data = await request.get_json()
+        username = data.get('username')
+        docs = data.get('docs')
+
+        if not username:
+            return jsonify({"error": "Username ist erforderlich"}), 400
+
+        # Chat hinzufügen
+        chat = await db.create_chat_async(username, message)
+        if chat:
+            return jsonify({"message": "Chat erfolgreich hinzugefügt", "chat": chat.model_dump(by_alias=True)}), 201
+        return jsonify({"error": "Fehler beim Hinzufügen des Chats"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Hinzufügen des Chats: {e}"}), 500

@@ -18,9 +18,21 @@ async def get_documents():
 
         # Dokumente des Benutzers abrufen
         documents = await db.get_documents_of_user_async(username)
-        if documents is not None:
-            return jsonify({"message": "Dokumente gefunden", "documents": [doc.model_dump(by_alias=True) for doc in documents]}), 200
-        return jsonify({"error": "Benutzer nicht gefunden"}), 404
+        if documents is None:
+                    return jsonify({"error": "Benutzer nicht gefunden"}), 404
+        
+        res = [
+            {
+                "mongo_file_id": doc.mongo_file_id,
+                "doc_id": doc.doc_id,
+                "summary": doc.summary,
+                "name": doc.name
+            }
+            for doc in documents
+        ]
+
+        return jsonify(res), 200
+
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen der Dokumente: {e}"}), 500
 
