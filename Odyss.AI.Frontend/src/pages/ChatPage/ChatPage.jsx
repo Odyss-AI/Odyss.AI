@@ -11,11 +11,15 @@ import useChatStore from '../../store/chatStore';
 import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
 import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 import useFileStore from '../../store/fileStore.jsx';
+import useAuthStore from '../../store/authStore.jsx';
+import { createChat } from '../../utils.js';
+import { Alert } from '@mui/material';
 
 function ChatPage() {
     //lokaler zustand
     const [selectedChat, setSelectedChat] = React.useState(null);
     const [newChatName, setNewChatName] = React.useState("");
+    const [docViewOpen, setDocViewOpen] = React.useState(true);
 
     // Zugriff auf den Zustand für PDF-Dateien und die aktuelle Auswahl
     //globaler zustand für PDFPreview
@@ -36,6 +40,8 @@ function ChatPage() {
 
     const chatMessages = selectedChat ? allChats[selectedChat.id] || [] : [];
 
+    const username = useAuthStore((state) => state.username);
+
     // Setze die erste Datei als Standardauswahl, wenn noch keine Datei ausgewählt wurde
     useEffect(() => {
         if (files.length > 0 && !selectedFile) {
@@ -54,9 +60,19 @@ function ChatPage() {
         }
     };
 
-    const handleAddChat = () => {
+    const handleAddChat = async () => {
         if (newChatName.trim()) {
-            addChat(newChatName);
+            const newChat = await createChat(username, newChatName);
+            // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
+            if (!newChat) {
+                console.error("Fehler beim Erstellen des Chats");
+                alert("Fehler beim Erstellen des Chats");
+            }
+            else {
+                console.log("Neuer Chat erstellt");
+                addChat(newChat.chat_name);
+            }
+
             setNewChatName("");  // Eingabefeld zurücksetzen
         }
     };
@@ -78,6 +94,7 @@ function ChatPage() {
             <div className={styles.mainContent}>
                 {/* Linke Spalte: Neuer Chat hinzufügen und Sidebar */}
                 <div className={styles.sidebarContainer}>
+                    <button onClick={()=>setDocViewOpen(!docViewOpen)}>Zeige Dokumente</button>
                     <div className={styles.newChatContainer}>
                         <input
                             type="text"
@@ -96,7 +113,7 @@ function ChatPage() {
                 </div>
 
                 {/* Mittlere Spalte: SelectModell, DragAndDrop, PDFPreview */}
-                <div className={styles.middleContainer}>
+                {docViewOpen && <div className={styles.middleContainer}>
                     <SelectModell />
                     {hasUploadedFiles?(
                         <button onClick={() =>{
@@ -108,7 +125,7 @@ function ChatPage() {
                     ):<DragAndDrop/>}
                     {selectedFile && <PDFPreview />} {/* Zeigt die ausgewählte PDF-Datei */}
                     <PDFPreviewList onSelectPDF={handleSelectPDF} /> {/* PDF-Liste zum Auswählen */}
-                </div>
+                </div>}
 
                 {/* Rechte Spalte: ChatWindow, UserInput */}
                 <div className={styles.rightContainer}>

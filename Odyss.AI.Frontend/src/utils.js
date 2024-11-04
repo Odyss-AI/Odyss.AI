@@ -3,22 +3,22 @@ import axios from 'axios';
 const BaseUrl = "http://127.0.0.1:5000";
 
 // GET-Anfrage
-const getUser = (user) => {
-    axios.get(`${BaseUrl}/users/getuser`, {
-        params: {
-            username: user
-        }
-    })
-    .then(response => {
+const getUser = async (user) => {
+    try{
+        const response = await axios.get(`${BaseUrl}/users/getuser`, {
+            params: {
+                username: user
+            }
+        });
         console.log(response.data);
         return response.data;
-    })
-    .catch(error => {
+    } catch (error) {
         console.error(error);
-    });
+        return null;
+    }
 }
 
-const createUser = (user) => {
+const createUser = async (user) => {
     axios.post(`${BaseUrl}/users/adduser`, {
         id: "",
         username: user,
@@ -33,7 +33,7 @@ const createUser = (user) => {
     });
 }
 
-const uploadDocument = (document, user) => {
+const uploadDocument = async (document, user) => {
     axios.post(`${BaseUrl}/docs/upload`, 
         document,
         {
@@ -67,4 +67,18 @@ const getChats = async (user) => {
     }
   };
 
-export { getUser, createUser, uploadDocument, getChats };
+const createChat = async (user, chatName, docIds = []) => {
+    try {
+        const response = await axios.post(`${BaseUrl}/users/addchat`, {
+            username: user,
+            name: chatName,
+            docs: docIds
+        });
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export { getUser, createUser, uploadDocument, getChats, createChat };

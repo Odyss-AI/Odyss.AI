@@ -83,9 +83,9 @@ async def add_chat():
             return jsonify({"error": "Username ist erforderlich"}), 400
 
         # Chat hinzufügen
-        chat = await db.create_chat_async(username, message)
+        chat = await db.create_chat_async(username, chat_name, docs)
         if chat:
-            return jsonify({"message": "Chat erfolgreich hinzugefügt", "chat": chat.model_dump(by_alias=True)}), 201
+            return jsonify(chat.model_dump(by_alias=True)), 201
         return jsonify({"error": "Fehler beim Hinzufügen des Chats"}), 400
     except Exception as e:
         return jsonify({"error": f"Fehler beim Hinzufügen des Chats: {e}"}), 500

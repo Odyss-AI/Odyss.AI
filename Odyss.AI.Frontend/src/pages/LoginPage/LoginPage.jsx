@@ -15,10 +15,10 @@ function LoginPage() {
 
     return (
         <div className={styles.loginPage}>
-            <video autoPlay loop muted className={styles.videoBackground}>
+            {/* <video autoPlay loop muted className={styles.videoBackground}>
                 <source src={videoBg} type="video/mp4" />
                 Your browser does not support the video tag.
-            </video>
+            </video> */}
             <div className={styles.loginFormContainer}>
                 {isRegister ? (
                     <div className={styles.registerForm}>
