@@ -96,6 +96,8 @@ volumes:
     driver: local
   shared_data:
     driver: local
+  tei:
+    driver: local
 
 networks:
   odyss.ai:
