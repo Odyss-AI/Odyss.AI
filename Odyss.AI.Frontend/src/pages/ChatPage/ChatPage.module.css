@@ -8,6 +8,7 @@
 .mainContent {
     display: flex;
     flex: 1;
+    position: relative; /* Neue Positionierung für den Toggle-Button */
 }
 
 .sidebarContainer {
@@ -59,6 +60,23 @@
     border: 1px solid #ccc;
     padding: 10px;
     background-color: #ffffff;
+}
+
+.toggleMiddleButton {
+    position: absolute; /* Button neben der mittleren Spalte platzieren */
+    top: 50%; /* Vertikale Zentrierung */
+    left: calc(20% + 10px); /* Platzierung links neben der mittleren Spalte */
+    transform: translateY(-50%);
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    z-index: 10; /* Sicherstellen, dass der Button über der mittleren Spalte liegt */
+}
+
+.toggleMiddleButton:hover {
+    background-color: #0056b3;
 }
 
 .userInput {

@@ -14,6 +14,7 @@ import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 function ChatPage() {
     const [selectedChat, setSelectedChat] = React.useState(null);
     const [newChatName, setNewChatName] = React.useState("");
+    const [showMiddle, setShowMiddle] = React.useState(true); // Zustand für die Anzeige der mittleren Spalte
 
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
@@ -91,21 +92,33 @@ function ChatPage() {
                     />
                 </div>
 
+                {/* Mittlere Spalte ein-/ausblenden */}
                 {selectedChat && (
-                    <div className={styles.middleContainer}>
-                        <SelectModell />
-                        <DragAndDrop onFileDrop={handleFileDrop} />
-                        {selectedFile && <PDFPreview file={selectedFile} />} {/* Zeigt die ausgewählte PDF-Datei */}
-                        <PDFPreviewList
-                            files={chatFiles}
-                            onRemoveFile={handleRemoveFile}
-                            onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
-                        /> {/* PDF-Liste zum Auswählen */}
-                    </div>
+                    <>
+                        <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
+                            {showMiddle ? '<' : '>'}
+                        </button>
+                        {showMiddle && (
+                            <div className={styles.middleContainer}>
+                                <SelectModell />
+                                <DragAndDrop onFileDrop={handleFileDrop} />
+                                {selectedFile && <PDFPreview file={selectedFile} />} {/* Zeigt die ausgewählte PDF-Datei */}
+                                <PDFPreviewList
+                                    files={chatFiles}
+                                    onRemoveFile={handleRemoveFile}
+                                    onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
+                                /> {/* PDF-Liste zum Auswählen */}
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <div className={
-                    selectedChat ? styles.rightContainer : styles.rightContainerExpanded
+                    selectedChat
+                        ? showMiddle
+                            ? styles.rightContainer
+                            : styles.rightContainerExpanded
+                        : styles.rightContainerExpanded
                 }>
                     <div className={styles.chatWindowContainer}>
                         {selectedChat ? (

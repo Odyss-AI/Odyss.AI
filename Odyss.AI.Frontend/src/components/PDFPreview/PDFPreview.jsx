@@ -1,7 +1,8 @@
 // src/components/PDFPreview/PDFPreview.jsx
 import React from 'react';
+import styles from './PDFPreview.module.css';
 
-const PDFPreview = ({ file }) => {  // File wird jetzt als Prop übergeben
+const PDFPreview = ({ file }) => {
     if (!file) {
         return <p>Keine PDF-Datei ausgewählt</p>;
     }
@@ -9,14 +10,11 @@ const PDFPreview = ({ file }) => {  // File wird jetzt als Prop übergeben
     const fileURL = URL.createObjectURL(file); // Erzeugt eine URL zur Anzeige der PDF
 
     return (
-        <div className="pdf-display">
+        <div className={styles.pdfDisplay}>
             <iframe
                 src={fileURL}
-                type="application/pdf"
-                width="600"
-                height="500"
+                className={styles.pdfIframe} // Die iframe-Klasse verwenden, um das Styling konsistent zu halten
                 title="PDF Vorschau"
-                style={{ border: 'none' }}
             />
         </div>
     );

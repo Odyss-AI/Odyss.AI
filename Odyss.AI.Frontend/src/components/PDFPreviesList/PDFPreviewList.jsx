@@ -38,7 +38,6 @@ const PDFPreviewList = ({ files, onRemoveFile, onSelectFile }) => {  // Neue Pro
                             className={styles.pdfPreviewFrame}
                             style={{ pointerEvents: 'none' }} // Blockiert Events auf `iframe`, damit das übergeordnete Div klickbar ist
                         />
-                        <div className={styles.fileName}>{file.name}</div>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation(); // Verhindert, dass der Klick auf das Button auch das PDF auswählt
