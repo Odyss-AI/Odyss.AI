@@ -60,6 +60,10 @@ async def query_pixtral_async(doc:Document):
         for img in tqdm(doc.imgList, desc="Processing images"):
             image_class = await get_image_class_async(img.link)
 
+            # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
+            if image_class == "just_img":
+                continue
+
             # Bild laden und in Base64 kodieren
             image = PILImage.open(img.link)
             buffered = BytesIO()
@@ -83,13 +87,13 @@ async def query_pixtral_async(doc:Document):
                         },
                     ],
                 }],
-                model=model,  # Anpassen an den korrekten Modellnamen
+                model=model,  
                 max_tokens=256,
             )
 
             # Ergebnis anzeigen
             img.llm_output = chat_completion_from_base64.choices[0].message.content
-        
+
         return doc
     
     
