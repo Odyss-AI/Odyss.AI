@@ -40,7 +40,7 @@ function ChatPage() {
     useEffect(() => {
         if (files.length > 0 && !selectedFile) {
             setSelectedFile(files[0]);
-            console.log("Setting default seleceted File",files[0])
+            console.log("Setting default selected File", files[0]);
         }
     }, [files, selectedFile, setSelectedFile]);
 
@@ -70,7 +70,7 @@ function ChatPage() {
 
     const handleSelectPDF = (pdf) => {
         setSelectedFile(pdf); // Setze die neue ausgewählte PDF für die Hauptanzeige
-        console.log("Selected PDF", pdf)
+        console.log("Selected PDF", pdf);
     };
 
     return (
@@ -95,23 +95,27 @@ function ChatPage() {
                     />
                 </div>
 
-                {/* Mittlere Spalte: SelectModell, DragAndDrop, PDFPreview */}
-                <div className={styles.middleContainer}>
-                    <SelectModell />
-                    {hasUploadedFiles?(
-                        <button onClick={() =>{
-                            //Zeigt das Drag-and-Drop-Feld wueder an, wenn geklickt
-                            useFileStore.setState({hasUploadedFiles: false});
-                        }}>
-                        Weitere PDF-Dateien hochladen
-                        </button>
-                    ):<DragAndDrop/>}
-                    {selectedFile && <PDFPreview />} {/* Zeigt die ausgewählte PDF-Datei */}
-                    <PDFPreviewList onSelectPDF={handleSelectPDF} /> {/* PDF-Liste zum Auswählen */}
-                </div>
+                {/* Mittlere Spalte: Nur anzeigen, wenn ein Chat ausgewählt ist */}
+                {selectedChat && (
+                    <div className={styles.middleContainer}>
+                        <SelectModell />
+                        {hasUploadedFiles ? (
+                            <button onClick={() => {
+                                //Zeigt das Drag-and-Drop-Feld wieder an, wenn geklickt
+                                useFileStore.setState({ hasUploadedFiles: false });
+                            }}>
+                                Weitere PDF-Dateien hochladen
+                            </button>
+                        ) : <DragAndDrop />}
+                        {selectedFile && <PDFPreview />} {/* Zeigt die ausgewählte PDF-Datei */}
+                        <PDFPreviewList onSelectPDF={handleSelectPDF} /> {/* PDF-Liste zum Auswählen */}
+                    </div>
+                )}
 
                 {/* Rechte Spalte: ChatWindow, UserInput */}
-                <div className={styles.rightContainer}>
+                <div className={
+                    selectedChat ? styles.rightContainer : styles.rightContainerExpanded
+                }>
                     <div className={styles.chatWindowContainer}>
                         {selectedChat ? (
                             <ChatWindow messages={chatMessages} />

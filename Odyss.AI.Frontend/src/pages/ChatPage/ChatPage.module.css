@@ -1,17 +1,8 @@
 /* src/pages/ChatPage/ChatPage.module.css */
-
 .chatPage {
     display: flex;
     flex-direction: column;
     height: 100vh;
-}
-
-.header {
-    background-color: #007bff;
-    color: white;
-    padding: 10px;
-    text-align: center;
-    font-size: 1.5rem;
 }
 
 .mainContent {
@@ -37,6 +28,16 @@
 
 .rightContainer {
     flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 20px;
+    background-color: #f0f0f0;
+}
+
+.rightContainerExpanded {
+    flex: 2;
     padding: 20px;
     display: flex;
     flex-direction: column;
