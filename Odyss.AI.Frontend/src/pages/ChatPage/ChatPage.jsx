@@ -29,6 +29,7 @@ function ChatPage() {
     const removeFileFromChat = useChatStore((state) => state.removeFileFromChat);
     const setSelectedFile = useChatStore((state) => state.setSelectedFile);
     const toggleDragAndDrop = useChatStore((state) => state.toggleDragAndDrop);
+    const username = useAuthStore((state) => state.username);
 
     const chatMessages = selectedChat ? allChats[selectedChat.id]?.messages || [] : [];
     const chatFiles = selectedChat ? allChats[selectedChat.id]?.files || [] : [];
@@ -52,8 +53,9 @@ function ChatPage() {
     };
 
     const handleAddChat = async () => {
+        console.log(username);
         if (newChatName.trim()) {
-            const newChat = await createChat(username, newChatName);
+            const newChat = await createChat(username.user.username, newChatName);
             // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
             if (!newChat) {
                 console.error("Fehler beim Erstellen des Chats");
@@ -64,8 +66,6 @@ function ChatPage() {
                 addChat(newChat.chat_name);
             }
 
-            setNewChatName("");  // Eingabefeld zurücksetzen
-            addChat(newChatName);
             setNewChatName("");
         }
     };
