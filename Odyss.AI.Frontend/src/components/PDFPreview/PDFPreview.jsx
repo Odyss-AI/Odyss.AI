@@ -1,17 +1,12 @@
 // src/components/PDFPreview/PDFPreview.jsx
 import React from 'react';
-import useFileStore from '../../store/fileStore.jsx';
 
-const PDFPreview = () => {
-    const selectedFile = useFileStore((state) => state.selectedFile); // Zugriff auf die aktuell ausgewählte Datei zur Vorschau
-
-    console.log("Rendering PDFPreview with file: ", selectedFile);
-
-    if (!selectedFile) {
+const PDFPreview = ({ file }) => {  // File wird jetzt als Prop übergeben
+    if (!file) {
         return <p>Keine PDF-Datei ausgewählt</p>;
     }
 
-    const fileURL = URL.createObjectURL(selectedFile); // Erzeugt eine URL zur Anzeige der PDF
+    const fileURL = URL.createObjectURL(file); // Erzeugt eine URL zur Anzeige der PDF
 
     return (
         <div className="pdf-display">

@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 
 const useChatStore = create((set) => ({
-    chats: {},  // Ein Objekt, in dem die Nachrichten für jeden Chat gespeichert werden
+    chats: {},  // Ein Objekt, in dem die Nachrichten und Dateien für jeden Chat gespeichert werden
     chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID)
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
@@ -10,10 +10,13 @@ const useChatStore = create((set) => ({
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: [
-                    ...(state.chats[chatId] || []),  // Vorhandene Nachrichten für den Chat abrufen (oder leeres Array, falls keine existieren)
-                    { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
-                ],
+                [chatId]: {
+                    ...state.chats[chatId],
+                    messages: [
+                        ...(state.chats[chatId]?.messages || []),
+                        { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
+                    ],
+                },
             },
         })),
 
@@ -22,10 +25,13 @@ const useChatStore = create((set) => ({
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: [
-                    ...(state.chats[chatId] || []),
-                    { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
-                ],
+                [chatId]: {
+                    ...state.chats[chatId],
+                    messages: [
+                        ...(state.chats[chatId]?.messages || []),
+                        { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
+                    ],
+                },
             },
         })),
 
@@ -40,7 +46,7 @@ const useChatStore = create((set) => ({
                 ],
                 chats: {
                     ...state.chats,
-                    [newChatId]: []  // Initialer leerer Chat
+                    [newChatId]: { messages: [], files: [] }  // Initialer leerer Chat mit Nachrichten und Dateien
                 }
             };
         }),
@@ -49,12 +55,53 @@ const useChatStore = create((set) => ({
     deleteChat: (chatId) =>
         set((state) => {
             const updatedChatList = state.chatList.filter((chat) => chat.id !== chatId);
-            const { [chatId]: _, ...updatedChats } = state.chats;  // Entfernt den Chat aus den Nachrichten
+            const { [chatId]: _, ...updatedChats } = state.chats;  // Entfernt den Chat aus den Nachrichten und Dateien
             return {
                 chatList: updatedChatList,
                 chats: updatedChats
             };
         }),
+
+    // Funktionen für die Dateiverwaltung pro Chat
+    addFilesToChat: (chatId, newFiles) =>
+        set((state) => {
+            const existingFiles = state.chats[chatId]?.files || [];
+            return {
+                chats: {
+                    ...state.chats,
+                    [chatId]: {
+                        ...state.chats[chatId],
+                        files: [...existingFiles, ...newFiles],
+                    },
+                },
+            };
+        }),
+
+    removeFileFromChat: (chatId, fileIndex) =>
+        set((state) => {
+            const updatedFiles = [...(state.chats[chatId]?.files || [])];
+            updatedFiles.splice(fileIndex, 1);
+            return {
+                chats: {
+                    ...state.chats,
+                    [chatId]: {
+                        ...state.chats[chatId],
+                        files: updatedFiles,
+                    },
+                },
+            };
+        }),
+
+    setSelectedFile: (chatId, file) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    selectedFile: file,
+                },
+            },
+        })),
 }));
 
 export default useChatStore;
