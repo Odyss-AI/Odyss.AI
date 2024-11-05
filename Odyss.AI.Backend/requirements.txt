@@ -28,3 +28,4 @@ Pillow
 paramiko
 sshtunnel
 tqdm
+requests

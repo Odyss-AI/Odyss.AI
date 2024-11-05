@@ -17,10 +17,10 @@ services:
       context: ./Odyss.AI.Backend
     environment:
       - ENVIRONMENT=prod
-      - SERVICE_ENDPOINT_SELECTION=
+      - SERVICE_ENDPOINT_SELECTION=teseract
     container_name: backend
     ports:
-      - "5000:5000"
+      - "443:443"
     volumes:
       - shared_data:/shared_data
     depends_on:
@@ -83,7 +83,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - /c/Users/efitt/source/TEI/data:/data
+      - var/opt/tei
     command: --model-id BAAI/bge-large-en-v1.5
     networks:
       - odyss.ai
