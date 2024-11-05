@@ -64,18 +64,18 @@ services:
     networks:
       - odyss.ai
 
-  ##llm:
-  #  build:
-  #    context: ./Odyss.AI.Backend.LLM
-  #  container_name: llm
-  #  ports:
-  #    - "4000:4000"
-  #  depends_on:
-  #    - mongodb
-  #    - qdrant
-  #    - text_embeddings_inference
-  #  networks:
-  #    - odyss.ai
+  llm:
+    build:
+      context: ./Odyss.AI.Backend.LLM
+    container_name: llm
+    ports:
+      - "5150:5150"
+    depends_on:
+      - mongodb
+      - qdrant
+      - text_embeddings_inference
+    networks:
+      - odyss.ai
 
   text_embeddings_inference:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
