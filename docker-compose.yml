@@ -83,7 +83,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - var/opt/tei
+      - tei:/data/tei
     command: --model-id BAAI/bge-large-en-v1.5
     networks:
       - odyss.ai
