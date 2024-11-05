@@ -16,7 +16,7 @@ function Header() {
 
     return (
         <header className={styles.header}>
-            <img src={logo} alt="Logo" className={styles.logo} /> {/* Logo auf der linken Seite */}
+            <img src={logo} alt="Logo" className={styles.logo} /> {/* Logo auf der linken Seite - CSS wurde geändert */}
             <h1 className={styles.title}>Sail to solutions with our answer-delivering boat!</h1> {/* Titel in der Mitte */}
 
             {isLoggedIn && ( // Nur anzeigen, wenn der Benutzer eingeloggt ist
