@@ -9,7 +9,7 @@ app = Flask(__name__)
 model = load_model('diagram_classifier.h5')  # Pfad zu deinem Modell
 
 # Klassenbezeichnungen
-chart_classes = ['bar_chart', 'diagram', 'flow_chart', 'graph', 'growth_chart', 'pie_chart']
+chart_classes = ['bar_chart', 'diagram', 'flow_chart', 'graph', 'just_img', 'pie_chart', 'table']
 
 class ImageTaggerService:
     def load_and_preprocess_image(self, img_data):
