@@ -8,7 +8,7 @@
 .mainContent {
     display: flex;
     flex: 1;
-    position: relative; /* Neue Positionierung für den Toggle-Button */
+    position: relative;
 }
 
 .sidebarContainer {
@@ -63,16 +63,16 @@
 }
 
 .toggleMiddleButton {
-    position: absolute; /* Button neben der mittleren Spalte platzieren */
-    top: 50%; /* Vertikale Zentrierung */
-    left: calc(20% + 10px); /* Platzierung links neben der mittleren Spalte */
-    transform: translateY(-50%);
+    position: absolute;
+    top: 80px; /* Weiter nach unten verschieben, um nicht mit dem "Hinzufügen"-Button zu überlappen */
+    left: 260px; /* Abstand zur linken Sidebar, weiter rechts als vorher */
     padding: 5px 10px;
     background-color: #007bff;
     color: #ffffff;
     border: none;
     cursor: pointer;
-    z-index: 10; /* Sicherstellen, dass der Button über der mittleren Spalte liegt */
+    transition: background-color 0.3s ease;
+    z-index: 10; /* Sicherstellen, dass der Button sichtbar bleibt */
 }
 
 .toggleMiddleButton:hover {

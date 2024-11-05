@@ -74,6 +74,7 @@ function ChatPage() {
     return (
         <div className={styles.chatPage}>
             <div className={styles.mainContent}>
+                {/* Linke Spalte */}
                 <div className={styles.sidebarContainer}>
                     <div className={styles.newChatContainer}>
                         <input
@@ -92,27 +93,27 @@ function ChatPage() {
                     />
                 </div>
 
-                {/* Mittlere Spalte ein-/ausblenden */}
+                {/* Toggle Button für die mittlere Spalte */}
                 {selectedChat && (
-                    <>
-                        <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
-                            {showMiddle ? '<' : '>'}
-                        </button>
-                        {showMiddle && (
-                            <div className={styles.middleContainer}>
-                                <SelectModell />
-                                <DragAndDrop onFileDrop={handleFileDrop} />
-                                {selectedFile && <PDFPreview file={selectedFile} />} {/* Zeigt die ausgewählte PDF-Datei */}
-                                <PDFPreviewList
-                                    files={chatFiles}
-                                    onRemoveFile={handleRemoveFile}
-                                    onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
-                                /> {/* PDF-Liste zum Auswählen */}
-                            </div>
-                        )}
-                    </>
+                    <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
+                        {showMiddle ? '<' : '>'}
+                    </button>
                 )}
 
+                {/* Mittlere Spalte */}
+                {selectedChat && showMiddle && (
+                    <div className={styles.middleContainer}>
+                        <DragAndDrop onFileDrop={handleFileDrop} />
+                        {selectedFile && <PDFPreview file={selectedFile} />} {/* Zeigt die ausgewählte PDF-Datei */}
+                        <PDFPreviewList
+                            files={chatFiles}
+                            onRemoveFile={handleRemoveFile}
+                            onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
+                        /> {/* PDF-Liste zum Auswählen */}
+                    </div>
+                )}
+
+                {/* Rechte Spalte */}
                 <div className={
                     selectedChat
                         ? showMiddle
@@ -128,6 +129,7 @@ function ChatPage() {
                         )}
                     </div>
                     <UserInput onSendMessage={handleSendMessage} />
+                    <SelectModell />
                 </div>
             </div>
             <Footer />
