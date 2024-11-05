@@ -84,3 +84,19 @@
     display: flex;
     justify-content: flex-end;
 }
+
+.toggleDragAndDropButton {
+    align-self: flex-start;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.toggleDragAndDropButton:hover {
+    background-color: #0056b3;
+}

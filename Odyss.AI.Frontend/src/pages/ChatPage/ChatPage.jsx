@@ -14,7 +14,7 @@ import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 function ChatPage() {
     const [selectedChat, setSelectedChat] = React.useState(null);
     const [newChatName, setNewChatName] = React.useState("");
-    const [showMiddle, setShowMiddle] = React.useState(true); // Zustand für die Anzeige der mittleren Spalte
+    const [showMiddle, setShowMiddle] = React.useState(true);
 
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
@@ -24,10 +24,12 @@ function ChatPage() {
     const addFilesToChat = useChatStore((state) => state.addFilesToChat);
     const removeFileFromChat = useChatStore((state) => state.removeFileFromChat);
     const setSelectedFile = useChatStore((state) => state.setSelectedFile);
+    const toggleDragAndDrop = useChatStore((state) => state.toggleDragAndDrop);
 
     const chatMessages = selectedChat ? allChats[selectedChat.id]?.messages || [] : [];
     const chatFiles = selectedChat ? allChats[selectedChat.id]?.files || [] : [];
     const selectedFile = selectedChat ? allChats[selectedChat.id]?.selectedFile : null;
+    const showDragAndDrop = selectedChat ? allChats[selectedChat.id]?.showDragAndDrop : true;
 
     useEffect(() => {
         if (chatFiles.length > 0 && !selectedFile) {
@@ -103,13 +105,19 @@ function ChatPage() {
                 {/* Mittlere Spalte */}
                 {selectedChat && showMiddle && (
                     <div className={styles.middleContainer}>
-                        <DragAndDrop onFileDrop={handleFileDrop} />
-                        {selectedFile && <PDFPreview file={selectedFile} />} {/* Zeigt die ausgewählte PDF-Datei */}
+                        {showDragAndDrop ? (
+                            <DragAndDrop onFileDrop={handleFileDrop} />
+                        ) : (
+                            <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>
+                                Weitere PDF-Dateien hochladen
+                            </button>
+                        )}
+                        {selectedFile && <PDFPreview file={selectedFile} />}
                         <PDFPreviewList
                             files={chatFiles}
                             onRemoveFile={handleRemoveFile}
                             onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
-                        /> {/* PDF-Liste zum Auswählen */}
+                        />
                     </div>
                 )}
 
