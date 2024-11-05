@@ -1,21 +1,10 @@
 // src/components/PDFPreviewList/PDFPreviewList.jsx
 import React from 'react';
-import useFileStore from '../../store/fileStore.jsx';
 import styles from './PDFPreviewList.module.css';
 
-const PDFPreviewList = () => {
-    const files = useFileStore((state) => state.files);
-    const setSelectedFile = useFileStore((state) => state.setSelectedFile); // Zugriff auf die Funktion zum Setzen der ausgewählten Datei
+const PDFPreviewList = ({ files, onRemoveFile, onSelectFile }) => {  // Neue Props für die Dateien und Aktionen
 
     console.log("Rendering PDFPreviewList with files: ", files);
-
-    // Funktion zum Löschen einer Datei aus der Vorschau
-    const handleRemoveFile = (index) => {
-        const newFiles = [...files];
-        newFiles.splice(index, 1); // Entfernt die Datei mit dem angegebenen Index
-        useFileStore.setState({ files: newFiles });
-        console.log("After removing file, files: ", newFiles);
-    };
 
     if (!files || files.length === 0) {
         return <p>Keine PDF-Dateien hochgeladen</p>;
@@ -37,7 +26,7 @@ const PDFPreviewList = () => {
                         onClick={(e) => {
                             e.preventDefault(); // Verhindert mögliche Standardaktionen
                             console.log("PDF clicked: ", file);
-                            setSelectedFile(file); // Beim Klicken wird die Datei ausgewählt
+                            onSelectFile(file); // Neue Datei auswählen
                         }}
                         style={{ cursor: 'pointer' }} // Zeigt an, dass das Element klickbar ist
                     >
@@ -49,11 +38,10 @@ const PDFPreviewList = () => {
                             className={styles.pdfPreviewFrame}
                             style={{ pointerEvents: 'none' }} // Blockiert Events auf `iframe`, damit das übergeordnete Div klickbar ist
                         />
-                        <div className={styles.fileName}>{file.name}</div>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation(); // Verhindert, dass der Klick auf das Button auch das PDF auswählt
-                                handleRemoveFile(index);
+                                onRemoveFile(index); // Datei entfernen
                             }}
                             className={styles.removeButton}
                         >

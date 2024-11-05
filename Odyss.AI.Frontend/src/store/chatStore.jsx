@@ -10,10 +10,13 @@ const useChatStore = create((set) => ({
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: [
-                    ...(state.chats[chatId] || []),  // Vorhandene Nachrichten für den Chat abrufen (oder leeres Array, falls keine existieren)
-                    { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
-                ],
+                [chatId]: {
+                    ...state.chats[chatId],
+                    messages: [
+                        ...(state.chats[chatId]?.messages || []),
+                        { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
+                    ],
+                },
             },
         })),
 
@@ -22,10 +25,13 @@ const useChatStore = create((set) => ({
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: [
-                    ...(state.chats[chatId] || []),
-                    { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
-                ],
+                [chatId]: {
+                    ...state.chats[chatId],
+                    messages: [
+                        ...(state.chats[chatId]?.messages || []),
+                        { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
+                    ],
+                },
             },
         })),
 
@@ -40,21 +46,68 @@ const useChatStore = create((set) => ({
                 ],
                 chats: {
                     ...state.chats,
-                    [newChatId]: []  // Initialer leerer Chat
+                    [newChatId]: {
+                        messages: [],
+                        files: [],
+                        selectedFile: null,
+                        showDragAndDrop: true, // Default-Wert true, das Feld ist standardmäßig sichtbar
+                    }
                 }
             };
         }),
 
-    // Funktion zum Löschen eines Chats
-    deleteChat: (chatId) =>
+    // Funktion zum Hinzufügen von Dateien zu einem bestimmten Chat
+    addFilesToChat: (chatId, files) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    files: [...(state.chats[chatId]?.files || []), ...files],
+                    showDragAndDrop: false, // Drag-and-Drop-Feld nach dem Hochladen der Dateien ausblenden
+                }
+            }
+        })),
+
+    // Funktion zum Löschen einer Datei aus einem bestimmten Chat
+    removeFileFromChat: (chatId, fileIndex) =>
         set((state) => {
-            const updatedChatList = state.chatList.filter((chat) => chat.id !== chatId);
-            const { [chatId]: _, ...updatedChats } = state.chats;  // Entfernt den Chat aus den Nachrichten
+            const updatedFiles = [...(state.chats[chatId]?.files || [])];
+            updatedFiles.splice(fileIndex, 1);
             return {
-                chatList: updatedChatList,
-                chats: updatedChats
+                chats: {
+                    ...state.chats,
+                    [chatId]: {
+                        ...state.chats[chatId],
+                        files: updatedFiles,
+                    }
+                }
             };
         }),
+
+    // Funktion zum Setzen der ausgewählten Datei in einem bestimmten Chat
+    setSelectedFile: (chatId, file) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    selectedFile: file,
+                }
+            }
+        })),
+
+    // Funktion zum Umschalten des Drag-and-Drop-Felds
+    toggleDragAndDrop: (chatId) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    showDragAndDrop: !state.chats[chatId]?.showDragAndDrop,
+                }
+            }
+        })),
 }));
 
 export default useChatStore;

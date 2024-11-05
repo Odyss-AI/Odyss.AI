@@ -1,14 +1,10 @@
 // src/components/DragAndDrop/DragAndDrop.jsx
 import React, { useState } from 'react';
-import useFileStore from '../../store/fileStore.jsx';
+import { v4 as uuidv4 } from 'uuid'; // UUID importieren
 import styles from './DragAndDrop.module.css';
 
-const DragAndDrop = () => {
-    // Lokaler Zustand
+const DragAndDrop = ({ onFileDrop }) => {
     const [dragging, setDragging] = useState(false);
-
-    // Globaler Zustand aus dem File Store
-    const setFiles = useFileStore((state) => state.setFiles); // Zugriff auf die setFiles-Funktion
 
     // Drag & Drop Event-Handler
     const handleDragEnter = (e) => {
@@ -39,58 +35,75 @@ const DragAndDrop = () => {
             let pdfFiles = [];
             for (const file of files) {
                 if (file.type === 'application/pdf') {
-                    pdfFiles.push(file);
+                    const newFile = await createNewFile(file);
+                    pdfFiles.push(newFile);
                 } else if (file.type === 'application/zip') {
                     const extractedFiles = await extractPDFsFromZip(file);
-                    pdfFiles = pdfFiles.concat(extractedFiles);
+                    for (const extractedFile of extractedFiles) {
+                        pdfFiles.push(await createNewFile(extractedFile));
+                    }
                 } else {
                     alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
                     return;
                 }
             }
-            setFiles(pdfFiles); // Füge die neuen Dateien hinzu, anstatt die bestehenden zu überschreiben
+            onFileDrop(pdfFiles);
         }
     };
 
-    // Funktion zum Extrahieren von PDF-Dateien aus einem Zip-Ordner
+    const handleFileInputChange = async (e) => {
+        const files = Array.from(e.target.files);
+        let pdfFiles = [];
+
+        for (const file of files) {
+            if (file.type === 'application/pdf') {
+                const newFile = await createNewFile(file);
+                pdfFiles.push(newFile);
+            } else if (file.type === 'application/zip') {
+                const extractedFiles = await extractPDFsFromZip(file);
+                for (const extractedFile of extractedFiles) {
+                    pdfFiles.push(await createNewFile(extractedFile));
+                }
+            } else {
+                alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
+                return;
+            }
+        }
+        onFileDrop(pdfFiles);
+
+        // Input-Element zurücksetzen, um sicherzustellen, dass der Browser auch das erneute Hochladen der gleichen Datei zulässt
+        e.target.value = '';
+    };
+
+    // Hilfsfunktion zum Erstellen eines neuen File-Objekts aus einem bestehenden File-Objekt mit einer UUID
+    const createNewFile = async (file) => {
+        const fileData = await file.arrayBuffer();
+        const newFile = new File([fileData], `${uuidv4()}_${file.name}`, { type: file.type, lastModified: Date.now() });
+        return newFile;
+    };
+
+    // Hilfsfunktion zum Extrahieren von PDF-Dateien aus einem Zip-Ordner
     const extractPDFsFromZip = async (zipFile) => {
         const pdfFiles = [];
         try {
-            const JSZip = await import('jszip'); // Dynamischer Import von JSZip
+            const JSZip = await import('jszip');
             const zip = await JSZip.loadAsync(zipFile);
 
             for (const fileName of Object.keys(zip.files)) {
-                // Filtert Dateien, die mit "__MACOSX/" oder "._" beginnen, heraus
                 if (fileName.startsWith('__MACOSX/') || fileName.startsWith('._')) {
-                    continue; // Ignorieren dieser Dateien
+                    continue;
                 }
 
                 if (fileName.endsWith('.pdf')) {
                     const fileData = await zip.files[fileName].async('blob');
-                    pdfFiles.push(new File([fileData], fileName, { type: 'application/pdf' }));
+                    const newFile = new File([fileData], `${uuidv4()}_${fileName}`, { type: 'application/pdf' });
+                    pdfFiles.push(newFile);
                 }
             }
         } catch (error) {
             console.error("Fehler beim Extrahieren der PDF-Dateien aus dem Zip-Ordner:", error);
         }
         return pdfFiles;
-    };
-
-    const handleFileInputChange = async (e) => {
-        const files = Array.from(e.target.files);
-        let pdfFiles = [];
-        for (const file of files) {
-            if (file.type === 'application/pdf') {
-                pdfFiles.push(file);
-            } else if (file.type === 'application/zip') {
-                const extractedFiles = await extractPDFsFromZip(file);
-                pdfFiles = pdfFiles.concat(extractedFiles);
-            } else {
-                alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
-                return;
-            }
-        }
-        setFiles(pdfFiles);
     };
 
     return (

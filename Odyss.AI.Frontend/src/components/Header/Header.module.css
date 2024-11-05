@@ -6,17 +6,24 @@
     padding: 10px 20px; /* Innenabstand für den Header */
     background-color: #007bff; /* Hintergrundfarbe für den Header */
     color: white; /* Textfarbe */
+    height: 40px; /* Höhe des Headers bleibt konstant */
+    position: relative; /* Ermöglicht die Positionierung des Logos über den Header hinaus */
 }
 
 .logo {
-    height: 40px; /* Höhe des Logos */
+    height: 100px; /* Das Logo wird größer dargestellt */
+    max-width: 180px; /* Maximale Breite für das Logo */
     margin-right: 20px; /* Abstand zwischen Logo und Titel */
+    position: absolute;
+    top: -20px; /* Das Logo soll über den Header hinausragen */
+    left: 20px; /* Startet das Logo an der linken Seite mit einem kleinen Innenabstand */
 }
 
 .title {
     flex-grow: 1; /* Nimmt den verfügbaren Platz ein */
     text-align: center; /* Zentriert den Titel */
     font-size: 1.5rem; /* Schriftgröße für den Titel */
+    padding-left: 200px; /* Abstand, um Platz für das größere Logo zu lassen */
 }
 
 .userIconContainer {

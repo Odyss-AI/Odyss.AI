@@ -1,9 +1,16 @@
 /* src/components/PDFPreview/PDFPreview.module.css */
 .pdfDisplay {
-    border: none;
     width: 100%;
-    height: 200px;
-    margin-bottom: 15px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    height: 400px; /* Hauptanzeige deutlich größer machen */
+    margin-bottom: 20px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    border: 2px solid #007bff; /* Hauptanzeige hervorheben */
+    overflow: hidden;
+}
+
+.pdfIframe {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
