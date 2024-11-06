@@ -1,14 +1,15 @@
 // src/components/Login.js
 import React, { useState } from 'react';
 import useAuthStore from '../../store/authStore.jsx';
-import { getUser, getChats } from '../../utils.js';
+import { getUser, getChats, createUser } from '../../utils.js';
 
-function Login() {
+function Login({isRegister}) {
     const [username, setUsername] = useState('');  // Benutzername
     const [password, setPassword] = useState('');  // Passwort
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
 
     const handleLogin = async () => {
+
         if (username && password) {
             const user = await getUser(username);  // Benutzerdaten überprüfen
             if (!user) {
