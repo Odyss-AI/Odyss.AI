@@ -30,7 +30,7 @@ ENV ENVIRONMENT=docker
 ENV OCR_ENDPOINT_SELECTION=teseract
 
 # Make port 5000 available to the world outside this container
-EXPOSE 443
+EXPOSE 80
 
 # Define environment variable
 ENV PYTHONUNBUFFERED=1
