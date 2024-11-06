@@ -26,4 +26,4 @@ EXPOSE 5150
 ENV PYTHONUNBUFFERED=1
 
 # Run the application
-CMD ["python", "ImageTagger.py"]
+CMD ["python", "app/ImageTagger.py"]
