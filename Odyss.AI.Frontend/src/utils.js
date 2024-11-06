@@ -57,8 +57,7 @@ const getChats = async (user) => {
           username: user
         }
       });
-      console.log(response.data);
-      return response.data.chats[0];
+      return response.data.chats;
     } catch (error) {
       console.error(error);
       return [];

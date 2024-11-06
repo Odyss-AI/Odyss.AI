@@ -3,12 +3,16 @@ import React, { useState } from 'react';
 import useAuthStore from '../../store/authStore.jsx';
 import useChatStore from '../../store/chatStore.jsx';
 import { getUser, getChats, createUser } from '../../utils.js';
+import useWebSocket from '../../useWebSocket.jsx';
 
 function Login({isRegister}) {
     const [username, setUsername] = useState('');  // Benutzername
     const [password, setPassword] = useState('');  // Passwort
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
     const addChat = useChatStore((state) => state.addChat);  // Chat hinzufügen
+    const sendMessage = useChatStore((state) => state.sendMessage);  // Nachricht senden
+
+    const { initializeWebSocket } = useWebSocket();
 
     const handleLogin = async () => {
 
@@ -29,9 +33,14 @@ function Login({isRegister}) {
             }
             
             chats.forEach(chat => {
-                addChat(chat.chat_name, );  // Chat hinzufügen
+                //TODO: Hole tatsächliche Dokumente anhand der file_ids
+                addChat(chat.chat_name, [], chat.messages, chat.id);  // Chat hinzufügen
+                chat.messages.forEach(message => {
+                    sendMessage(chat.id, message.text, message.isUser, message.timestamp);  // Nachrichten hinzufügen
+                })
             });
-            console.log(chats);
+
+            initializeWebSocket();  // WebSocket initialisieren
         }
         else {
             alert('Please enter username and password');

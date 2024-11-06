@@ -4,14 +4,15 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import styles from './SelectModell.module.css';
 
-export default function SelectModell() {
+export default function SelectModell({setSelectedModel}) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
-    const handleClose = () => {
+    const handleClose = (model) => {
         setAnchorEl(null);
+        setSelectedModel(model);
     };
 
     return (
@@ -34,9 +35,8 @@ export default function SelectModell() {
                     'aria-labelledby': 'basic-button',
                 }}
             >
-                <MenuItem onClick={handleClose}>X-Model</MenuItem>
-                <MenuItem onClick={handleClose}>Y-Model</MenuItem>
-                <MenuItem onClick={handleClose}>Z-Model</MenuItem>
+                <MenuItem onClick={() => handleClose("mistral")}>Mistral</MenuItem>
+                <MenuItem onClick={() => handleClose("chatgpt")}>ChatGPT</MenuItem>
             </Menu>
         </div>
     );

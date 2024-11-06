@@ -19,13 +19,13 @@ function LoginPage() {
 
     const handleRegister = async () => {
         if (username) {
-            const response = await createUser(username);
-            if (response.error) {
-                console.log(response.error);
-                alert(response.error);
+            const user = await createUser(username);
+            if (user.error) {
+                console.log(user.error);
+                alert(user.error);
                 return;
             }
-            login(username);  // Login-Logik hier
+            login(user);  // Login-Logik hier
         }
         else {
             alert('Please enter username and password');

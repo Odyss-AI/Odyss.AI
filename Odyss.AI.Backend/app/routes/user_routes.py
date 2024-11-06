@@ -41,7 +41,6 @@ async def get_user():
         # Benutzer abrufen
         user = await db.get_user_async(username)
         chats = await db.get_chats_by_user_async(username)
-
         res = {
             "user": user, 
             "chats": chats

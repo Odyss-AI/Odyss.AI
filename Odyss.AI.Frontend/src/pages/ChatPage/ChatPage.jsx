@@ -12,6 +12,7 @@ import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
 import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 import useFileStore from '../../store/fileStore.jsx';
 import useAuthStore from '../../store/authStore.jsx';
+import useWebSocket from '../../useWebSocket.jsx';
 import { createChat } from '../../utils.js';
 import { Alert } from '@mui/material';
 
@@ -19,6 +20,7 @@ function ChatPage() {
     const [selectedChat, setSelectedChat] = React.useState(null);
     const [newChatName, setNewChatName] = React.useState("");
     const [showMiddle, setShowMiddle] = React.useState(true);
+    const [selectedModel, setSelectedModel] = React.useState("mistral");
 
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
@@ -36,6 +38,8 @@ function ChatPage() {
     const selectedFile = selectedChat ? allChats[selectedChat.id]?.selectedFile : null;
     const showDragAndDrop = selectedChat ? allChats[selectedChat.id]?.showDragAndDrop : true;
 
+    const { sendMessageToOdyss } = useWebSocket();
+
     useEffect(() => {
         if (chatFiles.length > 0 && !selectedFile) {
             setSelectedFile(selectedChat.id, chatFiles[0]);
@@ -48,14 +52,16 @@ function ChatPage() {
 
     const handleSendMessage = (message) => {
         if (selectedChat) {
-            sendMessage(selectedChat.id, message);
+            console.log("Message sent: ", message);
+            sendMessageToOdyss(message, selectedChat.id, username.user.username, selectedModel);
+            sendMessage(selectedChat.id, message, true, new Date().toLocaleTimeString().toString());
         }
     };
 
     const handleAddChat = async () => {
         console.log(username);
         if (newChatName.trim()) {
-            const newChat = await createChat(username.user.username, newChatName);
+            const newChat = await createChat(username.user, newChatName);
             // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
             if (!newChat) {
                 console.error("Fehler beim Erstellen des Chats");
@@ -94,7 +100,6 @@ function ChatPage() {
             <div className={styles.mainContent}>
                 {/* Linke Spalte */}
                 <div className={styles.sidebarContainer}>
-                    <button onClick={()=>setDocViewOpen(!docViewOpen)}>Zeige Dokumente</button>
                     <div className={styles.newChatContainer}>
                         <input
                             type="text"
@@ -154,7 +159,7 @@ function ChatPage() {
                         )}
                     </div>
                     <UserInput onSendMessage={handleSendMessage} />
-                    <SelectModell />
+                    <SelectModell setSelectedModel={setSelectedModel}/>
                 </div>
             </div>
             <Footer />

@@ -6,7 +6,7 @@ const useChatStore = create((set) => ({
     chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID)
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
-    sendMessage: (chatId, message) =>
+    sendMessage: (chatId, message, isUser, timestamp) =>
         set((state) => ({
             chats: {
                 ...state.chats,
@@ -14,7 +14,7 @@ const useChatStore = create((set) => ({
                     ...state.chats[chatId],
                     messages: [
                         ...(state.chats[chatId]?.messages || []),
-                        { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
+                        { isUser: isUser, text: message, timestamp: timestamp }
                     ],
                 },
             },
@@ -36,19 +36,18 @@ const useChatStore = create((set) => ({
         })),
 
     // Funktion zum Hinzufügen eines neuen Chats
-    addChat: (chatName, files, messages) =>
+    addChat: (chatName, files, messages, id) =>
         set((state) => {
-            const newChatId = state.chatList.length + 1; // ID basierend auf der Länge der aktuellen Liste generieren
             return {
                 chatList: [
                     ...state.chatList,
-                    { id: newChatId, name: chatName }
+                    { id: id, name: chatName }
                 ],
                 chats: {
                     ...state.chats,
-                    [newChatId]: {
-                        messages: [],
-                        files: chatName,
+                    [id]: {
+                        messages: messages || [],
+                        files: files || [],
                         selectedFile: null,
                         showDragAndDrop: true, // Default-Wert true, das Feld ist standardmäßig sichtbar
                     }

@@ -66,7 +66,7 @@ class MessageManager:
             if message.selected_model == AvailibleModels.CHATGPT.value:
                 answer = await call_chatgpt_api_async(prompt)
             else:
-                answer = await query_mixtral_async(prompt, message.content)
+                answer = await query_mixtral_async(prompt)
         except Exception as e:
             logging.error(f"Error building prompt or calling LLM API: {e}")
             return None, f"Error building prompt or calling LLM API: {e}", chat.id

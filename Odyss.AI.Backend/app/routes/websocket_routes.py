@@ -27,6 +27,7 @@ async def chat():
         msg = data.get('message')
         chat_id = data.get('chatId')
         model = data.get('model')
+        timestamp = data.get('timestamp')
 
         if not chat_id:
             chat_id = None
@@ -54,8 +55,8 @@ async def chat():
             await websocket.send(json.dumps({"error": chunks}))
             continue
 
-        llm_res_dict = llm_res.model_dump(by_alias=True)
-        llm_res_dict = convert_datetime(llm_res_dict)
+        # llm_res_dict = 
+        llm_res_dict = convert_datetime(llm_res)
 
         res = {
             "chatId": chat_id,
@@ -63,4 +64,4 @@ async def chat():
             "chunks": [chunk.model_dump(by_alias=True) if hasattr(chunk, 'model_dump') else convert_to_model(chunk).model_dump(by_alias=True) for chunk in chunks]
         }
 
-        await websocket.send(json.dumps(res))
+        await websocket.send(res)
