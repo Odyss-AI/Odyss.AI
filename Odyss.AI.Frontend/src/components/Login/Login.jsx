@@ -1,12 +1,14 @@
 // src/components/Login.js
 import React, { useState } from 'react';
 import useAuthStore from '../../store/authStore.jsx';
+import useChatStore from '../../store/chatStore.jsx';
 import { getUser, getChats, createUser } from '../../utils.js';
 
 function Login({isRegister}) {
     const [username, setUsername] = useState('');  // Benutzername
     const [password, setPassword] = useState('');  // Passwort
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
+    const addChat = useChatStore((state) => state.addChat);  // Chat hinzufügen
 
     const handleLogin = async () => {
 
@@ -25,6 +27,11 @@ function Login({isRegister}) {
                 alert('Error fetching chats');
                 return;
             }
+            
+            chats.forEach(chat => {
+                addChat(chat.chat_name, );  // Chat hinzufügen
+            });
+            console.log(chats);
         }
         else {
             alert('Please enter username and password');

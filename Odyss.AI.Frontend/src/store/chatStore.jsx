@@ -36,7 +36,7 @@ const useChatStore = create((set) => ({
         })),
 
     // Funktion zum Hinzufügen eines neuen Chats
-    addChat: (chatName) =>
+    addChat: (chatName, files, messages) =>
         set((state) => {
             const newChatId = state.chatList.length + 1; // ID basierend auf der Länge der aktuellen Liste generieren
             return {
@@ -48,7 +48,7 @@ const useChatStore = create((set) => ({
                     ...state.chats,
                     [newChatId]: {
                         messages: [],
-                        files: [],
+                        files: chatName,
                         selectedFile: null,
                         showDragAndDrop: true, // Default-Wert true, das Feld ist standardmäßig sichtbar
                     }
@@ -109,5 +109,6 @@ const useChatStore = create((set) => ({
             }
         })),
 }));
+
 
 export default useChatStore;
