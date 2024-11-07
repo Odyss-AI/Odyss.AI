@@ -37,27 +37,18 @@ class MessageManager:
         
         db = get_db()
 
-        try:
-            # Load the chat from the cache or the database
-            chat = await self.get_chat_async(db, message, user, chat_id)
-            if chat is None:
-                raise ValueError("Failed to get or create chat")
-        except Exception as e:
-            logging.error(f"Error loading chat: {e}")
-            return None, f"Error loading chat: {e}", chat_id
+        # Load the chat from the cache or the database
+        chat = await self.get_chat_async(db, message, user, chat_id)
+        if chat is None:
+            raise ValueError("Failed to get or create chat")
 
-        try:
-            # Load the documents from the database
-            chat = await self.get_docs_async(db, user, chat)
-            if chat is None:
-                raise ValueError("Failed to get documents for chat")
-        except Exception as e:
-            logging.error(f"Error loading documents: {e}")
-            return None, f"Error loading documents: {e}", chat.id
+        # Load the documents from the database
+        docs = await self.get_docs_async(db, user, chat.doc_ids)
+        if docs is None:
+            raise ValueError("Failed to get documents")
 
         # Search for similar text chunks in the documents
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
-        docs = await db.get_documents_of_user_async(user)
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
 
         try:
@@ -95,58 +86,78 @@ class MessageManager:
             Chat: The chat object.
         """
         try:
-            if chat_id is None:
-                chat = await db.create_chat_async(user, message)
+            chat = await self.cache.get(chat_id, Chat)
+
+            # If the chat is in the cache, add the message to it
+            if chat:
+                await db.add_message_to_chat_async(chat.id, message)
+                chat.messages.append(message)
+
+            # If the chat is not in the cache, retrieve it from the database
             else:
-                chat = await self.cache.get(chat_id, Chat)
-                if not chat:
-                    chat = await db.get_chat_async(chat_id)
-                    if not chat:
-                        chat = await db.create_chat_async(user, message)
-                    else:
-                        await db.add_message_to_chat_async(chat.id, message)
-                        chat.messages.append(message)
-                else:
-                    chat.messages.append(message)
+                chat = await db.get_chat_async(chat_id)
+                if chat:
                     await db.add_message_to_chat_async(chat.id, message)
+                    chat.messages.append(message)
+
+            # Update the cache
+            if chat:        
                 await self.cache.set(chat.id, chat)
+                
             return chat
         except Exception as e:
             logging.error(f"Error in get_chat_async: {e}")
             return None
     
-    async def get_docs_async(self, db: MongoDBService, user: str, chat: Chat, doc_ids: list = None):
+    async def get_docs_async(self, db: MongoDBService, user: str, doc_ids: list = []):
         """
-        Retrieves the documents associated with the user and updates the chat's document IDs.
+        Retrieves the documents from the database based on the provided document IDs.
 
         Args:
             db (MongoDBService): The database service instance.
             user (str): The username.
-            chat (Chat): The chat object.
-            doc_ids (list, optional): A list of document IDs. If provided, it checks if the chat's document IDs match.
+            doc_ids (list, optional): A list of document IDs. Defaults to None.
 
         Returns:
-            Chat: The updated chat object.
+            list: A list of document objects.
         """
+
         try:
-            if doc_ids and set(chat.doc_ids) == set(doc_ids):
-                return chat
+            if not doc_ids:
+                return []
 
-            try:
-                documents = await db.get_documents_of_user_async(user)
-            except Exception as e:
-                logging.error(f"Error retrieving documents from database: {e}")
-                return chat
+            # If someone will implement caching, there are some errors while searching for the documents in the caching service
 
-            if chat.doc_ids and len(chat.doc_ids) > 0:
-                chat.doc_ids = [doc for doc in chat.doc_ids if doc in [d.doc_id for d in documents]]
-            else:
-                chat.doc_ids = [doc.doc_id for doc in documents]
+            # # Check which documents are already in the cache
+            # cached_docs = await self.cache.get_cached_documents(doc_ids)
+            # cached_doc_ids = {doc.id for doc in cached_docs}
+            
+            # # Check which documents are missing in the cache
+            # missing_doc_ids = [doc_id for doc_id in doc_ids if doc_id not in cached_doc_ids]
 
-            return chat
+            # # Retrieve the missing documents from the database
+            # if missing_doc_ids:
+            #     missing_docs = await db.get_documents_by_ids_async(user, missing_doc_ids)
+            #     # Cache the missing documents
+            #     await self.cache.cache_documents(missing_docs)
+            # else:
+            #     missing_docs = []
+
+            # # Combine the cached and missing documents
+            # docs = cached_docs + missing_docs
+
+            docs = await db.get_documents_of_user_async(user)
+            if docs is None:
+                return []
+            
+            # Filter the documents based on doc_ids
+            filtered_docs = [doc for doc in docs if doc.doc_id in doc_ids]
+
+            return filtered_docs
+
         except Exception as e:
-            logging.error(f"Unexpected error in get_docs_async: {e}")
-            return chat
+            logging.error(f"Error in get_docs_async: {e}")
+            return None
     
     async def write_bot_msg_async(self, db: MongoDBService, chat: Chat, answer: str):
         """
@@ -165,7 +176,7 @@ class MessageManager:
             id=str(ObjectId()),
             is_user=False,
             content=answer,
-            timestamp=datetime.datetime.now()
+            timestamp=str(datetime.datetime.now())
         )
 
         await db.add_message_to_chat_async(chat.id, bot_msg)

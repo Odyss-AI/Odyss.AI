@@ -15,7 +15,7 @@ msg_manager = MessageManager()
 def home():
     return "<h1>Hallo bei Odyss.AI</h1>"
 
-@main.websocket('/chat')
+@main.websocket('/v1/chat')
 async def chat():
     db = get_db()
     
@@ -45,7 +45,7 @@ async def chat():
             id=str(ObjectId()),
             is_user=True,
             content=msg,
-            timestamp=datetime.datetime.now(),
+            timestamp=timestamp,
             selected_model=model
         )
 
@@ -55,8 +55,13 @@ async def chat():
             await websocket.send(json.dumps({"error": chunks}))
             continue
 
-        # llm_res_dict = 
-        llm_res_dict = convert_datetime(llm_res)
+        llm_res_dict = {
+            "id": llm_res.id,
+            "content": llm_res.content,
+            "timestamp": llm_res.timestamp,
+            "is_user": llm_res.is_user,
+            "selected_model": llm_res.selected_model
+        }
 
         res = {
             "chatId": chat_id,
@@ -64,4 +69,4 @@ async def chat():
             "chunks": [chunk.model_dump(by_alias=True) if hasattr(chunk, 'model_dump') else convert_to_model(chunk).model_dump(by_alias=True) for chunk in chunks]
         }
 
-        await websocket.send(res)
+        await websocket.send(json.dumps(res))

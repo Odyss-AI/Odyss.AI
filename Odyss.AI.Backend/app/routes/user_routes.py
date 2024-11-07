@@ -6,7 +6,7 @@ from app.models.chat import Chat
 from app.utils.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
 
 # Benutzer hinzufügen
-@main.route('/users/add', methods=['POST'])
+@main.route('/v1/user/add', methods=['POST'])
 async def add_user():
     try:
         db = get_db()
@@ -32,7 +32,7 @@ async def add_user():
         return jsonify({"error": f"Fehler beim Hinzufügen des Benutzers: {e}"}), 500
 
 # Benutzer abrufen
-@main.route('/users/getuser', methods=['GET'])
+@main.route('/v1/user/get', methods=['GET'])
 async def get_user():
     try:
         db = get_db()
@@ -53,7 +53,7 @@ async def get_user():
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen des Benutzers: {e}"}), 500
     
-@main.route('/users/getchats', methods=['GET'])
+@main.route('/v1/user/chat/get', methods=['GET'])
 async def get_chats():
     try:
         db = get_db()
@@ -68,7 +68,7 @@ async def get_chats():
         return jsonify({"error": f"Fehler beim Abrufen der Chats: {e}"}), 500
 
 # Chat hinzufügen
-@main.route('/users/addchat', methods=['POST'])
+@main.route('/v1/user/chat/add', methods=['POST'])
 async def add_chat():
     try:
         db = get_db()
@@ -88,3 +88,18 @@ async def add_chat():
         return jsonify({"error": "Fehler beim Hinzufügen des Chats"}), 400
     except Exception as e:
         return jsonify({"error": f"Fehler beim Hinzufügen des Chats: {e}"}), 500
+    
+# Delete Chats
+@main.route('/v1/user/chat/delete', methods=['DELETE'])
+async def delete_chat():
+    try:
+        db = get_db()
+        chat_id = request.args.get('chatid')
+
+        # Chat löschen
+        chat = await db.delete_chat_async(chat_id)
+        if chat:
+            return jsonify({"message": "Chat gelöscht"}), 200
+        return jsonify({"error": "Chat nicht gefunden"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Löschen des Chats: {e}"}), 500

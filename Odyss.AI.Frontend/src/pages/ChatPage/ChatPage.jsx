@@ -13,8 +13,7 @@ import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 import useFileStore from '../../store/fileStore.jsx';
 import useAuthStore from '../../store/authStore.jsx';
 import useWebSocket from '../../useWebSocket.jsx';
-import { createChat } from '../../utils.js';
-import { Alert } from '@mui/material';
+import { createChat, deleteChatFromDb, uploadDocument } from '../../utils.js';
 
 function ChatPage() {
     const [selectedChat, setSelectedChat] = React.useState(null);
@@ -52,39 +51,54 @@ function ChatPage() {
 
     const handleSendMessage = (message) => {
         if (selectedChat) {
-            console.log("Message sent: ", message);
-            sendMessageToOdyss(message, selectedChat.id, username.user.username, selectedModel);
-            sendMessage(selectedChat.id, message, true, new Date().toLocaleTimeString().toString());
+            const timestamp = new Date().toISOString();
+            console.log("Message sent: ", message, selectedChat);
+            sendMessage(selectedChat.id, message, true, timestamp);
+            sendMessageToOdyss(message, selectedChat.id, username.user.username, selectedModel, timestamp);
         }
     };
 
     const handleAddChat = async () => {
         console.log(username);
         if (newChatName.trim()) {
-            const newChat = await createChat(username.user, newChatName);
+            const newChat = await createChat(username.user.username, newChatName);
             // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
             if (!newChat) {
                 console.error("Fehler beim Erstellen des Chats");
                 alert("Fehler beim Erstellen des Chats");
             }
             else {
-                console.log("Neuer Chat erstellt");
-                addChat(newChat.chat_name);
+                console.log("Neuer Chat erstellt: ", newChat);
+                addChat(newChat.chat_name, [], newChat.messages, newChat.id);
             }
 
             setNewChatName("");
         }
     };
 
-    const handleDeleteChat = (chatId) => {
-        deleteChat(chatId);
+    const handleDeleteChat = async (chatId) => {
         if (selectedChat && selectedChat.id === chatId) {
+            console.log("Chat löschen: ", chatId);
+            const chatDeleteMsg = await deleteChatFromDb(chatId);
+            console.log("Chat gelöscht: ", chatDeleteMsg);
+            if (!chatDeleteMsg) {
+                console.error("Fehler beim Löschen des Chats");
+                alert("Fehler beim Löschen des Chats");
+                return;
+            }
+            deleteChat(chatId);
             setSelectedChat(null);
         }
     };
 
-    const handleFileDrop = (newFiles) => {
+    const handleFileDrop = async (newFiles) => {
         if (selectedChat) {
+            const files = await uploadDocument(newFiles, username.user.username, selectedChat.id);
+            if (!files) {
+                console.error("Fehler beim Hochladen der Datei");
+                alert("Fehler beim Hochladen der Datei");
+                return;
+            }
             addFilesToChat(selectedChat.id, newFiles);
         }
     };

@@ -6,7 +6,7 @@ const useChatStore = create((set) => ({
     chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID)
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
-    sendMessage: (chatId, message, isUser, timestamp) =>
+    sendMessage: (chatId, message, isUser, timestamp, chunks = []) =>
         set((state) => ({
             chats: {
                 ...state.chats,
@@ -14,7 +14,7 @@ const useChatStore = create((set) => ({
                     ...state.chats[chatId],
                     messages: [
                         ...(state.chats[chatId]?.messages || []),
-                        { isUser: isUser, text: message, timestamp: timestamp }
+                        { isUser: isUser, text: message, timestamp: timestamp, chunks: chunks }
                     ],
                 },
             },
@@ -107,6 +107,16 @@ const useChatStore = create((set) => ({
                 }
             }
         })),
+
+    // Funktion zum Löschen eines Chats anhand der chatId
+    deleteChat: (chatId) =>
+        set((state) => {
+            const { [chatId]: _, ...remainingChats } = state.chats;
+            return {
+                chats: remainingChats,
+                chatList: state.chatList.filter(chat => chat.id !== chatId),
+            };
+        }),
 }));
 
 

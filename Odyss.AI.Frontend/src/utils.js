@@ -5,7 +5,7 @@ const BaseUrl = "http://127.0.0.1:5000";
 // GET-Anfrage
 const getUser = async (user) => {
     try{
-        const response = await axios.get(`${BaseUrl}/users/getuser`, {
+        const response = await axios.get(`${BaseUrl}/v1/user/get`, {
             params: {
                 username: user
             }
@@ -20,7 +20,7 @@ const getUser = async (user) => {
 
 const createUser = async (user) => {
     try{
-        const response = await axios.post(`${BaseUrl}/users/add`, {
+        const response = await axios.post(`${BaseUrl}/v1/user/add`, {
             username: user
         });
         console.log(response.data);
@@ -31,28 +31,31 @@ const createUser = async (user) => {
     }
 }
 
-const uploadDocument = async (document, user) => {
-    axios.post(`${BaseUrl}/docs/upload`, 
-        document,
-        {
-            headers: { 'Content-Type': 'multipart/form-data'},
+const uploadDocument = async (files, user, chatId) => {
+    try {
+        const formData = new FormData();
+        files.forEach((file, index) => {
+            formData.append('file' + index, file);
+        });
+
+        const response = await axios.post(`${BaseUrl}/v1/doc/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
             params: {
-                username: user
+                username: user,
+                chatId: chatId
             }
-        }
-    )
-    .then(response => {
+        });
         console.log(response.data);
         return response.data;
-    })
-    .catch(error => {
+    }
+    catch (error) {
         console.error(error);
-    });
+    }
 }
 
 const getChats = async (user) => {
     try {
-      const response = await axios.get(`${BaseUrl}/users/getchats`, {
+      const response = await axios.get(`${BaseUrl}/v1/user/chat/get`, {
         params: {
           username: user
         }
@@ -66,7 +69,7 @@ const getChats = async (user) => {
 
 const createChat = async (user, chatName, docIds = []) => {
     try {
-        const response = await axios.post(`${BaseUrl}/users/addchat`, {
+        const response = await axios.post(`${BaseUrl}/v1/user/chat/add`, {
             username: user,
             name: chatName,
             docs: docIds
@@ -78,4 +81,18 @@ const createChat = async (user, chatName, docIds = []) => {
     }
 }
 
-export { getUser, createUser, uploadDocument, getChats, createChat };
+const deleteChatFromDb = async (chatId) => {
+    try {
+        const response = await axios.delete(`${BaseUrl}/v1/user/chat/delete`, {
+            params: {
+                chatid: chatId
+            }
+        });
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export { getUser, createUser, uploadDocument, getChats, createChat, deleteChatFromDb };

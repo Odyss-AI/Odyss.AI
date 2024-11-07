@@ -10,7 +10,7 @@ from app.config import config
 doc_manager = DocumentManager()
 
 # Dokumente des Benutzers abrufen
-@main.route('/docs/getdocs', methods=['GET'])
+@main.route('/v1/doc/get', methods=['GET'])
 async def get_documents():
     try:
         db = get_db()
@@ -37,11 +37,12 @@ async def get_documents():
         return jsonify({"error": f"Fehler beim Abrufen der Dokumente: {e}"}), 500
 
 # Dokument hochladen
-@main.route('/docs/upload', methods=['POST'])
+@main.route('/v1/doc/upload', methods=['POST'])
 async def upload_document():
     try:
         db = get_db()
         username = request.args.get('username')
+        chat_id = request.args.get('chatId')
         file_data = await request.files  # PDF-Datei direkt aus dem Request-Body
 
         if not username:
@@ -53,7 +54,7 @@ async def upload_document():
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):
-                new_doc, msg = await doc_manager.handle_document_async(f, username, is_local=True)
+                new_doc, msg = await doc_manager.handle_document_async(f, username, chat_id)
                 if new_doc is None:
                     return jsonify({'error': str(msg)}), 400
 
@@ -64,7 +65,7 @@ async def upload_document():
     except Exception as e:
         return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {str(e)}"}), 500
     
-@main.route('/docs/uploadfilepath', methods=['GET'])
+@main.route('/v1/doc/upload/filepath', methods=['GET'])
 async def upload_document_path():
     try:
         db = get_db()
