@@ -31,7 +31,7 @@ async def paddleocr():
 
     try:
         # Übergebe den Dateipfad direkt an die extract_text-Methode
-        extracted_text = ocrpaddle.extract_text(doc)
+        ocrpaddle.extract_text(doc)
         
         # Rückgabe des extrahierten Texts oder eine Erfolgsmeldung
         return jsonify(doc.model_dump()), 200 # Rückgabe des extrahierten Texts

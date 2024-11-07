@@ -38,17 +38,17 @@ class OCRNougat:
 
             self.extract_images_from_pdf(pdf_stream, doc)
 
-    def convert_docx_or_pptx_to_pdf(self, document_path):
-        try:
-            print(f"Konvertiere {document_path} zu PDF...")
-            if document_path.endswith(".docx"):
-                docx_to_pdf(document_path)
-            elif document_path.endswith(".pptx"):
-                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-        except Exception as e:
-            raise Exception(f"Fehler während der Konvertierung: {e}")
+    # def convert_docx_or_pptx_to_pdf(self, document_path):
+    #     try:
+    #         print(f"Konvertiere {document_path} zu PDF...")
+    #         if document_path.endswith(".docx"):
+    #             docx_to_pdf(document_path)
+    #         elif document_path.endswith(".pptx"):
+    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
+    #     except Exception as e:
+    #         raise Exception(f"Fehler während der Konvertierung: {e}")
 
-        return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
+    #     return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
 # extraction
     def extract_text_from_pdf(self, pdf_stream):
