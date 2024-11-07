@@ -8,14 +8,17 @@ import logging
 
 from bson import ObjectId
 
-from app.config import Config
+from app.config import config
 from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.helpers import call_mistral_api_async
+from app.utils.ml_connection import query_mixtral_async, query_pixtral_async
+from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
+from app.utils.pdf_converter import save_and_convert_file
+from app.utils.batching import create_summary_with_batches
 
 class DocumentManager:
     """
@@ -23,13 +26,12 @@ class DocumentManager:
     """
 
     def __init__(self):
-        self.local_file_path = Config.LOCAL_DOC_PATH
-        self.tei_url = Config.TEI_URL + "/embed"
+        # self.tei_url = Config.TEI_URL + "/embed"
         self.sim_search = SimailaritySearchService()
 
     async def handle_document_async(self, file, username, is_local = True):
         """
-        Handles the document upload, processing, and storage asynchronously.
+        Handles the document upload, processing, and storage asynchronously. Refer software architecture pattern Integration Operation Segregation Principle (IOSP)
 
         Args:
             file: The file object to be processed.
@@ -42,149 +44,80 @@ class DocumentManager:
         
         try:
             db = get_db()
-            filename, id = self.generate_filename(file.filename)
-            fileid = await db.upload_pdf(file, file.filename)
-            if fileid is None:
-                return None, "Error while saving document in DB"
+            # Generate a unique name for the document
+            hash_doc, hash = self.generate_filename(file.filename)
+
+            # Convert file to PDF, OCR just uses PDFs
+            converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
+            if self.handle_error(converted_file_path is None, "Error converting file", file, username):
+                return None, "Error converting file"
+
+            # Upload the PDF to MongoDB and get the file objectID back
+            mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
+            if self.handle_error(mongo_file_id is None, "Error uploading file on MongoDB", file, username):
+                return None, "Error uploading file on MongoDB"
+
+            # Get all PDF informations (text/images)
+            new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
+            new_doc = await extract_pdf_information_with_ocr(new_doc)
+            if self.handle_error(new_doc is None, "Error extracting information while using ocr", file, username):
+                return None, "Error extracting information while using ocr"
+
+            # TODO: Upload extracted pictures to mongoDB (maybe not necessary anymore)
             
-            get_file = await db.get_pdf_async(fileid)
-            # Create a new document object with necessary metadata
-            new_doc = self.get_new_doc(filename, fileid, file.filename)
-
-            # Send new_doc to OCR, where the text is read out and the images are recognized
-            # The object with the text split up and images (here the URLs are stored) comes back
-
-            # Check if the document already exists in DB
-            # user_docs = await db.get_documents_of_user_async(username)
-            # if user_docs is not None:
-            #     for doc in user_docs:
-            #         if doc.name == id:
-            #             return None, "File already exists"
+            # Tag Images and delete them after processing
+            new_doc = await query_pixtral_async(new_doc)
+            for img in new_doc.imgList:
+                if os.path.exists(img.link):
+                    os.remove(img.link)
+                    img.link = "Image is successfully evaluated and deleted"
 
             # Create embeddings for the document
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
-
-            if embeddings is None:
-                logging.error(f"Error creating embeddings: {file.filename} from user {username}")
+            if self.handle_error(embeddings is None, "Error creating embeddings", file, username):
                 return None, "Error creating embeddings"
-            
+
             # Save the embeddings in QDrant
-            is_save_successfull = await self.sim_search.save_embedding_async(id, embeddings)
-            if not is_save_successfull:
-                logging.error(f"Error saving embeddings: {file.filename} from user {username}")
+            is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
+            if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
                 return None, "Error saving embeddings"
 
             # Create a summary for the document
-            prompt = summary_prompt_builder(new_doc.textList)
-            summary = await call_mistral_api_async(prompt)
-            new_doc.summary = summary
-
-            if new_doc.summary is None:
-                logging.error(f"Error creating summary: {file.filename} from user {username}")
+            # TODO: Fix batching loop so ssh tunnel is not opened for every batch
+            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
+            if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
                 return None, "Error creating summary"
-
-
-            # für die Texte werden Embeddings erstellt und in VektorDb gespeichert
-            #embeddings = await self.create_text_embedding_async(new_doc)
-
-            # Summary is generated from the text through LLM
 
             # Save new_doc in the database
             doc_id = await db.add_document_to_user_async(username, new_doc)
-
-            if doc_id is None:
-                logging.error(f"Error saving document: {file.filename} from user {username}")
+            if self.handle_error(doc_id is None, "Error saving document", file, username):
                 return None, "Error saving document"
-            
+
             return new_doc, "File uploaded successfully"
         except Exception as e:
-            logging.error(f"Error handling document {file.filename} from {username}: {e}")
-            return None, e
+            logging.error(f"Error handling document {file.filename} from {username}: {str(e)}")
+            return None, str(e)
     
     def generate_filename(self, original_filename):
-        """
-        Generates a unique filename based on the original filename.
-
-        Args:
-            original_filename (str): The original filename of the document.
-
-        Returns:
-            tuple: A tuple containing the generated filename and the file hash.
-        """
-
         file_hash = hashlib.sha256(original_filename.encode('utf-8')).hexdigest()
-        # Save the file extension
         _, file_extension = os.path.splitext(original_filename)
         return f"{file_hash}{file_extension}", file_hash
-
-    async def save_document_local_async(self, file, filename):
-        """
-        Saves the document locally asynchronously.
-
-        Args:
-            file: The file object to be saved.
-            filename (str): The name of the file to be saved.
-
-        Returns:
-            str: The file path where the document is saved, or None if the file already exists.
-        """
-        
-        filepath = os.path.join(self.local_file_path, filename)
-        
-        if os.path.exists(filepath):
-            return None
-        
-        loop = asyncio.get_event_loop()
-        content = await loop.run_in_executor(None, file.read)  
-        
-        async with aiofiles.open(filepath, 'wb') as out_file:
-            await out_file.write(content) 
-        
-        return filepath
     
-    def get_new_doc(self, name: str, dbId: str, original_name: str):
-        """
-        Creates a new Document object with the provided metadata.
-
-        Args:
-            name (str): The unique name of the document.
-            path (str): The file path of the document.
-            original_name (str): The original name of the document.
-
-        Returns:
-            Document: The created Document object.
-        """
-        
+    def get_new_doc(self, mongo_obj_id: str, hash: str, original_name: str, path: str):
         return Document(
             id = str(ObjectId()),
-            doc_id=name,
+            doc_id = hash,
+            mongo_file_id = mongo_obj_id,
             name = original_name,
             timestamp = datetime.now(),
-            doclink = str(dbId),
             summary = "",
             imgList = [],
-            textList = []
+            textList = [],
+            path = path
         )
     
-    async def fetch_embedding_async(self, to_embed: str):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
-                if response.status == 200:
-                    return await response.json().get("embedding")
-                return None
-    
-    async def create_text_embedding_async(self, doc: Document):
-        tasks = []
-        for chunk in doc.textList:
-            tasks.append(self.fetch_embedding_async(doc.id, chunk.text))
-        
-        embeddings = await asyncio.gather(*tasks)
-        
-        return embeddings
-    
-    async def save_embedding_async(self, doc_id: str, embedding: str):
-        # Speichere das Embedding in der VektorDb
-        pass
-
-        
-    
+    def handle_error(self, condition, error_message, file, username):
+        if condition:
+            logging.error(f"{error_message}: {file.filename} from user {username}")
+            return None, error_message
+        return condition

@@ -4,9 +4,7 @@ from bson import ObjectId
 import os
 import PyPDF2
 import numpy as np
-from pptxtopdf import convert as pptx_to_pdf
-from docx2pdf import convert as docx_to_pdf
-from app.user import TextChunk, Image
+from app.user import TextChunk, Image, Document
 from PIL import Image as PilImage
 from app.config import Config
 from paddleocr import PaddleOCR  # PaddleOCR importieren
@@ -17,28 +15,9 @@ class OCRPaddle:
         print("Initialisiere PaddleOCR mit deutscher Sprache...")
         self.ocr = PaddleOCR(use_angle_cls=True, lang='de')  # Für deutsche Texte 'de' wählen
 
-    def extract_text(self, doc, document_path):
-        print(f"Extrahiere Text aus Dokument: {document_path}")
-        
-        # Prüfe den Typ des Dokuments basierend auf dem Dateipfad
-        file_extension = os.path.splitext(document_path)[1].lower()
-        print(f"Dokumenttyp erkannt: {file_extension}")
-
-        if file_extension == ".pdf":
-            # Direkt PDF verarbeiten
-            print(f"Starte Verarbeitung des PDF-Dokuments: {document_path}")
-            self.process_pdf(document_path, doc)
-        elif file_extension in [".docx", ".pptx"]:
-            # Konvertiere zu PDF und dann verarbeite das konvertierte PDF
-            print(f"Konvertiere {file_extension}-Dokument zu PDF...")
-            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)
-            print(f"Verarbeite konvertiertes PDF: {converted_pdf_path}")
-            self.process_pdf(converted_pdf_path, doc)
-            os.remove(converted_pdf_path)  # Lösche das konvertierte PDF nach der Verarbeitung
-            print(f"Lösche temporäre Datei: {converted_pdf_path}")
-        else:
-            print("Nicht unterstützter Dateityp")
-
+    def extract_text(self, doc: Document):
+        self.process_pdf(doc.path, doc)
+        os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
         return doc
 
     def process_pdf(self, document_path, doc):
@@ -54,15 +33,15 @@ class OCRPaddle:
 
             self.extract_images_from_pdf(pdf_stream, doc)
 
-    def convert_docx_or_pptx_to_pdf(self, document_path):
-        try:
-            print(f"Konvertiere {document_path} zu PDF...")
-            if document_path.endswith(".docx"):
-                docx_to_pdf(document_path)
-            elif document_path.endswith(".pptx"):
-                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-        except Exception as e:
-            raise Exception(f"Fehler während der Konvertierung: {e}")
+    # def convert_docx_or_pptx_to_pdf(self, document_path):
+    #     try:
+    #         print(f"Konvertiere {document_path} zu PDF...")
+    #         if document_path.endswith(".docx"):
+    #             docx_to_pdf(document_path)
+    #         elif document_path.endswith(".pptx"):
+    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
+    #     except Exception as e:
+    #         raise Exception(f"Fehler während der Konvertierung: {e}")
 
         return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
@@ -168,7 +147,7 @@ class OCRPaddle:
 
         print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
         # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
         sections = full_text.split('\n\n')
 

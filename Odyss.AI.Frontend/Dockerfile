@@ -1,20 +1,29 @@
-# Use an official Node.js runtime as a parent image
-FROM node:14-alpine
-
-# Set the working directory in the container
+# Stage 1: Build the Vite app
+FROM node:18-alpine AS build
+ 
+# Set working directory
 WORKDIR /app
-
-# Copy the package.json and package-lock.json files into the container
+ 
+# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install the dependencies
+ 
+# Install dependencies
 RUN npm install
-
-# Copy the rest of the application code into the container
+ 
+# Copy the rest of the application
 COPY . .
-
-# Expose port 3000 to the outside world
-EXPOSE 3000
-
-# Run the application
-CMD ["npm", "run", "build"]
+ 
+# Build the application
+RUN npm run build
+ 
+# Stage 2: Serve with NGINX
+FROM nginx:alpine
+ 
+# Copy the built files from the build stage to NGINX's web directory
+COPY --from=build /app/dist /usr/share/nginx/html
+ 
+# Expose port 80
+EXPOSE 80
+ 
+# Start NGINX server
+CMD ["nginx", "-g", "daemon off;"]

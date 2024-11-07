@@ -4,7 +4,7 @@ import logging
 from app.utils.db import get_db
 from app.models.chat import Chat, Message
 from app.models.user import TextChunk, Document
-from app.utils.helpers import call_mistral_api_async, call_chatgpt_api_async
+from app.utils.ml_connection import query_mixtral_async, call_chatgpt_api_async
 from app.utils.prompts import qna_prompt_builder
 from bson.objectid import ObjectId
 from app.services.caching import CachingService
@@ -66,7 +66,7 @@ class MessageManager:
             if message.selected_model == AvailibleModels.CHATGPT.value:
                 answer = await call_chatgpt_api_async(prompt)
             else:
-                answer = await call_mistral_api_async(prompt)
+                answer = await query_mixtral_async(prompt, message.content)
         except Exception as e:
             logging.error(f"Error building prompt or calling LLM API: {e}")
             return None, f"Error building prompt or calling LLM API: {e}", chat.id

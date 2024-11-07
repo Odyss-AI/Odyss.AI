@@ -10,6 +10,9 @@ RUN pip install virtualenv
 # Create a virtual environment
 RUN virtualenv venv
 
+# Install CV2 dependencies
+RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 
@@ -20,10 +23,10 @@ RUN /bin/bash -c "source venv/bin/activate && pip install --no-cache-dir -r requ
 COPY . .
 
 # Make port 5000 available to the world outside this container
-EXPOSE 5000
+EXPOSE 5150
 
 # Define environment variable
 ENV PYTHONUNBUFFERED=1
 
 # Run the application
-CMD ["python", "llm.py"]
+CMD ["/bin/bash", "-c", "source venv/bin/activate && python ImageTagger.py"]

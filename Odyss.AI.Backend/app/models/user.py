@@ -19,13 +19,14 @@ class TextChunk(BaseModel):
 class Document(BaseModel):
     id: str
     doc_id: str
+    mongo_file_id: str
     name: str
     timestamp: datetime
-    doclink: str
     summary: str
     imgList: List[Image]
     textList: List[TextChunk]
-
+    path: str
+    
 class User(BaseModel):
     id: str
     username: str
