@@ -1,4 +1,4 @@
-// src/pages/ChatPage/ChatPage.jsx
+/* src/pages/ChatPage/ChatPage.jsx */
 import React, { useEffect } from 'react';
 import ChatWindow from '../../components/ChatWindow/ChatWindow.jsx';
 import UserInput from '../../components/UserInput/UserInput.jsx';
@@ -16,31 +16,39 @@ import { createChat } from '../../utils.js';
 import { Alert } from '@mui/material';
 
 function ChatPage() {
+    //lokaler zustand
     const [selectedChat, setSelectedChat] = React.useState(null);
     const [newChatName, setNewChatName] = React.useState("");
-    const [showMiddle, setShowMiddle] = React.useState(true);
+    const [docViewOpen, setDocViewOpen] = React.useState(true);
+
+    // Zugriff auf den Zustand für PDF-Dateien und die aktuelle Auswahl
+    //globaler zustand für PDFPreview
+    const files = useFileStore((state) => state.files);
+    const setFiles = useFileStore((state) => state.setFiles);
+    const selectedFile = useFileStore((state) => state.selectedFile);
+    const setSelectedFile = useFileStore((state) => state.setSelectedFile);
+
+    //globaler Zustand um zu kontrollieren ob ich DragAndDrop Komponente oder Button anzeigen möchte
+    const hasUploadedFiles = useFileStore((state) => state.hasUploadedFiles);
 
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
     const sendMessage = useChatStore((state) => state.sendMessage);
+    //globaler zustand für SideBar um Chats hinzuzufügen oder zu löschen
     const addChat = useChatStore((state) => state.addChat);
     const deleteChat = useChatStore((state) => state.deleteChat);
-    const addFilesToChat = useChatStore((state) => state.addFilesToChat);
-    const removeFileFromChat = useChatStore((state) => state.removeFileFromChat);
-    const setSelectedFile = useChatStore((state) => state.setSelectedFile);
-    const toggleDragAndDrop = useChatStore((state) => state.toggleDragAndDrop);
+
+    const chatMessages = selectedChat ? allChats[selectedChat.id] || [] : [];
+
     const username = useAuthStore((state) => state.username);
 
-    const chatMessages = selectedChat ? allChats[selectedChat.id]?.messages || [] : [];
-    const chatFiles = selectedChat ? allChats[selectedChat.id]?.files || [] : [];
-    const selectedFile = selectedChat ? allChats[selectedChat.id]?.selectedFile : null;
-    const showDragAndDrop = selectedChat ? allChats[selectedChat.id]?.showDragAndDrop : true;
-
+    // Setze die erste Datei als Standardauswahl, wenn noch keine Datei ausgewählt wurde
     useEffect(() => {
-        if (chatFiles.length > 0 && !selectedFile) {
-            setSelectedFile(selectedChat.id, chatFiles[0]);
+        if (files.length > 0 && !selectedFile) {
+            setSelectedFile(files[0]);
+            console.log("Setting default seleceted File",files[0])
         }
-    }, [chatFiles, selectedFile, selectedChat, setSelectedFile]);
+    }, [files, selectedFile, setSelectedFile]);
 
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
@@ -53,9 +61,8 @@ function ChatPage() {
     };
 
     const handleAddChat = async () => {
-        console.log(username);
         if (newChatName.trim()) {
-            const newChat = await createChat(username.user.username, newChatName);
+            const newChat = await createChat(username, newChatName);
             // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
             if (!newChat) {
                 console.error("Fehler beim Erstellen des Chats");
@@ -66,33 +73,26 @@ function ChatPage() {
                 addChat(newChat.chat_name);
             }
 
-            setNewChatName("");
+            setNewChatName("");  // Eingabefeld zurücksetzen
         }
     };
 
     const handleDeleteChat = (chatId) => {
         deleteChat(chatId);
         if (selectedChat && selectedChat.id === chatId) {
-            setSelectedChat(null);
+            setSelectedChat(null); // Setzt den ausgewählten Chat zurück, falls er gelöscht wurde
         }
     };
 
-    const handleFileDrop = (newFiles) => {
-        if (selectedChat) {
-            addFilesToChat(selectedChat.id, newFiles);
-        }
-    };
-
-    const handleRemoveFile = (fileIndex) => {
-        if (selectedChat) {
-            removeFileFromChat(selectedChat.id, fileIndex);
-        }
+    const handleSelectPDF = (pdf) => {
+        setSelectedFile(pdf); // Setze die neue ausgewählte PDF für die Hauptanzeige
+        console.log("Selected PDF", pdf)
     };
 
     return (
         <div className={styles.chatPage}>
             <div className={styles.mainContent}>
-                {/* Linke Spalte */}
+                {/* Linke Spalte: Neuer Chat hinzufügen und Sidebar */}
                 <div className={styles.sidebarContainer}>
                     <button onClick={()=>setDocViewOpen(!docViewOpen)}>Zeige Dokumente</button>
                     <div className={styles.newChatContainer}>
@@ -112,40 +112,23 @@ function ChatPage() {
                     />
                 </div>
 
-                {/* Toggle Button für die mittlere Spalte */}
-                {selectedChat && (
-                    <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
-                        {showMiddle ? '<' : '>'}
-                    </button>
-                )}
+                {/* Mittlere Spalte: SelectModell, DragAndDrop, PDFPreview */}
+                {docViewOpen && <div className={styles.middleContainer}>
+                    <SelectModell />
+                    {hasUploadedFiles?(
+                        <button onClick={() =>{
+                            //Zeigt das Drag-and-Drop-Feld wueder an, wenn geklickt
+                            useFileStore.setState({hasUploadedFiles: false});
+                        }}>
+                        Weitere PDF-Dateien hochladen
+                        </button>
+                    ):<DragAndDrop/>}
+                    {selectedFile && <PDFPreview />} {/* Zeigt die ausgewählte PDF-Datei */}
+                    <PDFPreviewList onSelectPDF={handleSelectPDF} /> {/* PDF-Liste zum Auswählen */}
+                </div>}
 
-                {/* Mittlere Spalte */}
-                {selectedChat && showMiddle && (
-                    <div className={styles.middleContainer}>
-                        {showDragAndDrop ? (
-                            <DragAndDrop onFileDrop={handleFileDrop} />
-                        ) : (
-                            <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>
-                                Weitere PDF-Dateien hochladen
-                            </button>
-                        )}
-                        {selectedFile && <PDFPreview file={selectedFile} />}
-                        <PDFPreviewList
-                            files={chatFiles}
-                            onRemoveFile={handleRemoveFile}
-                            onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
-                        />
-                    </div>
-                )}
-
-                {/* Rechte Spalte */}
-                <div className={
-                    selectedChat
-                        ? showMiddle
-                            ? styles.rightContainer
-                            : styles.rightContainerExpanded
-                        : styles.rightContainerExpanded
-                }>
+                {/* Rechte Spalte: ChatWindow, UserInput */}
+                <div className={styles.rightContainer}>
                     <div className={styles.chatWindowContainer}>
                         {selectedChat ? (
                             <ChatWindow messages={chatMessages} />
@@ -154,7 +137,6 @@ function ChatPage() {
                         )}
                     </div>
                     <UserInput onSendMessage={handleSendMessage} />
-                    <SelectModell />
                 </div>
             </div>
             <Footer />

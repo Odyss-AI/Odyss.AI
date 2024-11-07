@@ -1,20 +1,27 @@
 // src/components/PDFPreview/PDFPreview.jsx
 import React from 'react';
-import styles from './PDFPreview.module.css';
+import useFileStore from '../../store/fileStore.jsx';
 
-const PDFPreview = ({ file }) => {
-    if (!file) {
+const PDFPreview = () => {
+    const selectedFile = useFileStore((state) => state.selectedFile); // Zugriff auf die aktuell ausgewählte Datei zur Vorschau
+
+    console.log("Rendering PDFPreview with file: ", selectedFile);
+
+    if (!selectedFile) {
         return <p>Keine PDF-Datei ausgewählt</p>;
     }
 
-    const fileURL = URL.createObjectURL(file); // Erzeugt eine URL zur Anzeige der PDF
+    const fileURL = URL.createObjectURL(selectedFile); // Erzeugt eine URL zur Anzeige der PDF
 
     return (
-        <div className={styles.pdfDisplay}>
+        <div className="pdf-display">
             <iframe
                 src={fileURL}
-                className={styles.pdfIframe} // Die iframe-Klasse verwenden, um das Styling konsistent zu halten
+                type="application/pdf"
+                width="600"
+                height="500"
                 title="PDF Vorschau"
+                style={{ border: 'none' }}
             />
         </div>
     );
