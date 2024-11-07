@@ -9,7 +9,7 @@ const getUser = async (user) => {
             params: {
                 username: user
             }
-        })
+        });
         console.log(response.data);
         return response.data;
     } catch (error) {
@@ -19,16 +19,18 @@ const getUser = async (user) => {
 }
 
 const createUser = async (user) => {
-    try{
-        const response = await axios.post(`${BaseUrl}/users/add`, {
-            username: user
-        });
+    axios.post(`${BaseUrl}/users/adduser`, {
+        id: "",
+        username: user,
+        documents: []
+    })
+    .then(response => {
         console.log(response.data);
         return response.data;
-    } catch (error) {
+    })
+    .catch(error => {
         console.error(error);
-        return null;
-    }
+    });
 }
 
 const uploadDocument = async (document, user) => {
