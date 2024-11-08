@@ -78,7 +78,7 @@ services:
       - odyss.ai
 
   text_embeddings_inference:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5 --host 0.0.0.0
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
     container_name: text_embeddings_inference
     ports:
       - "8080:8080"
