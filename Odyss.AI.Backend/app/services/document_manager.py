@@ -29,7 +29,7 @@ class DocumentManager:
         # self.tei_url = Config.TEI_URL + "/embed"
         self.sim_search = SimailaritySearchService()
 
-    async def handle_document_async(self, file, username, is_local = True):
+    async def handle_document_async(self, file, username, chat_id):
         """
         Handles the document upload, processing, and storage asynchronously. Refer software architecture pattern Integration Operation Segregation Principle (IOSP)
 
@@ -92,6 +92,10 @@ class DocumentManager:
             doc_id = await db.add_document_to_user_async(username, new_doc)
             if self.handle_error(doc_id is None, "Error saving document", file, username):
                 return None, "Error saving document"
+            
+            is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
+            if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):
+                return None, "Error adding document to chat"
 
             return new_doc, "File uploaded successfully"
         except Exception as e:

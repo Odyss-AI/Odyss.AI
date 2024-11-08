@@ -1,48 +1,77 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import useChatStore from './store/chatStore';
+import useAuthStore from './store/authStore';
 
-const URL = 'http://127.0.0.1:5000/chat';
+const URL = 'http://127.0.0.1:5000/v1/chat';
 
-const useWebSocket = (isUser, chatsCalled) => {
+const useWebSocket = () => {
   const [socket, setSocket] = useState(null);
-  const [messages, setMessages] = useState([]);
-  
-  // Funktion zum Senden einer Nachricht über den WebSocket
-  const sendMessage = useCallback((message, chatId, user) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        const msg = {
-            message: message,
-            username: user,
-            chat_id: chatId,
-        };
-        socket.send(JSON.stringify(msg));
-      } else {
-        // Füge die Nachricht zur Liste hinzu, auch wenn keine Verbindung besteht
-        setMessages((prevMessages) => [...prevMessages, {  }]);
-      }
-    }, [socket]);
+  const sendMessage = useChatStore((state) => state.sendMessage);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
-  useEffect(() => {
-    if (!isUser && !chatsCalled) return;
-
-    // WebSocket-Verbindung erstellen
+  const initializeWebSocket = useCallback(() => {
     const ws = new WebSocket(URL);
     setSocket(ws);
 
-    // WebSocket-Nachrichten-Handler
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      console.log('Message from Backend:', message);
-      setMessages((prevMessages) => [...prevMessages, message]);
-      console.log('Messages in Websocket:', messages);
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
     };
 
-    // WebSocket-Verbindung schließen beim Unmounten der Komponente
+    ws.onmessage = (event) => {
+      const res = JSON.parse(event.data);
+      console.log('Message from Backend:', res);
+      sendMessage(res.chatId, res.message.content, false, res.message.timestamp, res.chunks);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed, attempting to reconnect...');
+      setTimeout(initializeWebSocket, 1000); // Reconnect after 1 second
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      ws.close();
+    };
+
     return () => {
       ws.close();
     };
-  }, [isUser]);
+  }, [sendMessage]);
 
-  return { messages, sendMessage };
+  useEffect(() => {
+    let cleanup;
+    if (isLoggedIn) {
+      cleanup = initializeWebSocket();
+    }
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [isLoggedIn, initializeWebSocket]);
+
+  const sendMessageToOdyss = useCallback((message, chatId, user, selectedModel, timestamp) => {
+    console.log('Sending message to Odyss:', message, chatId, user, selectedModel, timestamp);
+    if (socket && socket.readyState === WebSocket.CLOSED) {
+      initializeWebSocket();
+    }
+      const msg = {
+        message: message,
+        username: user,
+        chatId: chatId,
+        model: selectedModel,
+        timestamp: timestamp
+      };
+
+      setTimeout(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(msg));
+        } else {
+          console.error('WebSocket is not open. Ready state:', socket?.readyState);
+        }
+
+      }, 2000); // Pause for 2 seconds
+  }, [socket]);
+
+  return { initializeWebSocket, sendMessageToOdyss };
 };
 
 export default useWebSocket;

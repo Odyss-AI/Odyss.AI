@@ -5,15 +5,16 @@ import BotMessage from '../BotMessage/BotMessage';
 import styles from './ChatWindow.module.css';
 
 function ChatWindow({ messages }) {
+    console.log(messages);
     return (
         <div className={styles.chatWindow}>
             {messages.map((msg, index) => (
-                msg.sender === 'user' ?  // Prüfen auf 'sender', nicht 'type'
+                msg.isUser ?  // Prüfen auf 'sender', nicht 'type'
                     <div className={styles.userMessageContainer} key={index}>
                         <UserMessage message={msg.text} />
                     </div> :
-                    <div className={styles.botMessageContainer} key={index}>
-                        <BotMessage message={msg.text} />
+                    <div className={styles.userMessageContainer} key={index}>
+                        <UserMessage message={msg.text} />
                     </div>
             ))}
         </div>
