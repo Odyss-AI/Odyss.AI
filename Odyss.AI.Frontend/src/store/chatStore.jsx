@@ -2,8 +2,8 @@
 import { create } from 'zustand';
 
 const useChatStore = create((set) => ({
-    chats: {},  // Ein Objekt, in dem die Nachrichten für jeden Chat gespeichert werden
-    chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID)
+    chats: {},  // Ein Objekt, in dem die Nachrichten für jeden Chat gespeichert werden für die Nachrichten im ChatWindow
+    chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID) für die SideBar
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
     sendMessage: (chatId, message) =>

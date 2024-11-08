@@ -4,7 +4,7 @@ import React from 'react';
 function BotMessage({ text }) {
     return (
         <div className="bot-message">
-            <p>{text}</p>
+            <p><strong>Nauta:</strong> {text}</p> {/* Fügt "Nauta:" vor jeder Nachricht hinzu */}
         </div>
     );
 }

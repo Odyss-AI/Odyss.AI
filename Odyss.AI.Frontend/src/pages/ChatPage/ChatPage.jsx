@@ -1,4 +1,3 @@
-// src/pages/ChatPage/ChatPage.jsx
 import React, { useEffect } from 'react';
 import ChatWindow from '../../components/ChatWindow/ChatWindow.jsx';
 import UserInput from '../../components/UserInput/UserInput.jsx';
@@ -13,7 +12,7 @@ import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
 
 function ChatPage() {
     const [selectedChat, setSelectedChat] = React.useState(null);
-    const [newChatName, setNewChatName] = React.useState("");
+    const [newChatName, setNewChatName] = React.useState('');
     const [showMiddle, setShowMiddle] = React.useState(true);
 
     const chats = useChatStore((state) => state.chatList);
@@ -42,7 +41,13 @@ function ChatPage() {
     };
 
     const handleSendMessage = (message) => {
-        if (selectedChat) {
+        if (!selectedChat) {
+            // Wenn kein Chat ausgewählt ist, neuen Chat erstellen
+            const newChatId = chats.length + 1;
+            const chatName = `Chat ${newChatId}`;
+            addChat(chatName);
+            setSelectedChat({ id: newChatId, name: chatName });
+        } else {
             sendMessage(selectedChat.id, message);
         }
     };
@@ -50,7 +55,7 @@ function ChatPage() {
     const handleAddChat = () => {
         if (newChatName.trim()) {
             addChat(newChatName);
-            setNewChatName("");
+            setNewChatName('');
         }
     };
 
@@ -76,7 +81,6 @@ function ChatPage() {
     return (
         <div className={styles.chatPage}>
             <div className={styles.mainContent}>
-                {/* Linke Spalte */}
                 <div className={styles.sidebarContainer}>
                     <div className={styles.newChatContainer}>
                         <input
@@ -95,20 +99,21 @@ function ChatPage() {
                     />
                 </div>
 
-                {/* Toggle Button für die mittlere Spalte */}
                 {selectedChat && (
                     <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
                         {showMiddle ? '<' : '>'}
                     </button>
                 )}
 
-                {/* Mittlere Spalte */}
                 {selectedChat && showMiddle && (
                     <div className={styles.middleContainer}>
                         {showDragAndDrop ? (
                             <DragAndDrop onFileDrop={handleFileDrop} />
                         ) : (
-                            <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>
+                            <button
+                                className={styles.toggleDragAndDropButton}
+                                onClick={() => toggleDragAndDrop(selectedChat.id)}
+                            >
                                 Weitere PDF-Dateien hochladen
                             </button>
                         )}
@@ -121,14 +126,15 @@ function ChatPage() {
                     </div>
                 )}
 
-                {/* Rechte Spalte */}
-                <div className={
-                    selectedChat
-                        ? showMiddle
-                            ? styles.rightContainer
+                <div
+                    className={
+                        selectedChat
+                            ? showMiddle
+                                ? styles.rightContainer
+                                : styles.rightContainerExpanded
                             : styles.rightContainerExpanded
-                        : styles.rightContainerExpanded
-                }>
+                    }
+                >
                     <div className={styles.chatWindowContainer}>
                         {selectedChat ? (
                             <ChatWindow messages={chatMessages} />

@@ -9,9 +9,17 @@
 .userMessageContainer {
     align-self: flex-end; /* Benutzer-Nachricht rechts ausrichten */
     margin: 5px 0; /* Abstand zwischen den Nachrichten */
+    background-color: #e0f7fa; /* Benutzer-Nachricht Hintergrundfarbe */
+    padding: 8px;
+    border-radius: 10px;
+    max-width: 60%; /* Maximale Breite für Benutzer-Nachrichten */
 }
 
 .botMessageContainer {
     align-self: flex-start; /* Bot-Nachricht links ausrichten */
     margin: 5px 0; /* Abstand zwischen den Nachrichten */
+    background-color: #f1f1f1; /* Bot-Nachricht Hintergrundfarbe */
+    padding: 8px;
+    border-radius: 10px;
+    max-width: 60%; /* Maximale Breite für Bot-Nachrichten */
 }
