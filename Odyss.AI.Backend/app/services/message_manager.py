@@ -42,15 +42,18 @@ class MessageManager:
         if chat is None:
             raise ValueError("Failed to get or create chat")
 
+        print(f"Chat ID: {chat.id}")
         # Load the documents from the database
         docs = await self.get_docs_async(db, user, chat.doc_ids)
         if docs is None:
             raise ValueError("Failed to get documents")
 
+        print(f"Docs: {docs}")
         # Search for similar text chunks in the documents
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
 
+        print(f"Chunks: {chunks}")
         try:
             # Build the prompt for the LLM
             prompt = qna_prompt_builder(chunks, message.content)
@@ -58,6 +61,7 @@ class MessageManager:
                 answer = await call_chatgpt_api_async(prompt)
             else:
                 answer = await query_mixtral_async(prompt)
+                print(f"Answer: {answer}")
         except Exception as e:
             logging.error(f"Error building prompt or calling LLM API: {e}")
             return None, f"Error building prompt or calling LLM API: {e}", chat.id
@@ -65,6 +69,7 @@ class MessageManager:
         try:
             # Build the answer
             bot_msg = await self.write_bot_msg_async(db, chat, answer)
+            print(f"Bot message: {bot_msg}")
         except Exception as e:
             logging.error(f"Error writing bot message: {e}")
             return None, f"Error writing bot message: {e}", chat.id
