@@ -57,6 +57,7 @@ class MessageManager:
         try:
             # Build the prompt for the LLM
             prompt = qna_prompt_builder(chunks, message.content)
+            print(f"Prompt: {prompt}")
             if message.selected_model == AvailibleModels.CHATGPT.value:
                 answer = await call_chatgpt_api_async(prompt)
             else:
