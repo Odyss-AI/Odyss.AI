@@ -81,7 +81,7 @@ services:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
     container_name: text_embeddings_inference
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - tei:/data/tei
     command: --model-id BAAI/bge-large-en-v1.5
