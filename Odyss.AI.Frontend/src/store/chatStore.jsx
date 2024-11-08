@@ -1,9 +1,10 @@
 // src/store/chatStore.js
 import { create } from 'zustand';
 
+// Der Zustandsspeicher (ChatStore) verwaltet Chats, Nachrichten und Dateien.
 const useChatStore = create((set) => ({
-    chats: {},  // Ein Objekt, in dem die Nachrichten für jeden Chat gespeichert werden für die Nachrichten im ChatWindow
-    chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID) für die SideBar
+    chats: {}, // Speichert die einzelnen Chats mit ihren Nachrichten und Dateien
+    chatList: [], // Enthält die Liste der vorhandenen Chats
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
     sendMessage: (chatId, message) =>
@@ -38,7 +39,7 @@ const useChatStore = create((set) => ({
     // Funktion zum Hinzufügen eines neuen Chats
     addChat: (chatName) =>
         set((state) => {
-            const newChatId = state.chatList.length + 1; // ID basierend auf der Länge der aktuellen Liste generieren
+            const newChatId = state.chatList.length + 1; // Generiert eine neue Chat-ID basierend auf der aktuellen Länge der Chatliste
             return {
                 chatList: [
                     ...state.chatList,
@@ -50,7 +51,7 @@ const useChatStore = create((set) => ({
                         messages: [],
                         files: [],
                         selectedFile: null,
-                        showDragAndDrop: true, // Default-Wert true, das Feld ist standardmäßig sichtbar
+                        showDragAndDrop: true, // Das Drag-and-Drop-Feld ist standardmäßig sichtbar
                     }
                 }
             };
@@ -63,8 +64,8 @@ const useChatStore = create((set) => ({
                 ...state.chats,
                 [chatId]: {
                     ...state.chats[chatId],
-                    files: [...(state.chats[chatId]?.files || []), ...files],
-                    showDragAndDrop: false, // Drag-and-Drop-Feld nach dem Hochladen der Dateien ausblenden
+                    files: [...(state.chats[chatId]?.files || []), ...files.map(file => file)], // Fügt die neuen Dateien hinzu
+                    showDragAndDrop: false, // Blendet das Drag-and-Drop-Feld nach dem Hochladen der Dateien aus
                 }
             }
         })),
@@ -73,7 +74,7 @@ const useChatStore = create((set) => ({
     removeFileFromChat: (chatId, fileIndex) =>
         set((state) => {
             const updatedFiles = [...(state.chats[chatId]?.files || [])];
-            updatedFiles.splice(fileIndex, 1);
+            updatedFiles.splice(fileIndex, 1); // Entfernt die Datei an der angegebenen Position
             return {
                 chats: {
                     ...state.chats,
@@ -92,7 +93,7 @@ const useChatStore = create((set) => ({
                 ...state.chats,
                 [chatId]: {
                     ...state.chats[chatId],
-                    selectedFile: file,
+                    selectedFile: file, // Setzt die ausgewählte Datei für den Chat
                 }
             }
         })),
@@ -104,7 +105,7 @@ const useChatStore = create((set) => ({
                 ...state.chats,
                 [chatId]: {
                     ...state.chats[chatId],
-                    showDragAndDrop: !state.chats[chatId]?.showDragAndDrop,
+                    showDragAndDrop: !state.chats[chatId]?.showDragAndDrop, // Ändert den Status des Drag-and-Drop-Felds
                 }
             }
         })),
