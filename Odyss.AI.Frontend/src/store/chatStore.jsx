@@ -25,13 +25,10 @@ const useChatStore = create((set) => ({
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: {
-                    ...state.chats[chatId],
-                    messages: [
-                        ...(state.chats[chatId]?.messages || []),
-                        { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
-                    ],
-                },
+                [chatId]: [
+                    ...(state.chats[chatId] || []),
+                    { sender: 'bot', text: message, timestamp: new Date().toLocaleTimeString() }
+                ],
             },
         })),
 
@@ -55,7 +52,6 @@ const useChatStore = create((set) => ({
             };
         }),
 
-    // Funktion zum Hinzufügen von Dateien zu einem bestimmten Chat
     addFilesToChat: (chatId, files) =>
         set((state) => ({
             chats: {

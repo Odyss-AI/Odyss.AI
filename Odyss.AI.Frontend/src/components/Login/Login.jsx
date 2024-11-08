@@ -5,7 +5,7 @@ import useChatStore from '../../store/chatStore.jsx';
 import { getUser, getChats, createUser } from '../../utils.js';
 import useWebSocket from '../../useWebSocket.jsx';
 
-function Login({isRegister}) {
+function Login() {
     const [username, setUsername] = useState('');  // Benutzername
     const [password, setPassword] = useState('');  // Passwort
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
@@ -15,7 +15,6 @@ function Login({isRegister}) {
     const { initializeWebSocket } = useWebSocket();
 
     const handleLogin = async () => {
-
         if (username && password) {
             const user = await getUser(username);  // Benutzerdaten überprüfen
             if (!user) {

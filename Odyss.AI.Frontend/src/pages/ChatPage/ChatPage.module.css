@@ -1,14 +1,22 @@
 /* src/pages/ChatPage/ChatPage.module.css */
+
 .chatPage {
     display: flex;
     flex-direction: column;
     height: 100vh;
 }
 
+.header {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
 .mainContent {
     display: flex;
     flex: 1;
-    position: relative;
 }
 
 .sidebarContainer {
@@ -37,16 +45,6 @@
     background-color: #f0f0f0;
 }
 
-.rightContainerExpanded {
-    flex: 2;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 20px;
-    background-color: #f0f0f0;
-}
-
 .newChatContainer {
     display: flex;
     gap: 10px;
@@ -62,41 +60,8 @@
     background-color: #ffffff;
 }
 
-.toggleMiddleButton {
-    position: absolute;
-    top: 80px; /* Weiter nach unten verschieben, um nicht mit dem "Hinzufügen"-Button zu überlappen */
-    left: 260px; /* Abstand zur linken Sidebar, weiter rechts als vorher */
-    padding: 5px 10px;
-    background-color: #007bff;
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    z-index: 10; /* Sicherstellen, dass der Button sichtbar bleibt */
-}
-
-.toggleMiddleButton:hover {
-    background-color: #0056b3;
-}
-
 .userInput {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
-}
-
-.toggleDragAndDropButton {
-    align-self: flex-start;
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    background-color: #007bff;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.toggleDragAndDropButton:hover {
-    background-color: #0056b3;
 }

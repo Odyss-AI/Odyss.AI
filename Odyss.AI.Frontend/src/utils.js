@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BaseUrl = "http://127.0.0.1:5000";
+const BaseUrl = "http://141.75.150.37:443";
 
 // GET-Anfrage
 const getUser = async (user) => {
@@ -9,7 +9,7 @@ const getUser = async (user) => {
             params: {
                 username: user
             }
-        })
+        });
         console.log(response.data);
         return response.data;
     } catch (error) {

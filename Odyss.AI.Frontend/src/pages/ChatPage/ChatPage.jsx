@@ -10,7 +10,6 @@ import styles from './ChatPage.module.css';
 import useChatStore from '../../store/chatStore';
 import PDFPreview from '../../components/PDFPreview/PDFPreview.jsx';
 import PDFPreviewList from '../../components/PDFPreviesList/PDFPreviewList.jsx';
-import useFileStore from '../../store/fileStore.jsx';
 import useAuthStore from '../../store/authStore.jsx';
 import useWebSocket from '../../useWebSocket.jsx';
 import { createChat, deleteChatFromDb, uploadDocument } from '../../utils.js';
