@@ -44,6 +44,87 @@ async def query_pixtral_async(doc:Document):
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
 
+    models = client.models.list()
+    model = models.data[0].id
+
+    print(model)
+
+    for img in tqdm(doc.imgList, desc="Processing images"):
+        image_class = await get_image_class_async(img.link)
+
+        # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
+        if image_class == "just_img":
+            continue
+
+        # Bild laden und in Base64 kodieren
+        image = PILImage.open(img.link)
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")  # Speichern im PNG-Format
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        # Pixtral-Anfrage mit der eingebetteten Klasse
+        chat_completion_from_base64 = client.chat.completions.create(
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"The image shows a {image_class}. Please describe what I see."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{img_str}"
+                        },
+                    },
+                ],
+            }],
+            model=model,  
+            max_tokens=256,
+        )
+
+        # Ergebnis anzeigen
+        img.llm_output = chat_completion_from_base64.choices[0].message.content
+
+    return doc
+    
+    
+
+async def query_mixtral_async(prompt: list):
+    # Sondertokens definieren
+    BOS_ID = "<s>"
+    EOS_ID = "</s>"
+    INST_ID = "[INST]"
+    END_INST_ID = "[/INST]"
+    
+    # JSON-Format für den API-Aufruf
+    data = {
+        "inputs": f"{BOS_ID} {INST_ID} {str(prompt)} {END_INST_ID} Model answer {EOS_ID}"
+    }
+    try:
+        # Sende die Anfrage über den Tunnel
+        response = requests.post(config.mistral_api_base, json=data)
+        
+        if response.status_code == 200:
+            result = json.loads(response.text)
+            answer = result[0]['generated_text']
+            return answer
+        else:
+            print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)
+
+    except Exception as e:
+        print("Verbindungsfehler:", e)    
+            
+
+
+# Anfrage an das Pixtral-Modell
+async def query_pixtral_with_ssh_async(doc:Document):
+    # OpenAI-API-Einstellungen
+    openai_api_key = config.openai_api_key
+    openai_api_base = config.openai_api_base  # Pixtral-Modell-URL
+    client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
+    # Bildklasse vom Image Tagger holen
+
     with SSHTunnelForwarder(
     (config.ssh_host, config.ssh_port),
     ssh_username=config.ssh_username,
@@ -98,7 +179,7 @@ async def query_pixtral_async(doc:Document):
     
     
 
-async def query_mixtral_async(prompt: list):
+async def query_mixtral_with_ssh_async(prompt: list):
     # Sondertokens definieren
     BOS_ID = "<s>"
     EOS_ID = "</s>"
