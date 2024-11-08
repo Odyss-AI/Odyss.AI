@@ -23,6 +23,7 @@ async def chat():
         message = await websocket.receive()
         data = json.loads(message)
         
+        print("New chat messages")
         username = data.get('username')
         msg = data.get('message')
         chat_id = data.get('chatId')
