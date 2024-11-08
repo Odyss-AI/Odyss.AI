@@ -90,17 +90,17 @@ function ChatPage() {
         }
     };
 
-    const handleFileDrop = async (newFiles) => {
-        if (selectedChat) {
-            const files = await uploadDocument(newFiles, username.user.username, selectedChat.id);
-            if (!files) {
-                console.error("Fehler beim Hochladen der Datei");
-                alert("Fehler beim Hochladen der Datei");
-                return;
-            }
-            addFilesToChat(selectedChat.id, newFiles);
-        }
-    };
+    // const handleFileDrop = async (newFiles) => {
+    //     if (selectedChat) {
+    //         const files = await uploadDocument(newFiles, username.user.username, selectedChat.id);
+    //         if (!files) {
+    //             console.error("Fehler beim Hochladen der Datei");
+    //             alert("Fehler beim Hochladen der Datei");
+    //             return;
+    //         }
+    //         addFilesToChat(selectedChat.id, newFiles);
+    //     }
+    // };
 
     const handleRemoveFile = (fileIndex) => {
         if (selectedChat) {
@@ -141,7 +141,7 @@ function ChatPage() {
                 {selectedChat && showMiddle && (
                     <div className={styles.middleContainer}>
                         {showDragAndDrop ? (
-                            <DragAndDrop onFileDrop={handleFileDrop} />
+                            <DragAndDrop username={username} selectedChat={selectedChat}/>
                         ) : (
                             <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>
                                 Weitere PDF-Dateien hochladen

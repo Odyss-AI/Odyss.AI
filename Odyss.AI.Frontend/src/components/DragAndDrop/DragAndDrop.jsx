@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import useFileStore from '../../store/fileStore.jsx';
 import styles from './DragAndDrop.module.css';
+import { uploadDocument } from '../../utils.js';
 
-const DragAndDrop = () => {
+const DragAndDrop = ({username, selectedChat}) => {
     // Lokaler Zustand
     const [dragging, setDragging] = useState(false);
 
@@ -48,6 +49,19 @@ const DragAndDrop = () => {
                     return;
                 }
             }
+            
+            console.log("PDF-Dateien:", pdfFiles);
+            console.log("Benutzername:", username.user.username);
+            console.log("Ausgewählter Chat:", selectedChat);
+            if (selectedChat) {
+                const files = await uploadDocument(pdfFiles, username.user.username, selectedChat.id);
+                if (!files) {
+                    console.error("Fehler beim Hochladen der Datei");
+                    alert("Fehler beim Hochladen der Datei");
+                    return;
+                }
+            }
+
             setFiles(pdfFiles); // Füge die neuen Dateien hinzu, anstatt die bestehenden zu überschreiben
         }
     };
@@ -87,6 +101,15 @@ const DragAndDrop = () => {
                 pdfFiles = pdfFiles.concat(extractedFiles);
             } else {
                 alert("Bitte nur PDF-Dateien oder ZIP-Ordner hochladen!");
+                return;
+            }
+        }
+
+        if (selectedChat) {
+            const files = await uploadDocument(pdfFiles, username.user.username, selectedChat.id);
+            if (!files) {
+                console.error("Fehler beim Hochladen der Datei");
+                alert("Fehler beim Hochladen der Datei");
                 return;
             }
         }
