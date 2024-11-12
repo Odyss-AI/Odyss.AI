@@ -13,6 +13,21 @@ function LoginPage() {
         setIsRegister((prev) => !prev);
     };
 
+    const handleRegister = async () => {
+        if (username) {
+            const user = await createUser(username);
+            if (user.error) {
+                console.log(user.error);
+                alert(user.error);
+                return;
+            }
+            login(user);  // Login-Logik hier
+        }
+        else {
+            alert('Please enter username and password');
+        }
+    }
+
     return (
         <div className={styles.loginPage}>
             {/* <video autoPlay loop muted className={styles.videoBackground}>

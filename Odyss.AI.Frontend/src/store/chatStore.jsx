@@ -6,14 +6,17 @@ const useChatStore = create((set) => ({
     chatList: [],  // Eine Liste von Chats, die es gibt (mit Name und ID)
 
     // Funktion zum Senden einer Nachricht an einen bestimmten Chat
-    sendMessage: (chatId, message) =>
+    sendMessage: (chatId, message, isUser, timestamp, chunks = []) =>
         set((state) => ({
             chats: {
                 ...state.chats,
-                [chatId]: [
-                    ...(state.chats[chatId] || []),  // Vorhandene Nachrichten für den Chat abrufen (oder leeres Array, falls keine existieren)
-                    { sender: 'user', text: message, timestamp: new Date().toLocaleTimeString() }
-                ],
+                [chatId]: {
+                    ...state.chats[chatId],
+                    messages: [
+                        ...(state.chats[chatId]?.messages || []),
+                        { isUser: isUser, text: message, timestamp: timestamp, chunks: chunks }
+                    ],
+                },
             },
         })),
 
@@ -30,31 +33,87 @@ const useChatStore = create((set) => ({
         })),
 
     // Funktion zum Hinzufügen eines neuen Chats
-    addChat: (chatName) =>
+    addChat: (chatName, files, messages, id) =>
         set((state) => {
-            const newChatId = state.chatList.length + 1; // ID basierend auf der Länge der aktuellen Liste generieren
             return {
                 chatList: [
                     ...state.chatList,
-                    { id: newChatId, name: chatName }
+                    { id: id, name: chatName }
                 ],
                 chats: {
                     ...state.chats,
-                    [newChatId]: []  // Initialer leerer Chat
+                    [id]: {
+                        messages: messages || [],
+                        files: files || [],
+                        selectedFile: null,
+                        showDragAndDrop: true, // Default-Wert true, das Feld ist standardmäßig sichtbar
+                    }
                 }
             };
         }),
 
-    // Funktion zum Löschen eines Chats
+    addFilesToChat: (chatId, files) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    files: [...(state.chats[chatId]?.files || []), ...files],
+                    showDragAndDrop: false, // Drag-and-Drop-Feld nach dem Hochladen der Dateien ausblenden
+                }
+            }
+        })),
+
+    // Funktion zum Löschen einer Datei aus einem bestimmten Chat
+    removeFileFromChat: (chatId, fileIndex) =>
+        set((state) => {
+            const updatedFiles = [...(state.chats[chatId]?.files || [])];
+            updatedFiles.splice(fileIndex, 1);
+            return {
+                chats: {
+                    ...state.chats,
+                    [chatId]: {
+                        ...state.chats[chatId],
+                        files: updatedFiles,
+                    }
+                }
+            };
+        }),
+
+    // Funktion zum Setzen der ausgewählten Datei in einem bestimmten Chat
+    setSelectedFile: (chatId, file) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    selectedFile: file,
+                }
+            }
+        })),
+
+    // Funktion zum Umschalten des Drag-and-Drop-Felds
+    toggleDragAndDrop: (chatId) =>
+        set((state) => ({
+            chats: {
+                ...state.chats,
+                [chatId]: {
+                    ...state.chats[chatId],
+                    showDragAndDrop: !state.chats[chatId]?.showDragAndDrop,
+                }
+            }
+        })),
+
+    // Funktion zum Löschen eines Chats anhand der chatId
     deleteChat: (chatId) =>
         set((state) => {
-            const updatedChatList = state.chatList.filter((chat) => chat.id !== chatId);
-            const { [chatId]: _, ...updatedChats } = state.chats;  // Entfernt den Chat aus den Nachrichten
+            const { [chatId]: _, ...remainingChats } = state.chats;
             return {
-                chatList: updatedChatList,
-                chats: updatedChats
+                chats: remainingChats,
+                chatList: state.chatList.filter(chat => chat.id !== chatId),
             };
         }),
 }));
+
 
 export default useChatStore;

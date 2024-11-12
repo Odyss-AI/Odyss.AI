@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from typing import Optional
+from app.models.user import Document
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from aiocache import caches, Cache
@@ -120,3 +121,35 @@ class CachingService:
         except Exception as e:
             logging.error(f"Error updating key {key}: {e}")
             return False
+        
+    async def cache_documents(self, documents: List[Document], ttl: int = 6000) -> bool:
+        try:
+            for document in documents:
+                key = f"document:{document.id}"
+                if not await self.exists(key):
+                    await self.set(key, document, ttl)
+            return True
+        except Exception as e:
+            logging.error(f"Error caching documents: {e}")
+            return False
+        
+    async def get_cached_documents(self, documents: List[str]):
+        """
+        Prüft, ob die Dokumente im Cache sind und gibt die gefundenen Dokumente zurück.
+
+        Args:
+            documents (List[Document]): Die Liste der zu prüfenden Dokumente.
+
+        Returns:
+            List[Document]: Die Liste der im Cache gefundenen Dokumente.
+        """
+        cached_documents = []
+        try:
+            for document in documents:
+                key = f"document:{document.id}"
+                cached_document = await self.get(key)
+                if cached_document:
+                    cached_documents.append(cached_document)
+        except Exception as e:
+            logging.error(f"Error retrieving documents from cache: {e}")
+        return cached_documents
