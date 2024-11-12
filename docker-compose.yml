@@ -23,6 +23,8 @@ services:
       - "443:443"
     volumes:
       - shared_data:/shared_data
+      - /etc/ssh/id_ed25519:/root/.ssh/id_ed25519:ro
+      - /etc/ssh/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
     depends_on:
       - mongodb
       - qdrant
