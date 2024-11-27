@@ -180,19 +180,19 @@ async def query_pixtral_with_ssh_async(doc:Document):
     
 
 async def query_mixtral_with_ssh_async(prompt: list):
-    # Sondertokens definieren
     BOS_ID = "<s>"
     EOS_ID = "</s>"
     INST_ID = "[INST]"
     END_INST_ID = "[/INST]"
-    
-    # JSON-Format für den API-Aufruf
+
+    # Prompt formatieren
+    formatted_prompt = "\n".join([f"{message['role']}: {message['content']}" for message in prompt])
     data = {
-        "inputs": f"{BOS_ID} {INST_ID} {str(prompt)} {END_INST_ID} Model answer {EOS_ID}"
+        "inputs": f"{BOS_ID} {INST_ID} {formatted_prompt} {END_INST_ID} Model answer {EOS_ID}"
     }
 
     try:
-        # SSH-Tunnel-Forwarder einrichten
+        # SSH-Tunnel einrichten
         with SSHTunnelForwarder(
             (config.ssh_host, config.ssh_port),
             ssh_username=config.ssh_username,
@@ -201,19 +201,18 @@ async def query_mixtral_with_ssh_async(prompt: list):
         ) as tunnel:
             
             print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
-            
-            # Warte, bis der Tunnel aktiv ist
-            tunnel.start()
-            
-            # Sende die Anfrage über den Tunnel
+
+            # Anfrage an Mixtral senden
             response = requests.post(config.mistral_api_base, json=data)
-            
+
             if response.status_code == 200:
-                result = json.loads(response.text)
-                answer = result[0]['generated_text']
-                return answer
+                result = response.json()
+                if isinstance(result, list) and 'generated_text' in result[0]:
+                    return result[0]['generated_text']
+                else:
+                    print("Unerwartetes Antwortformat:", result)
             else:
-                print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)
+                print(f"Fehler beim Abrufen der Antwort: {response.status_code}, {response.text}")
 
     except Exception as e:
-        print("Verbindungsfehler:", e)    
+        print(f"Verbindungsfehler: {e}")    
