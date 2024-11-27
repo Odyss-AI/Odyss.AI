@@ -2,6 +2,7 @@ import asyncio
 import base64
 import requests
 import json
+import aiohttp
 
 from tqdm import tqdm
 from openai import OpenAI
@@ -185,10 +186,11 @@ async def query_mixtral_with_ssh_async(prompt: list):
     EOS_ID = "</s>"
     INST_ID = "[INST]"
     END_INST_ID = "[/INST]"
-    
-    # JSON-Format für den API-Aufruf
+
+    # Prompt-Formatierung
+    formatted_prompt = "\n".join([f"{message['role']}: {message['content']}" for message in prompt])
     data = {
-        "inputs": f"{BOS_ID} {INST_ID} {str(prompt)} {END_INST_ID} Model answer {EOS_ID}"
+        "inputs": f"{BOS_ID} {INST_ID} {formatted_prompt} {END_INST_ID} Model answer {EOS_ID}"
     }
 
     try:
@@ -201,19 +203,21 @@ async def query_mixtral_with_ssh_async(prompt: list):
         ) as tunnel:
             
             print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
-            
-            # Warte, bis der Tunnel aktiv ist
-            tunnel.start()
-            
-            # Sende die Anfrage über den Tunnel
-            response = requests.post(config.mistral_api_base, json=data)
-            
-            if response.status_code == 200:
-                result = json.loads(response.text)
-                answer = result[0]['generated_text']
-                return answer
-            else:
-                print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)
+
+            # Anfrage über den Tunnel senden
+            async with aiohttp.ClientSession() as session:
+                async with session.post(config.mistral_api_base, json=data) as response:
+                    if response.status == 200:
+                        try:
+                            result = await response.json()
+                            if isinstance(result, list) and 'generated_text' in result[0]:
+                                return result[0]['generated_text']
+                            else:
+                                print("Unerwartetes Antwortformat:", result)
+                        except Exception as e:
+                            print("Fehler beim Verarbeiten der JSON-Antwort:", e)
+                    else:
+                        print("Fehler beim Abrufen der Antwort:", response.status, await response.text())
 
     except Exception as e:
-        print("Verbindungsfehler:", e)    
+        print("Verbindungsfehler:", e) 

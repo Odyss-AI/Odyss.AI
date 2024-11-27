@@ -4,44 +4,64 @@ from app.models.user import TextChunk
 
 def summary_prompt_builder(chunks: List[TextChunk]):
 
-    context = "".join(f"{t.text}" for i, t in enumerate(chunks))
+    context = "\n".join([f"Abschnitt {i + 1}: {t.text}" for i, t in enumerate(chunks)])
 
     return [
         {
             "role": "system",
             "content": f"""
-                You are a teacher tasked with summarizing an text. After reading the text, give a short summary in one or two sentences about the content in the essay.
+                Deine Aufgabe ist es, den folgenden Text zu lesen, die wichtigsten Punkte zu identifizieren und eine kurze Zusammenfassung zu erstellen, die die Essenz des Textes widerspiegelt. Die Zusammenfassung sollte in ein bis zwei klaren und prägnanten Sätzen erfolgen.
 
                 # Text:
                 {context}
 
-                # Instructions:
-                ## Summarize:
-                In clear and concise language, summarize the key points and themes presented in the essay.
+                # Anweisungen:
+                ## Zusammenfassen:
+                - Fasse die wichtigsten Argumente und Themen des Textes zusammen.
+                - Hebe die Hauptpunkte hervor und erstelle eine kohärente Zusammenfassung des Textes.
+                - Die Zusammenfassung sollte klar und prägnant sein und die Kernideen des Textes widerspiegeln.
+                - Bitte vermeide unnötige Details und konzentriere dich auf die wesentlichen Aspekte des Textes.
                 """,
         },
     ]
 
 def qna_prompt_builder(chunks: list, question: str):
 
+    # Erstellen des Kontexts aus den bereitgestellten Text-Chunks
     context = ""
     if chunks:
-        for chunk, i in chunks:
+        for chunk in chunks:
             context += chunk + "\n"
-            
+
+    # Prompt erstellen
+    if context.strip():
+        # Wenn ein Kontext vorhanden ist
+        content = f"""
+        Deine Aufgabe ist es, den folgenden Text zu lesen und zu verstehen. 
+        Nach dem Lesen des Textes beantworte die gestellten Fragen. 
+        Bitte antworte immer auf Deutsch.
+
+        # Text:
+        {context}
+
+        # Anweisungen:
+        Antworte in 3-8 klaren und prägnanten Sätzen auf die folgende Frage: 
+        {question}
+        """
+    else:
+        # Wenn kein Kontext vorhanden ist
+        content = f"""
+        Es wird kein spezifischer Text bereitgestellt. 
+        Beantworte die folgende Frage basierend auf deinem Wissen. 
+        Bitte antworte immer auf Deutsch.
+
+        # Frage:
+        {question}
+        """
+
     return [
-            {
-                "role": "system",
-                "content": f"""
-                    You are a teacher. Your task is to read and understand the following text.
-                    After reading the text, answer the questions that follow. If no text is provided, please answer the question to the best of your ability.
-
-                    # Text:
-                    {context}
-
-                    # Instructions:
-                    ## In clear and concise language, answer the following question in 3-8 sentences:
-                    {question}
-                    """,
-            }
+        {
+            "role": "system",
+            "content": content.strip(),
+        }
     ]
