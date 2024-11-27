@@ -1,6 +1,6 @@
 from typing import List
 from app.utils.prompts import summary_prompt_builder
-from app.utils.ml_connection import query_mixtral_async
+from app.utils.ml_connection import query_mixtral_with_ssh_async
 from app.models.user import TextChunk
 import unicodedata
 import re
@@ -65,7 +65,7 @@ async def create_summary_with_batches(chunks: List[TextChunk], max_words: int = 
     
     for batch in batches:
         prompt = summary_prompt_builder(batch)
-        summary = await query_mixtral_async(prompt)
+        summary = await query_mixtral_with_ssh_async(prompt)
         batch_summaries.append(summary)
     
     final_text = " ".join(batch_summaries)
@@ -75,6 +75,6 @@ async def create_summary_with_batches(chunks: List[TextChunk], max_words: int = 
         final_text = " ".join(words[:token_limit / 1.4])
     
     final_prompt = summary_prompt_builder([TextChunk(id="final_summary", text=final_text, page=0)])
-    final_summary = await query_mixtral_async(final_prompt)
+    final_summary = await query_mixtral_with_ssh_async(final_prompt)
     
     return final_summary
