@@ -13,51 +13,64 @@ class OCRTesseract:
     def extract_text(self, doc: Document):
         self.process_pdf(doc.path, doc)  # Verarbeite das konvertierte PDF
         # Lösche das konvertierte PDF nach der Verarbeitung (optional)
-        os.remove(doc.path)
+        # os.remove(doc.path)
 
         return doc
 
     def process_pdf(self, document_path, doc):
         with open(document_path, 'rb') as pdf_file:
             pdf_stream = BytesIO(pdf_file.read())
-            page_texts = self.extract_text_from_pdf(pdf_stream, doc)
-            for page_text, page_num in page_texts:
-                self.split_text_into_chunks(page_text, doc, page_num) 
+            self.extract_text_and_chunks_from_pdf(pdf_stream, doc)  # Direkte Verarbeitung
+            self.extract_images_from_pdf(pdf_stream, doc)  # Bilder wie gehabt verarbeiten
 
-            self.extract_images_from_pdf(pdf_stream, doc)
 
-    def extract_text_from_pdf(self, pdf_stream, doc):
-        full_text = ""
-        page_texts = []
-        formulas = []  # Liste für gefundene Formeln
+    def extract_text_and_chunks_from_pdf(self, pdf_stream, doc, max_chunk_size=512, enable_chunking=True):
         try:
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
                 page_text = page.extract_text()
                 if page_text:
-                    full_text += f"{page_text.strip()}\n"
-                    page_texts.append((page_text.strip(), page_num + 1))  # Seitenzahl hinzufügen
-                    
-                    # Suche nach mathematischen Formeln im Text
+                    # Text in Abschnitte teilen
+                    sections = page_text.strip().split('\n\n')
+
+                    for section in sections:
+                        if enable_chunking:
+                            # Längere Abschnitte weiter aufteilen
+                            while len(section) > max_chunk_size:
+                                text_chunk = TextChunk(
+                                    id=str(ObjectId()),
+                                    text=section[:max_chunk_size].strip(),
+                                    page=page_num + 1,
+                                )
+                                doc.textList.append(text_chunk)
+                                section = section[max_chunk_size:]  # Rest weiterverarbeiten
+
+                        # Rest des Abschnitts als Chunk speichern
+                        if section.strip():
+                            text_chunk = TextChunk(
+                                id=str(ObjectId()),
+                                text=section.strip(),
+                                page=page_num + 1,
+                            )
+                            doc.textList.append(text_chunk)
+
+                    # Formeln extrahieren
                     formulas_found = self.extract_formulas(page_text.strip())
-                    formulas.append((formulas_found, page_num + 1))  # Formeln und Seitenzahl speichern
+                    for formula in formulas_found:
+                        formula_chunk = TextChunk(
+                            id=str(ObjectId()),
+                            text="",  # Kein Text, nur die Formel
+                            page=page_num + 1,
+                            formula=[formula],
+                        )
+                        doc.textList.append(formula_chunk)
+
                 else:
-                    full_text += f"No text detected on page {page_num + 1}\n"
-                    page_texts.append(("", page_num + 1))  # Leeren Text hinzufügen
-                
-                if not full_text.strip():  # If no text was found
-                    full_text = ""  # Return empty string for image-only documents
+                    print(f"No text detected on page {page_num + 1}")
 
         except Exception as e:
-            print(f"Error extracting text from PDF: {e}")
+            print(f"Error extracting text and chunks from PDF: {e}")
 
-        # Füge die gefundenen Formeln zur textList des Dokuments hinzu
-        for formulas_on_page, page_num in formulas:
-            for formula in formulas_on_page:
-                text_chunk = TextChunk(id=str(ObjectId()), text="", page=page_num, formula=[formula])
-                doc.textList.append(text_chunk)
-
-        return page_texts  # Gib die Liste von Seiten zurück
     
     def extract_formulas(self, text):
         # Regex-Muster für einfache LaTeX-Formeln (z.B. $...$ oder \[...\])
@@ -149,31 +162,23 @@ class OCRTesseract:
 
         print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
-
     def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
-        # Text in Wörter aufteilen
-        words = full_text.split()
+        # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
+        sections = full_text.split('\n\n')
 
-        # Variable für den aktuellen Chunk
-        current_chunk = []
-        word_count = 0
-
-        for word in words:
-            current_chunk.append(word)
-            word_count += 1
-            
-            # Wenn die maximale Anzahl an Wörtern erreicht ist, speichere den Chunk und starte einen neuen
-            if word_count >= max_chunk_size:
-                text_chunk = TextChunk(id=str(ObjectId()), text=' '.join(current_chunk), page=page_num)
+        for section in sections:
+            if enable_chunking:
+                # Teile den Abschnitt weiter auf, wenn er länger als max_chunk_size ist
+                while len(section) > max_chunk_size:
+                    # Füge einen TextChunk mit max_chunk_size hinzu
+                    text_chunk = TextChunk(id=str(ObjectId()), text=section[:max_chunk_size].strip(), page=page_num)
+                    doc.textList.append(text_chunk)
+                    section = section[max_chunk_size:]  # Rest des Abschnitts
+                
+            # Füge den verbleibenden Abschnitt hinzu, wenn nicht leer
+            if section.strip():
+                text_chunk = TextChunk(id=str(ObjectId()), text=section.strip(), page=page_num)
                 doc.textList.append(text_chunk)
-                current_chunk = []  # Leere den aktuellen Chunk
-                word_count = 0  # Setze die Wortanzahl zurück
-
-        # Falls nach der Schleife noch Wörter übrig sind, die weniger als max_chunk_size sind, füge sie als letzten Chunk hinzu
-        if current_chunk:
-            text_chunk = TextChunk(id=str(ObjectId()), text=' '.join(current_chunk), page=page_num)
-            doc.textList.append(text_chunk)
-
 
 
     def ocr_image(self, image_stream):
