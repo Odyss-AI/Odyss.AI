@@ -8,12 +8,17 @@ from app.user import TextChunk, Image, Document
 from PIL import Image as PilImage
 from app.config import Config
 import pytesseract
+import LatexOCR
 
 class OCRTesseract:
+    def __init__(self):
+        # LatexOCR-Instanz zur Formel-Erkennung initialisieren
+        self.latex_ocr = LatexOCR()
+
     def extract_text(self, doc: Document):
         self.process_pdf(doc.path, doc)  # Verarbeite das konvertierte PDF
         # Lösche das konvertierte PDF nach der Verarbeitung (optional)
-        os.remove(doc.path)
+        # os.remove(doc.path)
 
         return doc
 
@@ -25,20 +30,6 @@ class OCRTesseract:
                 self.split_text_into_chunks(page_text, doc, page_num) 
 
             self.extract_images_from_pdf(pdf_stream, doc)
-
-    # def convert_docx_or_pptx_to_pdf(self, document_path):
-    #     try:
-    #         if document_path.endswith(".docx"):
-    #             # Konvertiere .docx zu PDF
-    #             docx_to_pdf(document_path)
-    #         elif document_path.endswith(".pptx"):
-    #             # Konvertiere .pptx zu PDF
-    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-    #     except Exception as e:
-    #         raise Exception(f"Error during conversion: {e}")
-
-        # Rückgabe des Pfads zur neuen PDF-Datei
-        # return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
     def extract_text_from_pdf(self, pdf_stream, doc):
         full_text = ""
@@ -74,15 +65,14 @@ class OCRTesseract:
         return page_texts  # Gib die Liste von Seiten zurück
     
     def extract_formulas(self, text):
-        # Regex-Muster für einfache LaTeX-Formeln (z.B. $...$ oder \[...\])
-        formula_pattern = r'\$(.*?)\$|\\\[(.*?)\\\]'  # Erlaube sowohl Inline- als auch Blockformeln
-        matches = re.findall(formula_pattern, text)
-
-        # Extrahiere die gefundenen Formeln
+        # Verwende LatexOCR, um Formeln zu extrahieren
         formulas = []
-        for match in matches:
-            formula = match[0] if match[0] else match[1]  # Wähle den nicht leeren Teil aus
-            formulas.append(formula.strip())
+        try:
+            detected_formulas = self.latex_ocr.detect(text)
+            for formula in detected_formulas:
+                formulas.append(formula.strip())
+        except Exception as e:
+            print(f"Fehler bei der LatexOCR-Formel-Extraktion: {e}")
 
         return formulas
 

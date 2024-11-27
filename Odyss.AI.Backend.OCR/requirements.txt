@@ -19,3 +19,4 @@ paddleocr
 paddlepaddle
 quart-cors
 bson
+git+https://github.com/lukas-blecher/LaTeX-OCR.git

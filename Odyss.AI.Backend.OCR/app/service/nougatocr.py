@@ -20,7 +20,7 @@ class OCRNougat:
 
     def extract_text(self, doc: Document):
         self.process_pdf(doc.path, doc)
-        os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
+        # os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
 
         return doc
 
@@ -37,18 +37,6 @@ class OCRNougat:
                 self.split_text_into_chunks(page_text, doc, page_num)
 
             self.extract_images_from_pdf(pdf_stream, doc)
-
-    # def convert_docx_or_pptx_to_pdf(self, document_path):
-    #     try:
-    #         print(f"Konvertiere {document_path} zu PDF...")
-    #         if document_path.endswith(".docx"):
-    #             docx_to_pdf(document_path)
-    #         elif document_path.endswith(".pptx"):
-    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-    #     except Exception as e:
-    #         raise Exception(f"Fehler während der Konvertierung: {e}")
-
-    #     return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
 # extraction
     def extract_text_from_pdf(self, pdf_stream):
