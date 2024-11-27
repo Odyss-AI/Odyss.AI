@@ -175,31 +175,25 @@ class MongoDBService:
         """
         
         try:
-            async with await self.client.start_session() as session:
-                async with session.start_transaction():
-                    user = await self.get_user_async(username)
-                    if not user:
-                        return None
-                    
-                    docs = await self.get_documents_of_user_async(username)
-                    for doc in docs:
-                        if doc.doc_id == document.doc_id:
-                            return doc.id
-                    
-                    document.id = str(ObjectId())  # Generiere eine eindeutige ID für das Dokument
-                    await self.user_collection.update_one(
-                        {"username": username},
-                        {"$push": {"documents": document.model_dump(by_alias=True)}},
-                        session=session
-                    )
+            user = await self.get_user_async(username)
+            if not user:
+                return None
 
-                    return document.id
-        except asyncio.CancelledError:
-            logging.error("Die Operation wurde abgebrochen.")
-            raise
+            docs = await self.get_documents_of_user_async(username)
+            for doc in docs:
+                if doc.doc_id == document.doc_id:
+                    return doc.id
+
+            document.id = str(ObjectId())  # Generiere eine eindeutige ID für das Dokument
+            await self.user_collection.update_one(
+                {"username": username},
+                {"$push": {"documents": document.model_dump(by_alias=True)}}
+            )
+            return document.id
         except Exception as e:
             logging.error(f"Fehler beim Hinzufügen des Dokuments: {e}")
             return None
+
 
 
     async def delete_document_of_user_async(self, username, document_id):
