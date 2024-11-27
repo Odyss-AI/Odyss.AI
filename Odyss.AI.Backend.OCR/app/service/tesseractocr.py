@@ -26,20 +26,6 @@ class OCRTesseract:
 
             self.extract_images_from_pdf(pdf_stream, doc)
 
-    # def convert_docx_or_pptx_to_pdf(self, document_path):
-    #     try:
-    #         if document_path.endswith(".docx"):
-    #             # Konvertiere .docx zu PDF
-    #             docx_to_pdf(document_path)
-    #         elif document_path.endswith(".pptx"):
-    #             # Konvertiere .pptx zu PDF
-    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-    #     except Exception as e:
-    #         raise Exception(f"Error during conversion: {e}")
-
-        # Rückgabe des Pfads zur neuen PDF-Datei
-        # return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
-
     def extract_text_from_pdf(self, pdf_stream, doc):
         full_text = ""
         page_texts = []
@@ -165,22 +151,29 @@ class OCRTesseract:
 
 
     def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
-        # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
-        sections = full_text.split('\n\n')
+        # Text in Wörter aufteilen
+        words = full_text.split()
 
-        for section in sections:
-            if enable_chunking:
-                # Teile den Abschnitt weiter auf, wenn er länger als max_chunk_size ist
-                while len(section) > max_chunk_size:
-                    # Füge einen TextChunk mit max_chunk_size hinzu
-                    text_chunk = TextChunk(id=str(ObjectId()), text=section[:max_chunk_size].strip(), page=page_num)
-                    doc.textList.append(text_chunk)
-                    section = section[max_chunk_size:]  # Rest des Abschnitts
-                
-            # Füge den verbleibenden Abschnitt hinzu, wenn nicht leer
-            if section.strip():
-                text_chunk = TextChunk(id=str(ObjectId()), text=section.strip(), page=page_num)
+        # Variable für den aktuellen Chunk
+        current_chunk = []
+        word_count = 0
+
+        for word in words:
+            current_chunk.append(word)
+            word_count += 1
+            
+            # Wenn die maximale Anzahl an Wörtern erreicht ist, speichere den Chunk und starte einen neuen
+            if word_count >= max_chunk_size:
+                text_chunk = TextChunk(id=str(ObjectId()), text=' '.join(current_chunk), page=page_num)
                 doc.textList.append(text_chunk)
+                current_chunk = []  # Leere den aktuellen Chunk
+                word_count = 0  # Setze die Wortanzahl zurück
+
+        # Falls nach der Schleife noch Wörter übrig sind, die weniger als max_chunk_size sind, füge sie als letzten Chunk hinzu
+        if current_chunk:
+            text_chunk = TextChunk(id=str(ObjectId()), text=' '.join(current_chunk), page=page_num)
+            doc.textList.append(text_chunk)
+
 
 
     def ocr_image(self, image_stream):
