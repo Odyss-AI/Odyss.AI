@@ -27,10 +27,13 @@ def summary_prompt_builder(chunks: List[TextChunk]):
 
 def qna_prompt_builder(chunks: list, question: str):
 
+    # Nur die Textbestandteile extrahieren
+    text_chunks = [chunk[0] for chunk in chunks]
+
     # Erstellen des Kontexts aus den bereitgestellten Text-Chunks
     context = ""
-    if chunks:
-        for chunk in chunks:
+    if text_chunks:
+        for chunk in text_chunks:
             context += chunk + "\n"
 
     # Prompt erstellen
