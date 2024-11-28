@@ -50,6 +50,7 @@ class MessageManager:
 
         # print(f"Docs: {docs}")
         # Search for similar text chunks in the documents
+        print(f"Chat doc_ids: {chat.doc_ids}")
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
 
