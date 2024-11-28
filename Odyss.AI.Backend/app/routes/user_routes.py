@@ -6,7 +6,7 @@ from app.models.chat import Chat
 from app.utils.db import get_db  # Importiere den globalen db_service und die Initialisierungsfunktion
 
 # Benutzer hinzufügen
-@main.route('/users/adduser', methods=['POST'])
+@main.route('/users/add', methods=['POST'])
 async def add_user():
     try:
         db = get_db()
@@ -67,3 +67,25 @@ async def get_chats():
         return jsonify({"error": "Chats nicht gefunden"}), 404
     except Exception as e:
         return jsonify({"error": f"Fehler beim Abrufen der Chats: {e}"}), 500
+
+# Chat hinzufügen
+@main.route('/users/addchat', methods=['POST'])
+async def add_chat():
+    try:
+        db = get_db()
+
+        data = await request.get_json()
+        username = data.get('username')
+        docs = data.get('docs')
+        chat_name = data.get('name')
+
+        if not username:
+            return jsonify({"error": "Username ist erforderlich"}), 400
+
+        # Chat hinzufügen
+        chat = await db.create_chat_async(username, chat_name, docs)
+        if chat:
+            return jsonify(chat.model_dump(by_alias=True)), 201
+        return jsonify({"error": "Fehler beim Hinzufügen des Chats"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Fehler beim Hinzufügen des Chats: {e}"}), 500

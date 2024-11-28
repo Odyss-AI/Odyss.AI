@@ -10,10 +10,13 @@ from app.routes import main
 async def paddleocr(): 
     # JSON-Daten von der Anfrage abrufen
     data = await request.json
+    if data is None:
+        return jsonify({"error": "Invalid JSON data"}), 400
+    
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):
@@ -28,7 +31,7 @@ async def paddleocr():
 
     try:
         # Übergebe den Dateipfad direkt an die extract_text-Methode
-        extracted_text = ocrpaddle.extract_text(doc, document_path)
+        extracted_text = ocrpaddle.extract_text(doc)
         
         # Rückgabe des extrahierten Texts oder eine Erfolgsmeldung
         return jsonify(doc.model_dump()), 200 # Rückgabe des extrahierten Texts
@@ -39,10 +42,13 @@ async def paddleocr():
 async def nougatocr() : 
     # JSON-Daten von der Anfrage abrufen
     data = await request.json
+    if data is None:
+        return jsonify({"error": "Invalid JSON data"}), 400
+    
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):
@@ -58,7 +64,7 @@ async def nougatocr() :
     # Hier musst du sicherstellen, dass `extract_text` die Datei vom Dateipfad lesen kann
     try:
         # Übergebe den Dateipfad direkt an die extract_text-Methode
-        ocrnougat.extract_text(doc, document_path)  # Richtig: nur doc und document_path übergeben
+        ocrnougat.extract_text(doc)  # Richtig: nur doc und document_path übergeben
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -69,10 +75,12 @@ async def nougatocr() :
 async def tesseractocr():
     # JSON-Daten von der Anfrage abrufen
     data = await request.json
+    if data is None:
+        return jsonify({"error": "Invalid JSON data"}), 400
     doc = Document(**data)
 
     # Den Dateipfad aus der Anfrage abrufen
-    document_path = doc.doclink
+    document_path = doc.path
 
     # Prüfen, ob der Pfad existiert und auf eine Datei verweist
     if not os.path.exists(document_path):
@@ -88,7 +96,7 @@ async def tesseractocr():
     # Hier musst du sicherstellen, dass `extract_text` die Datei vom Dateipfad lesen kann
     try:
         # Übergebe den Dateipfad direkt an die extract_text-Methode
-        ocrtesseract.extract_text(doc, document_path)  # Richtig: nur doc und document_path übergeben
+        ocrtesseract.extract_text(doc)  # Richtig: nur doc und document_path übergeben
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

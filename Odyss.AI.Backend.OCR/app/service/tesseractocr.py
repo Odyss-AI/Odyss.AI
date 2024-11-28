@@ -1,61 +1,49 @@
 from io import BytesIO
+import re
 import zlib
 from bson import ObjectId
 import os
 import PyPDF2
-from pptxtopdf import convert as pptx_to_pdf
-from docx2pdf import convert as docx_to_pdf
-from app.user import TextChunk, Image
+from app.user import TextChunk, Image, Document
 from PIL import Image as PilImage
 from app.config import Config
 import pytesseract
 
 class OCRTesseract:
-    def extract_text(self, doc, document_path):
-        # Prüfe den Typ des Dokuments basierend auf dem Dateipfad
-        file_extension = os.path.splitext(document_path)[1].lower()
-
-        if file_extension == ".pdf":
-            # Direkt PDF verarbeiten
-            self.process_pdf(document_path, doc)
-        elif file_extension in [".docx", ".pptx"]:
-            # Konvertiere zu PDF und dann verarbeite das konvertierte PDF
-            converted_pdf_path = self.convert_docx_or_pptx_to_pdf(document_path)  # Pfad zur konvertierten PDF erhalten
-            self.process_pdf(converted_pdf_path, doc)  # Verarbeite das konvertierte PDF
-
-            # Lösche das konvertierte PDF nach der Verarbeitung (optional)
-            os.remove(converted_pdf_path)
-        else:
-            print("Unsupported file type")
+    def extract_text(self, doc: Document):
+        self.process_pdf(doc.path, doc)  # Verarbeite das konvertierte PDF
+        # Lösche das konvertierte PDF nach der Verarbeitung (optional)
+        os.remove(doc.path)
 
         return doc
 
     def process_pdf(self, document_path, doc):
         with open(document_path, 'rb') as pdf_file:
             pdf_stream = BytesIO(pdf_file.read())
-            page_texts = self.extract_text_from_pdf(pdf_stream)
+            page_texts = self.extract_text_from_pdf(pdf_stream, doc)
             for page_text, page_num in page_texts:
                 self.split_text_into_chunks(page_text, doc, page_num) 
 
             self.extract_images_from_pdf(pdf_stream, doc)
 
-    def convert_docx_or_pptx_to_pdf(self, document_path):
-        try:
-            if document_path.endswith(".docx"):
-                # Konvertiere .docx zu PDF
-                docx_to_pdf(document_path)
-            elif document_path.endswith(".pptx"):
-                # Konvertiere .pptx zu PDF
-                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-        except Exception as e:
-            raise Exception(f"Error during conversion: {e}")
+    # def convert_docx_or_pptx_to_pdf(self, document_path):
+    #     try:
+    #         if document_path.endswith(".docx"):
+    #             # Konvertiere .docx zu PDF
+    #             docx_to_pdf(document_path)
+    #         elif document_path.endswith(".pptx"):
+    #             # Konvertiere .pptx zu PDF
+    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
+    #     except Exception as e:
+    #         raise Exception(f"Error during conversion: {e}")
 
         # Rückgabe des Pfads zur neuen PDF-Datei
-        return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
+        # return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
-    def extract_text_from_pdf(self, pdf_stream):
+    def extract_text_from_pdf(self, pdf_stream, doc):
         full_text = ""
         page_texts = []
+        formulas = []  # Liste für gefundene Formeln
         try:
             pdf_reader = PyPDF2.PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
@@ -63,17 +51,40 @@ class OCRTesseract:
                 if page_text:
                     full_text += f"{page_text.strip()}\n"
                     page_texts.append((page_text.strip(), page_num + 1))  # Seitenzahl hinzufügen
+                    
+                    # Suche nach mathematischen Formeln im Text
+                    formulas_found = self.extract_formulas(page_text.strip())
+                    formulas.append((formulas_found, page_num + 1))  # Formeln und Seitenzahl speichern
                 else:
                     full_text += f"No text detected on page {page_num + 1}\n"
                     page_texts.append(("", page_num + 1))  # Leeren Text hinzufügen
-            
-            if not full_text.strip():  # If no text was found
-                full_text = ""  # Return empty string for image-only documents
+                
+                if not full_text.strip():  # If no text was found
+                    full_text = ""  # Return empty string for image-only documents
 
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
 
+        # Füge die gefundenen Formeln zur textList des Dokuments hinzu
+        for formulas_on_page, page_num in formulas:
+            for formula in formulas_on_page:
+                text_chunk = TextChunk(id=str(ObjectId()), text="", page=page_num, formula=[formula])
+                doc.textList.append(text_chunk)
+
         return page_texts  # Gib die Liste von Seiten zurück
+    
+    def extract_formulas(self, text):
+        # Regex-Muster für einfache LaTeX-Formeln (z.B. $...$ oder \[...\])
+        formula_pattern = r'\$(.*?)\$|\\\[(.*?)\\\]'  # Erlaube sowohl Inline- als auch Blockformeln
+        matches = re.findall(formula_pattern, text)
+
+        # Extrahiere die gefundenen Formeln
+        formulas = []
+        for match in matches:
+            formula = match[0] if match[0] else match[1]  # Wähle den nicht leeren Teil aus
+            formulas.append(formula.strip())
+
+        return formulas
 
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
@@ -153,7 +164,7 @@ class OCRTesseract:
         print(f"Image extraction complete. Images found: {len(doc.imgList)}")
 
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
         # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
         sections = full_text.split('\n\n')
 

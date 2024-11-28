@@ -1,0 +1,15 @@
+/* src/components/LoadingBar/LoadingBar.module.css */
+.loadingBarContainer {
+    width: 100%;
+    height: 8px;
+    background-color: #e0e0e0; /* Hintergrundfarbe des Ladebalkens */
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.loadingBar {
+    height: 100%;
+    background-color: #4caf50; /* Farbe des Fortschrittsbalkens */
+    transition: width 2s ease; /* Animation des Fortschritts */
+}

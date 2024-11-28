@@ -10,6 +10,9 @@ RUN pip install virtualenv
 # Create a virtual environment
 RUN virtualenv venv
 
+# Install CV2 dependencies
+RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 
@@ -25,5 +28,5 @@ EXPOSE 5050
 # Define environment variable
 ENV PYTHONUNBUFFERED=1
 
-# Run the application
-CMD ["python", "run.py"]
+# Run the application within the virtual environment
+CMD ["/bin/bash", "-c", "source venv/bin/activate && python run.py"]

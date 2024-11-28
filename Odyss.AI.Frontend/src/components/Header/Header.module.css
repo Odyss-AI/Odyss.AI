@@ -1,0 +1,42 @@
+/* src/components/Header/Header.module.css */
+.header {
+    display: flex; /* Flexbox für die horizontale Anordnung */
+    justify-content: space-between; /* Verteilt die Elemente gleichmäßig */
+    align-items: center; /* Zentriert die Elemente vertikal */
+    padding: 10px 20px; /* Innenabstand für den Header */
+    background-color: #007bff; /* Hintergrundfarbe für den Header */
+    color: white; /* Textfarbe */
+}
+
+.logo {
+    height: 40px; /* Höhe des Logos */
+    margin-right: 20px; /* Abstand zwischen Logo und Titel */
+}
+
+.title {
+    flex-grow: 1; /* Nimmt den verfügbaren Platz ein */
+    text-align: center; /* Zentriert den Titel */
+    font-size: 1.5rem; /* Schriftgröße für den Titel */
+}
+
+.userIconContainer {
+    position: relative;
+}
+
+.userIcon {
+    height: 40px; /* Höhe des Benutzer-Icons */
+    margin-left: 20px; /* Abstand zwischen Titel und Benutzer-Icon */
+    cursor: pointer;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    z-index: 10;
+}

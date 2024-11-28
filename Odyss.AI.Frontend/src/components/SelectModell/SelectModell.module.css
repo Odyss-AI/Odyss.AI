@@ -1,0 +1,11 @@
+/* src/components/SelectModell/SelectModell.module.css */
+.selectModell {
+    width: 50%; /* Nimmt 50% des Containers ein */
+    margin: 10px auto; /* Zentriert die Komponente und sorgt für einen kleinen oberen Abstand */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Positioniert den Inhalt der Komponente oben */
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+}

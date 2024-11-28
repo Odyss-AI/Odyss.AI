@@ -19,10 +19,13 @@ typing_extensions
 tzdata
 wsproto
 qdrant-client
-mistral
 aiocache
 aiocache[redis]
 quart-cors
 openai
-mistralai
 python-dotenv
+Pillow
+paramiko
+sshtunnel
+tqdm
+requests
