@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Use existing repository
         run: |
-          cd /path/to/your/repo
+          cd /var/opt
           git pull origin dev
           sudo docker-compose down
           sudo docker-compose build
