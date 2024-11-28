@@ -3,17 +3,15 @@ name: Deploy with Docker
 on:
   push:
     branches:
-      - dev  # Überwache nur Pushes in den dev-Branch
+      - dev
 
 jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Deploy with Docker
+      - name: Use existing repository
         run: |
+          cd /path/to/your/repo
           git pull origin dev
           sudo docker-compose down
           sudo docker-compose build
