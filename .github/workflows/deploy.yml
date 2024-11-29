@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Use existing repository
         run: |
-          cd /var/opt
+          cd /var/opt/Odyss.AI
           git pull origin dev
           sudo docker-compose down
           sudo docker-compose build
