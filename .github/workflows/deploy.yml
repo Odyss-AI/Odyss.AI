@@ -9,7 +9,10 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Use existing repository
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory /var/opt/Odyss.AI
+
+      - name: Deploy with Docker
         run: |
           cd /var/opt/Odyss.AI
           git pull origin dev
