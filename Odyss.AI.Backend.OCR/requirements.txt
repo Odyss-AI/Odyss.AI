@@ -19,3 +19,5 @@ paddleocr
 paddlepaddle
 quart-cors
 bson
+pip2tex
+pdf2image

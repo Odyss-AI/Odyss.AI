@@ -5,11 +5,12 @@ from torch import device
 import torch
 from transformers import AutoProcessor, AutoModelForVision2Seq, StoppingCriteriaList 
 import os
-import PyPDF2
+from PyPDF2 import PdfReader
 from app.user import Document, TextChunk, Image
 from PIL import Image as PilImage
 from app.config import Config
 from .StoppingCriteraScores import StoppingCriteriaScores
+from pdf2image import convert_from_bytes
 
 class OCRNougat:
     def __init__(self):
@@ -20,11 +21,11 @@ class OCRNougat:
 
     def extract_text(self, doc: Document):
         self.process_pdf(doc.path, doc)
-        os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
+        # os.remove(doc.path)  # Lösche das konvertierte PDF nach der Verarbeitung
 
         return doc
 
-# Convert
+# Process
     def process_pdf(self, document_path, doc):
         print(f"Öffne PDF für die Verarbeitung: {document_path}")
         with open(document_path, 'rb') as pdf_file:
@@ -34,125 +35,145 @@ class OCRNougat:
 
             for page_text, page_num in page_texts:
                 print(f"Verarbeite Seite {page_num}")
+                
+                # Wende `split_text_into_chunks` direkt auf den Text an
                 self.split_text_into_chunks(page_text, doc, page_num)
 
+            # Extrahiere Bilder
             self.extract_images_from_pdf(pdf_stream, doc)
-
-    def convert_docx_or_pptx_to_pdf(self, document_path):
-        try:
-            print(f"Konvertiere {document_path} zu PDF...")
-            if document_path.endswith(".docx"):
-                docx_to_pdf(document_path)
-            elif document_path.endswith(".pptx"):
-                pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-        except Exception as e:
-            raise Exception(f"Fehler während der Konvertierung: {e}")
-
-        return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
 # extraction
     def extract_text_from_pdf(self, pdf_stream):
-        full_text = ""
         page_texts = []
         try:
-            print("Extrahiere Text aus PDF...")
-            pdf_reader = PyPDF2.PdfReader(pdf_stream)
-            for page_num, page in enumerate(pdf_reader.pages):
-                page_text = page.extract_text()
-                if page_text:
+            print("Extrahiere Text aus PDF mit Nougat OCR...")
+            
+            # Konvertiere PDF-Seiten in Bilder
+            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG')
+            print(f"{len(images)} Seiten in Bilder konvertiert.")
+
+            for page_num, image in enumerate(images):
+                print(f"Verarbeite Seite {page_num + 1} mit Nougat OCR...")
+                
+                # Wandle das Bild in einen Byte-Stream für die OCR-Methode um
+                img_byte_stream = BytesIO()
+                image.save(img_byte_stream, format='JPEG')
+                img_byte_stream.seek(0)
+                
+                # Führe OCR auf dem Bild aus
+                page_text = self.ocr_image(img_byte_stream)
+                
+                # Prüfe, ob Text erkannt wurde
+                if page_text.strip():
                     print(f"Text auf Seite {page_num + 1} erkannt.")
-                    full_text += f"{page_text.strip()}\n"
                     page_texts.append((page_text.strip(), page_num + 1))
                 else:
                     print(f"Kein Text auf Seite {page_num + 1} erkannt.")
                     page_texts.append(("", page_num + 1))
-            
-            if not full_text.strip():  # If no text was found
-                print("Kein Text im gesamten Dokument erkannt. Möglicherweise bildbasiertes PDF.")
-                full_text = ""  # Return empty string for image-only documents
-
+                
         except Exception as e:
             print(f"Fehler beim Extrahieren des Textes aus dem PDF: {e}")
 
         return page_texts
 
-
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
-            pdf_reader = PyPDF2.PdfReader(pdf_stream)
-            
+            pdf_reader = PdfReader(pdf_stream)
+
             for page_num, page in enumerate(pdf_reader.pages):
-                resources = page.get("/Resources").get_object()
-                xobjects = resources.get("/XObject")
-                
-                if xobjects:
-                    xobjects = xobjects.get_object()
-                    image_counter = 1  # Image counter für jede Seite zurücksetzen
-                    
-                    for obj in xobjects:
-                        xobject = xobjects[obj].get_object()
-                        
-                        if xobject["/Subtype"] == "/Image":
-                            try:
-                                width = xobject["/Width"]
-                                height = xobject["/Height"]
+                resources = page.get("/Resources")
+                if resources is None:
+                    print(f"Keine Ressourcen auf Seite {page_num + 1}.")
+                else:
+                    xobjects = resources.get("/XObject")
+                    if xobjects is None:
+                        print(f"Keine XObjects auf Seite {page_num + 1}.")
+                    else:
+                        xobjects = xobjects.get_object()
+                        image_counter = 1  # Zähler für die Bilder pro Seite
 
-                                # Daten extrahieren
-                                data = xobject._data
-                                file_extension = "png"  # Standard PNG verwenden
+                        for obj in xobjects:
+                            xobject = xobjects[obj].get_object()
 
-                                # Überprüfe auf vorhandene Filter und dekodiere entsprechend
-                                if "/Filter" in xobject:
-                                    if xobject["/Filter"] == "/FlateDecode":
+                            if xobject["/Subtype"] == "/Image":
+                                img = None
+                                try:
+                                    width = xobject["/Width"]
+                                    height = xobject["/Height"]
+                                    data = xobject._data
+                                    file_extension = "png"
+
+                                    # Filter prüfen und entsprechende Verarbeitung
+                                    filter_type = xobject.get("/Filter", None)
+
+                                    if filter_type == "/FlateDecode":
                                         try:
-                                            data = zlib.decompress(data)  # Dekomprimiere die FlateDecode-Daten
+                                            data = zlib.decompress(data)
                                             img = PilImage.frombytes("RGB", (width, height), data)
                                         except Exception as e:
-                                            print(f"Fehler beim Dekomprimieren von Bild {image_counter} auf Seite {page_num + 1}: {e}")
-                                            continue
-                                    elif xobject["/Filter"] == "/DCTDecode":
+                                            print(f"Fehler beim Dekomprimieren von FlateDecode auf Seite {page_num + 1}: {e}")
+
+                                    elif filter_type == "/DCTDecode":
                                         file_extension = "jpg"
-                                    elif xobject["/Filter"] == "/JPXDecode":
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        with open(img_save_path, "wb") as f:
+                                            f.write(data)
+                                        img = None
+
+                                    elif filter_type == "/JPXDecode":
                                         file_extension = "jp2"
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        with open(img_save_path, "wb") as f:
+                                            f.write(data)
+                                        img = None
+
                                     else:
-                                        print(f"Unbekannter Filter {xobject['/Filter']} für Bild {image_counter} auf Seite {page_num + 1}")
-                                        continue
+                                        print(f"Unbekannter Filter {filter_type} auf Seite {page_num + 1}, Bild {image_counter}.")
 
-                                # Speicherpfad für das Bild
-                                img_save_path = os.path.join(Config.LOCAL_DOC_PATH, f"extracted_image_{page_num+1}_{image_counter}.{file_extension}")
+                                    # Bild speichern, falls ein PIL-Image erstellt wurde
+                                    if img is not None:
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        img.save(img_save_path)
+                                        print(f"Bild {image_counter} auf Seite {page_num + 1} erfolgreich gespeichert als {img_save_path}.")
 
-                                # Speichere das Bild basierend auf dem Filtertyp
-                                img.save(img_save_path)
-                                print(f"Bild {image_counter} auf Seite {page_num + 1} erfolgreich gespeichert als {img_save_path}.")
+                                    # OCR auf dem Bild ausführen
+                                    if os.path.exists(img_save_path):
+                                        print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
+                                        img_text = self.ocr_image(img_save_path)
 
-                                # OCR auf dem Bild ausführen
-                                print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
-                                img_text = self.ocr_image(img_save_path)  # Tesseract OCR-Funktion
+                                        # Text verarbeiten und hinzufügen
+                                        if img_text.strip():
+                                            self.split_text_into_chunks(img_text, doc, page_num)
 
-                                # Erstelle ein TextChunk für den OCR-Text und füge es zur textList hinzu
-                                if img_text.strip():  # Nur hinzufügen, wenn Text erkannt wurde
-                                    self.split_text_into_chunks(img_text, doc, page_num)  # OCR-Text in Chunks speichern
+                                        # Image-Objekt erstellen und zur imgList hinzufügen
+                                        image_obj = Image(
+                                            id=str(ObjectId()),
+                                            link=img_save_path,
+                                            page=page_num + 1,
+                                            type=file_extension,
+                                            imgtext=img_text if isinstance(img_text, str) else "",
+                                            llm_output=""
+                                        )
+                                        doc.imgList.append(image_obj)
 
-                                # Erstelle ein Image-Objekt
-                                image_obj = Image(
-                                    id=str(ObjectId()),
-                                    link=img_save_path,
-                                    page=page_num + 1,
-                                    type=file_extension,
-                                    imgtext=img_text if isinstance(img_text, str) else "",
-                                    llm_output=""
-                                )
-                                doc.imgList.append(image_obj)
+                                    image_counter += 1
 
-                                image_counter += 1
-
-                            except Exception as e:
-                                print(f"Fehler beim Verarbeiten des Bildes für Objekt {obj} auf Seite {page_num + 1}: {e}")
+                                except Exception as e:
+                                    print(f"Fehler beim Verarbeiten des Bildes auf Seite {page_num + 1}, Objekt {obj}: {e}")
 
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-        print(f"Image extraction complete. Images found: {len(doc.imgList)}")
+        print(f"Bildextraktion abgeschlossen. Gefundene Bilder: {len(doc.imgList)}")
 
 
     def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
