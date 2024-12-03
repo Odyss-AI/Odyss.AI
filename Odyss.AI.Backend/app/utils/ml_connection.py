@@ -142,9 +142,11 @@ async def query_pixtral_with_ssh_async(doc:Document):
         for img in tqdm(doc.imgList, desc="Processing images"):
             image_class = await get_image_class_async(img.link)
 
+            img.type = image_class
+
             # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
             if image_class == "just_img":
-                continue
+                continue   
 
             # Bild laden und in Base64 kodieren
             image = PILImage.open(img.link)

@@ -116,7 +116,7 @@ class OCRNougat:
                                     elif filter_type == "/DCTDecode":
                                         file_extension = "jpg"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -126,7 +126,7 @@ class OCRNougat:
                                     elif filter_type == "/JPXDecode":
                                         file_extension = "jp2"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -139,7 +139,7 @@ class OCRNougat:
                                     # Bild speichern, falls ein PIL-Image erstellt wurde
                                     if img is not None:
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         img.save(img_save_path)

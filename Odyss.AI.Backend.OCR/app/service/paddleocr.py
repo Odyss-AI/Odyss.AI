@@ -33,16 +33,6 @@ class OCRPaddle:
 
             self.extract_images_from_pdf(pdf_stream, doc)
 
-    # def convert_docx_or_pptx_to_pdf(self, document_path):
-    #     try:
-    #         print(f"Konvertiere {document_path} zu PDF...")
-    #         if document_path.endswith(".docx"):
-    #             docx_to_pdf(document_path)
-    #         elif document_path.endswith(".pptx"):
-    #             pptx_to_pdf(document_path, Config.LOCAL_DOC_PATH)
-    #     except Exception as e:
-    #         raise Exception(f"Fehler während der Konvertierung: {e}")
-
         return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
     def extract_text_from_pdf(self, pdf_stream):
@@ -110,7 +100,7 @@ class OCRPaddle:
                                     elif filter_type == "/DCTDecode":
                                         file_extension = "jpg"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -120,7 +110,7 @@ class OCRPaddle:
                                     elif filter_type == "/JPXDecode":
                                         file_extension = "jp2"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -133,7 +123,7 @@ class OCRPaddle:
                                     # Bild speichern, falls ein PIL-Image erstellt wurde
                                     if img is not None:
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_DOC_PATH,
+                                            Config.LOCAL_IMG_PATH,
                                             f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
                                         )
                                         img.save(img_save_path)
