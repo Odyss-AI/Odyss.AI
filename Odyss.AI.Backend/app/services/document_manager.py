@@ -46,56 +46,70 @@ class DocumentManager:
             db = get_db()
             # Generate a unique name for the document
             hash_doc, hash = self.generate_filename(file.filename)
+            try:
+                # Convert file to PDF, OCR just uses PDFs
+                converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
+            except Exception as e:
+                logging.error("Error while converting file: "+e)
 
-            # Convert file to PDF, OCR just uses PDFs
-            converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
-            if self.handle_error(converted_file_path is None, "Error converting file", file, username):
-                return None, "Error converting file"
+            try:
+                # Upload the PDF to MongoDB and get the file objectID back
+                mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
+            except Exception as e:
+                logging.error("Error while uploading file to Mongodb: "+ e)
 
-            # Upload the PDF to MongoDB and get the file objectID back
-            mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
-            if self.handle_error(mongo_file_id is None, "Error uploading file on MongoDB", file, username):
-                return None, "Error uploading file on MongoDB"
-
-            # Get all PDF informations (text/images)
-            new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
-            new_doc = await extract_pdf_information_with_ocr(new_doc)
-            if self.handle_error(new_doc is None, "Error extracting information while using ocr", file, username):
-                return None, "Error extracting information while using ocr"
+            try:
+                # Get all PDF informations (text/images)
+                new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
+                new_doc = await extract_pdf_information_with_ocr(new_doc)
+            except Exception as e:
+                logging.error("Error while extracing information while using ocr: "+e)
 
             # TODO: Upload extracted pictures to mongoDB (maybe not necessary anymore)
             
-            # Tag Images and delete them after processing
-            new_doc = await query_pixtral_with_ssh_async(new_doc)
-            for img in new_doc.imgList:
-                if os.path.exists(img.link):
-                    os.remove(img.link)
-                    img.link = "Image is successfully evaluated and deleted"
+            try:
+                # Tag Images and delete them after processing
+                new_doc = await query_pixtral_with_ssh_async(new_doc)
+                for img in new_doc.imgList:
+                    if os.path.exists(img.link):
+                        os.remove(img.link)
+                        img.link = "Image is successfully evaluated and deleted"
+            except Exception as e:
+                logging.error("Error while Image evaluation and deleting: "+e)
 
-            # Create embeddings for the document
-            embeddings = await self.sim_search.create_embeddings_async(new_doc)
-            if self.handle_error(embeddings is None, "Error creating embeddings", file, username):
-                return None, "Error creating embeddings"
+            try:
+                # Create embeddings for the document
+                embeddings = await self.sim_search.create_embeddings_async(new_doc)
+            except Exception as e:
+                logging.error("Error while creating embeddings: "+e)
 
-            # Save the embeddings in QDrant
-            is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
-            if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
-                return None, "Error saving embeddings"
+            try:
+                # Save the embeddings in QDrant
+                is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
+                if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
+                    return None, "Error saving embeddings"
+            except Exception as e:
+                logging.error("Error while safing embeddings in QDrant: "+e)
 
-            # Create a summary for the document
-            # TODO: Fix batching loop so ssh tunnel is not opened for every batch
-            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
-            if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
-                return None, "Error creating summary"
+            try:
+                # Create a summary for the document
+                # TODO: Fix batching loop so ssh tunnel is not opened for every batch
+                new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
+            except Exception as e:
+                logging.error("Error while creating summary: "+e)
 
-            # Save new_doc in the database
-            doc_id = await db.add_document_to_user_async(username, new_doc)
-            if self.handle_error(doc_id is None, "Error saving document", file, username):
-                return None, "Error saving document"
+            try:
+                # Save new_doc in the database
+                new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
+            except Exception as e:
+                logging.error("Error while saving document: "+e)
             
-            is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
-            if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):
-                return None, "Error adding document to chat"
+            try:
+                is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
+                if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):
+                    return None, "Error adding document to chat"
+            except Exception as e:
+                logging.error("Error while adding document to chat: "+e)
 
             return new_doc, "File uploaded successfully"
         except Exception as e:
