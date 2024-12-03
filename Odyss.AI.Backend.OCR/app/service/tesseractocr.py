@@ -34,13 +34,13 @@ class OCRTesseract:
             pdf_reader = PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
                 page_text = page.extract_text()
-                formulas_found = []
-
                 if page_text:
                     # Text in Abschnitte teilen
                     sections = page_text.strip().split('\n\n')
 
                     for section in sections:
+                        formulas_found = self.extract_formulas(section.strip())  # Formeln aus dem Textabschnitt extrahieren
+                        
                         if enable_chunking:
                             # Längere Abschnitte weiter aufteilen
                             while len(section) > max_chunk_size:
@@ -48,6 +48,7 @@ class OCRTesseract:
                                     id=str(ObjectId()),
                                     text=section[:max_chunk_size].strip(),
                                     page=page_num + 1,
+                                    formula=formulas_found if formulas_found else []
                                 )
                                 doc.textList.append(text_chunk)
                                 section = section[max_chunk_size:]  # Rest weiterverarbeiten
@@ -58,29 +59,17 @@ class OCRTesseract:
                                 id=str(ObjectId()),
                                 text=section.strip(),
                                 page=page_num + 1,
+                                formula=formulas_found if formulas_found else []
                             )
                             doc.textList.append(text_chunk)
-
-                    # Formeln extrahieren (Fall A)
-                    formulas_found = self.extract_formulas(page_text.strip())
-                    for formula in formulas_found:
-                        formula_chunk = TextChunk(
-                            id=str(ObjectId()),
-                            text="",  # Kein Text, nur die Formel
-                            page=page_num + 1,
-                            formula=[formula],
-                        )
-                        doc.textList.append(formula_chunk)
-
+                            
+                    # Hinweis: Formeln, die nicht innerhalb eines Abschnitts erkannt werden, könnten hier auch separat gespeichert werden.
                 else:
                     print(f"No text detected on page {page_num + 1}")
 
-                # Wenn keine Formeln aus dem Text extrahiert wurden, setze Flag für Fall B
-                if not formulas_found:
-                    print(f"Keine Formeln im markierbaren Text auf Seite {page_num + 1} gefunden. Fall B aktivieren.")
-
         except Exception as e:
             print(f"Error extracting text and chunks from PDF: {e}")
+
 
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
@@ -90,54 +79,96 @@ class OCRTesseract:
                 resources = page.get("/Resources")
                 if resources is None:
                     print(f"Keine Ressourcen auf Seite {page_num + 1}.")
-                    continue
+                else:
+                    xobjects = resources.get("/XObject")
+                    if xobjects is None:
+                        print(f"Keine XObjects auf Seite {page_num + 1}.")
+                    else:
+                        xobjects = xobjects.get_object()
+                        image_counter = 1  # Zähler für die Bilder pro Seite
 
-                xobjects = resources.get("/XObject")
-                if xobjects is None:
-                    print(f"Keine XObjects auf Seite {page_num + 1}.")
-                    continue
+                        for obj in xobjects:
+                            xobject = xobjects[obj].get_object()
 
-                xobjects = xobjects.get_object()
-                image_counter = 1  # Zähler für die Bilder pro Seite
+                            if xobject["/Subtype"] == "/Image":
+                                img = None
+                                try:
+                                    width = xobject["/Width"]
+                                    height = xobject["/Height"]
+                                    data = xobject._data
+                                    file_extension = "png"
 
-                for obj in xobjects:
-                    xobject = xobjects[obj].get_object()
+                                    # Filter prüfen und entsprechende Verarbeitung
+                                    filter_type = xobject.get("/Filter", None)
 
-                    if xobject["/Subtype"] == "/Image":
-                        try:
-                            # Bild extrahieren
-                            width = xobject["/Width"]
-                            height = xobject["/Height"]
-                            data = xobject._data
-                            file_extension = "png"
+                                    if filter_type == "/FlateDecode":
+                                        try:
+                                            data = zlib.decompress(data)
+                                            img = PilImage.frombytes("RGB", (width, height), data)
+                                        except Exception as e:
+                                            print(f"Fehler beim Dekomprimieren von FlateDecode auf Seite {page_num + 1}: {e}")
 
-                            # Speichern des Bildes
-                            img_save_path = os.path.join(
-                                Config.LOCAL_DOC_PATH,
-                                f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
-                            )
-                            with open(img_save_path, "wb") as f:
-                                f.write(data)
+                                    elif filter_type == "/DCTDecode":
+                                        file_extension = "jpg"
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        with open(img_save_path, "wb") as f:
+                                            f.write(data)
+                                        img = None
 
-                            # LaTeX-OCR auf dem Bild ausführen (Fall B)
-                            latex_result = self.extract_latex_from_image(img_save_path)
-                            if latex_result:
-                                formula_chunk = TextChunk(
-                                    id=str(ObjectId()),
-                                    text="",  # Kein Text, nur die Formel
-                                    page=page_num + 1,
-                                    formula=[latex_result],
-                                )
-                                doc.textList.append(formula_chunk)
-                                print(f"LaTeX-Formel erkannt: {latex_result}")
+                                    elif filter_type == "/JPXDecode":
+                                        file_extension = "jp2"
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        with open(img_save_path, "wb") as f:
+                                            f.write(data)
+                                        img = None
 
-                            image_counter += 1
+                                    else:
+                                        print(f"Unbekannter Filter {filter_type} auf Seite {page_num + 1}, Bild {image_counter}.")
 
-                        except Exception as e:
-                            print(f"Fehler beim Verarbeiten des Bildes auf Seite {page_num + 1}, Objekt {obj}: {e}")
+                                    # Bild speichern, falls ein PIL-Image erstellt wurde
+                                    if img is not None:
+                                        img_save_path = os.path.join(
+                                            Config.LOCAL_DOC_PATH,
+                                            f"extracted_image_{page_num+1}_{image_counter}.{file_extension}"
+                                        )
+                                        img.save(img_save_path)
+                                        print(f"Bild {image_counter} auf Seite {page_num + 1} erfolgreich gespeichert als {img_save_path}.")
+
+                                    # OCR auf dem Bild ausführen
+                                    if os.path.exists(img_save_path):
+                                        print(f"Starte OCR für Bild {image_counter} auf Seite {page_num + 1}...")
+                                        img_text = self.ocr_image(img_save_path)
+
+                                        # Text verarbeiten und hinzufügen
+                                        if img_text.strip():
+                                            self.split_text_into_chunks(img_text, doc, page_num)
+
+                                        # Image-Objekt erstellen und zur imgList hinzufügen
+                                        image_obj = Image(
+                                            id=str(ObjectId()),
+                                            link=img_save_path,
+                                            page=page_num + 1,
+                                            type=file_extension,
+                                            imgtext=img_text if isinstance(img_text, str) else "",
+                                            llm_output=""
+                                        )
+                                        doc.imgList.append(image_obj)
+
+                                    image_counter += 1
+
+                                except Exception as e:
+                                    print(f"Fehler beim Verarbeiten des Bildes auf Seite {page_num + 1}, Objekt {obj}: {e}")
 
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
+
+        print(f"Bildextraktion abgeschlossen. Gefundene Bilder: {len(doc.imgList)}")
 
     def extract_latex_from_image(self, image_path):
         try:
