@@ -91,6 +91,7 @@ class SimailaritySearchService:
             bool: True if the embeddings were successfully saved, False otherwise.
         """
         try:
+            print("saving process started qdrant")
             points = []
             for embedding in embeddings:
                 points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
