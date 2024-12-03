@@ -140,44 +140,46 @@ async def query_pixtral_with_ssh_async(doc:Document):
         print(model)
 
         for img in tqdm(doc.imgList, desc="Processing images"):
-            image_class = await get_image_class_async(img.link)
+            try:
+                image_class = await get_image_class_async(img.link)
 
-            img.type = image_class
+                img.type = image_class
 
-            # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
-            if image_class == "just_img":
-                continue   
+                # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
+                if image_class == "just_img":
+                    continue   
 
-            # Bild laden und in Base64 kodieren
-            image = PILImage.open(img.link)
-            buffered = BytesIO()
-            image.save(buffered, format="PNG")  # Speichern im PNG-Format
-            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                # Bild laden und in Base64 kodieren
+                image = PILImage.open(img.link)
+                buffered = BytesIO()
+                image.save(buffered, format="PNG")  # Speichern im PNG-Format
+                img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-            # Pixtral-Anfrage mit der eingebetteten Klasse
-            chat_completion_from_base64 = client.chat.completions.create(
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"The image shows a {image_class}. Please describe what I see."
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{img_str}"
+                # Pixtral-Anfrage mit der eingebetteten Klasse
+                chat_completion_from_base64 = client.chat.completions.create(
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"The image shows a {image_class}. Please describe what I see."
                             },
-                        },
-                    ],
-                }],
-                model=model,  
-                max_tokens=256,
-            )
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{img_str}"
+                                },
+                            },
+                        ],
+                    }],
+                    model=model,  
+                    max_tokens=256,
+                )
 
-            # Ergebnis anzeigen
-            img.llm_output = chat_completion_from_base64.choices[0].message.content
-
+                # Ergebnis anzeigen
+                img.llm_output = chat_completion_from_base64.choices[0].message.content
+            except Exception as e:
+                print(img.id + ": Error while processing image: ", e)
         return doc
     
     
