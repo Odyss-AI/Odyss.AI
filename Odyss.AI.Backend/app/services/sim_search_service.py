@@ -172,7 +172,7 @@ class SimailaritySearchService:
             # Create the Collection
             self.qdrant_client.create_collection(
                 collection_name=self.collection_name,
-                vectors_config=VectorParams(size=512, distance='Cosine'),
+                vectors_config=VectorParams(size=1024, distance='Cosine'),
                 on_disk_payload=True,
                 hnsw_config=HnswConfigDiff(
                     m=16,
