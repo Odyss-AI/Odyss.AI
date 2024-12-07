@@ -10,8 +10,6 @@ from app.config import Config
 import pytesseract
 from pix2tex.cli import LatexOCR
 from pdf2image import convert_from_bytes
-import fitz
-
 
 class OCRTesseract:
     def __init__(self):
