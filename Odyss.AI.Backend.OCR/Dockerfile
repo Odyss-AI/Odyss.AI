@@ -4,10 +4,10 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install dependencies for OpenCV and Poppler
+# Install dependencies for OpenCV, Poppler, and Tesseract
 RUN apt-get update && \
-    apt-get install -y ffmpeg libsm6 libxext6 poppler-utils && \
-    rm -rf /var/lib/apt/lists/*  # Entferne die nicht mehr benötigten Installationsdaten
+    apt-get install -y ffmpeg libsm6 libxext6 poppler-utils tesseract-ocr && \
+    rm -rf /var/lib/apt/lists/*  # Entferne die nicht mehr benötigten Installationsdateien
 
 # Install virtualenv
 RUN pip install virtualenv
