@@ -2,6 +2,7 @@ import uuid
 import aiohttp
 import asyncio
 import logging
+import traceback
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
@@ -90,23 +91,35 @@ class SimailaritySearchService:
         Returns:
             bool: True if the embeddings were successfully saved, False otherwise.
         """
+
         try:
-            print("saving process started qdrant")
+            print("Saving process started for Qdrant")
             points = []
             for embedding in embeddings:
                 points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
 
             result = self.qdrant_client.upsert(
-                collection_name=self.collection_name, 
-                wait=True, 
+                collection_name=self.collection_name,
+                wait=True,
                 points=points
-                )
-            
+            )
+
             return result.status == 'completed'
-            
-        except Exception as e:
-            logging.error(f"Error while saving embeddings at document {id}: {e}")
+
+        except ValueError as ve:
+            logging.error(f"ValueError while saving embeddings for document {id}: {ve}")
+            logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
+
+        except ConnectionError as ce:
+            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {ce}")
+            return None
+
+        except Exception as e:
+            logging.error(f"Unexpected error while saving embeddings for document {id}: {e}")
+            logging.debug(traceback.format_exc())  # Log full stack trace for debugging
+            return None
+
 
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
         """
