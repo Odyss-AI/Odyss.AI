@@ -38,7 +38,7 @@ class OCRTesseract:
             print("Extrahiere Text aus PDF mit Tesseract OCR...")
             
             # Konvertiere PDF-Seiten in Bilder
-            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG', poppler_path=r"/usr/bin")
+            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG')
 
             for page_num, image in enumerate(images):
                 print(f"Verarbeite Seite {page_num + 1} mit Tesseract OCR...")

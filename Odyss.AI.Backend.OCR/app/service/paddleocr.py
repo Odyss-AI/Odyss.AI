@@ -40,7 +40,7 @@ class OCRPaddle:
         page_texts = []
         try:
             print("Extrahiere Text aus PDF...")
-            pdf_reader = PdfReader(pdf_stream)
+            pdf_reader = PyPDF2.PdfReader(pdf_stream)
             for page_num, page in enumerate(pdf_reader.pages):
                 page_text = page.extract_text()
                 if page_text:
