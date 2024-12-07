@@ -79,8 +79,9 @@ class DocumentManager:
 
             try:
                 # Create embeddings for the document
+                print("new doc: "+new_doc)
                 embeddings = await self.sim_search.create_embeddings_async(new_doc)
-                print("embeddings doc_manager: "+embeddings)
+                print("embeddings doc_manager: "+ str(embeddings))
             except Exception as e:
                 logging.error("Error while creating embeddings: "+e)
 
