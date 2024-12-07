@@ -4,14 +4,16 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Install dependencies for OpenCV and Poppler
+RUN apt-get update && \
+    apt-get install -y ffmpeg libsm6 libxext6 poppler-utils && \
+    rm -rf /var/lib/apt/lists/*  # Entferne die nicht mehr benötigten Installationsdaten
+
 # Install virtualenv
 RUN pip install virtualenv
 
 # Create a virtual environment
 RUN virtualenv venv
-
-# Install CV2 dependencies
-RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 
 # Copy the requirements file into the container
 COPY requirements.txt .
