@@ -10,6 +10,8 @@ from app.config import Config
 import pytesseract
 from pix2tex.cli import LatexOCR
 from pdf2image import convert_from_bytes
+import fitz
+
 
 class OCRTesseract:
     def __init__(self):
@@ -38,7 +40,7 @@ class OCRTesseract:
             print("Extrahiere Text aus PDF mit Tesseract OCR...")
             
             # Konvertiere PDF-Seiten in Bilder
-            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG', poppler_path="/usr/bin")
+            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG', poppler_path=r"/usr/bin")
 
             for page_num, image in enumerate(images):
                 print(f"Verarbeite Seite {page_num + 1} mit Tesseract OCR...")
