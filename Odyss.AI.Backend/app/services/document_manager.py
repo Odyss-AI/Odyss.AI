@@ -80,7 +80,6 @@ class DocumentManager:
             try:
                 # Create embeddings for the document
                 embeddings = await self.sim_search.create_embeddings_async(new_doc)
-                print(embeddings)
             except Exception as e:
                 logging.error("Error while creating embeddings: "+e)
 
@@ -90,7 +89,7 @@ class DocumentManager:
                 if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
                     return None, "Error saving embeddings"
             except Exception as e:
-                logging.error("Error while safing embeddings in QDrant: "+e)
+                logging.error("Error while saving embeddings in QDrant: "+e)
 
             try:
                 # Create a summary for the document
