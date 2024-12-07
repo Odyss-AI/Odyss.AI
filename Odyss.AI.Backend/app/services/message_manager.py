@@ -54,7 +54,7 @@ class MessageManager:
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
 
-        # print(f"Chunks: {chunks}")
+        print(f"Chunks: {chunks}")
         try:
             # Build the prompt for the LLM
             prompt = qna_prompt_builder(chunks, message.content)
