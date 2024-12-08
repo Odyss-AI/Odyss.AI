@@ -21,44 +21,46 @@ class OCRPaddle:
         return doc
 
     def process_pdf(self, document_path, doc):
-        print(f"Öffne PDF für die Verarbeitung: {document_path}")
-        with open(document_path, 'rb') as pdf_file:
-            pdf_stream = BytesIO(pdf_file.read())
-            page_texts = self.extract_text_from_pdf(pdf_stream)
-            print(f"{len(page_texts)} Seiten im PDF erkannt")
+        try:
+            with open(document_path, 'rb') as pdf_file:
+                pdf_stream = BytesIO(pdf_file.read())
+                self.extract_text_from_pdf(pdf_stream, doc)
+                self.extract_images_from_pdf(pdf_stream, doc)
 
-            for page_text, page_num in page_texts:
-                print(f"Verarbeite Seite {page_num}")
-                self.split_text_into_chunks(page_text, doc, page_num)
-
-            self.extract_images_from_pdf(pdf_stream, doc)
+        except Exception as e:
+            print(f"Fehler bei der Verarbeitung des PDFs: {e}")
 
         return document_path.replace('.docx', '.pdf').replace('.pptx', '.pdf')
 
-    def extract_text_from_pdf(self, pdf_stream):
-        full_text = ""
-        page_texts = []
+    def extract_text_from_pdf(self, pdf_stream, doc):
         try:
-            print("Extrahiere Text aus PDF...")
-            pdf_reader = PyPDF2.PdfReader(pdf_stream)
-            for page_num, page in enumerate(pdf_reader.pages):
-                page_text = page.extract_text()
-                if page_text:
+            print("Extrahiere Text aus PDF mit PaddleOCR...")
+
+            # Konvertiere PDF-Seiten in Bilder
+            from pdf2image import convert_from_bytes
+            images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG')
+
+            for page_num, image in enumerate(images):
+                print(f"Verarbeite Seite {page_num + 1} mit PaddleOCR...")
+
+                # Wandle das Bild in einen Byte-Stream für die OCR-Methode um
+                img_byte_stream = BytesIO()
+                image.save(img_byte_stream, format='JPEG')
+                img_byte_stream.seek(0)
+
+                # Führe OCR auf dem Bild aus
+                page_text = self.ocr_image(img_byte_stream)
+
+                # Prüfe, ob Text erkannt wurde
+                if page_text.strip():
                     print(f"Text auf Seite {page_num + 1} erkannt.")
-                    full_text += f"{page_text.strip()}\n"
-                    page_texts.append((page_text.strip(), page_num + 1))
+                    # Text in Chunks aufteilen und hinzufügen
+                    self.split_text_into_chunks(page_text.strip(), doc, page_num + 1)
                 else:
                     print(f"Kein Text auf Seite {page_num + 1} erkannt.")
-                    page_texts.append(("", page_num + 1))
-            
-            if not full_text.strip():  # If no text was found
-                print("Kein Text im gesamten Dokument erkannt. Möglicherweise bildbasiertes PDF.")
-                full_text = ""  # Return empty string for image-only documents
-
         except Exception as e:
             print(f"Fehler beim Extrahieren des Textes aus dem PDF: {e}")
 
-        return page_texts
 
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
@@ -153,7 +155,7 @@ class OCRPaddle:
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=False):
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
         # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
         sections = full_text.split('\n\n')
 
