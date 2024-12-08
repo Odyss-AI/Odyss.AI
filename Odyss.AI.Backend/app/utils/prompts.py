@@ -42,7 +42,7 @@ def qna_prompt_builder(chunks: list, question: str):
         content = f"""
         Deine Aufgabe ist es, den folgenden Text zu lesen und zu verstehen. 
         Nach dem Lesen des Textes beantworte die gestellten Fragen. 
-        Bitte antworte immer auf Deutsch.
+        Antworte immer auf Deutsch.
 
         # Text:
         {context}
@@ -56,7 +56,7 @@ def qna_prompt_builder(chunks: list, question: str):
         content = f"""
         Es wird kein spezifischer Text bereitgestellt. 
         Beantworte die folgende Frage basierend auf deinem Wissen. 
-        Bitte antworte immer auf Deutsch.
+        Antworte immer auf Deutsch.
 
         # Frage:
         {question}
