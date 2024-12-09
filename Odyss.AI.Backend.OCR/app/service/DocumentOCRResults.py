@@ -3,9 +3,11 @@
 from difflib import SequenceMatcher
 from rapidfuzz.distance import Levenshtein
 from PyPDF2 import PdfReader
-from tesseractocr import OCRTesseract  # Importiere TesseractOCR
-from paddleocr import OCRPaddle        # Importiere PaddleOCR
-from nougatocr import OCRNougat        # Importiere NougatOCR
+import time
+from app.service.tesseractocr import OCRTesseract  # Importiere TesseractOCR
+from app.service.paddleocr import OCRPaddle        # Importiere PaddleOCR
+from app.service.nougatocr import OCRNougat        # Importiere NougatOCR
+from app.user import Document
 
 class Document:
     def __init__(self, path):
@@ -35,8 +37,14 @@ class DocumentOCRResults:
     def run_ocr(self, ocr_engines):
         for engine_name, engine_instance in ocr_engines.items():
             print(f"Starte OCR mit {engine_name}...")
-            document = engine_instance.extract_text(Document(path=self.pdf_path))
-            self.ocr_results[engine_name] = self._extract_text_from_document(document)
+            start_time = time.time()  # Zeitmessung starten
+            document = engine_instance.extract_text(Document(path=self.pdf_path))  # Aufruf von process
+            processing_time = time.time() - start_time  # Verarbeitungszeit messen
+            ocr_text = self._extract_text_from_document(document)
+            self.ocr_results[engine_name] = {
+                "text": ocr_text,
+                "processing_time": processing_time
+            }
 
     def _extract_text_from_document(self, document):
         # Extrahiert Text aus den Textchunks des Documents
@@ -44,15 +52,17 @@ class DocumentOCRResults:
 
     def compare_results(self):
         print("\n=== Vergleich der OCR-Ergebnisse ===")
-        results = {
-            ocr_name: self._calculate_metrics(ocr_text)
-            for ocr_name, ocr_text in self.ocr_results.items()
-        }
+        results = {}
+        for ocr_name, data in self.ocr_results.items():
+            metrics = self._calculate_metrics(data['text'])
+            metrics['processing_time'] = data['processing_time']
+            results[ocr_name] = metrics
 
         for ocr_name, metrics in results.items():
             print(f"\n--- {ocr_name} ---")
+            print(f"Textgenauigkeit: {metrics['char_accuracy']:.2f}%")
+            print(f"Verarbeitungszeit: {metrics['processing_time']:.2f} Sekunden")
             print(f"Levenshtein-Distanz: {metrics['levenshtein_distance']}")
-            print(f"Zeichen-genaue Genauigkeit: {metrics['char_accuracy']:.2f}%")
             print(f"Ähnlichkeitsrate: {metrics['similarity_ratio']:.2f}%")
 
     def _calculate_metrics(self, ocr_text):
@@ -92,5 +102,5 @@ class DocumentOCRResults:
 # Wenn die Datei direkt ausgeführt wird
 if __name__ == "__main__":
     # Pfad zum PDF angeben
-    pdf_path = "path/to/document.pdf"
+    pdf_path = "C:\\Users\\ramaz\\Documents\\Paper.pdf"
     DocumentOCRResults.main(pdf_path)
