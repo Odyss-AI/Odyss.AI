@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 import logging
 import traceback
-import json
+import tqdm
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
@@ -73,8 +73,8 @@ class SimailaritySearchService:
         chunks = [(chunk.text, chunk.id) for chunk in doc.textList]
         chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
         chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
- 
-        for i in range(0, len(chunks), 32):
+        for i in tqdm(range(0, len(chunks), 32), desc="Processing embeddings"):
+        #for i in range(0, len(chunks), 32):
             batch = chunks[i:i + 32]
             texts, ids = zip(*batch)
             tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
