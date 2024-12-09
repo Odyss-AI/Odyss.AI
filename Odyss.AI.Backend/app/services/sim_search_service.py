@@ -96,7 +96,7 @@ class SimailaritySearchService:
             print("Saving process started for Qdrant")
             points = []
 
-            print(embeddings)
+            #print(embeddings)
 
             for embedding in embeddings:
                 points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
