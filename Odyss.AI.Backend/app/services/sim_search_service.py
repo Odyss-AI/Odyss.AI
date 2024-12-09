@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import logging
 import traceback
+import json
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
@@ -41,6 +42,10 @@ class SimailaritySearchService:
             list: A list containing the embedding and the chunk ID, or None if an error occurs.
         """
         try:
+            payload = {"inputs": to_embed}
+            payload_size_bytes = len(json.dumps(payload).encode('utf-8'))  # Größe des JSON-Payloads in Bytes
+            payload_size_mb = payload_size_bytes / 1024 / 1024 # Größe in Megabyte
+            logging.info(f"Payload size for chunk {chunk_id}: {payload_size_mb:.2f} MB")
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
                     if response.status == 200:
