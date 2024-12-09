@@ -76,14 +76,16 @@ class DocumentManager:
                         img.link = "Image is successfully evaluated and deleted"
             except Exception as e:
                 logging.error("Error while Image evaluation and deleting: "+e)
+            print("images tagged and deleted")
 
             try:
                 # Create embeddings for the document
                 print("new doc: "+ str(new_doc))
                 embeddings = await self.sim_search.create_embeddings_async(new_doc)
-                print("embeddings doc_manager: "+ str(embeddings))
+                # print("embeddings doc_manager: "+ str(embeddings))
             except Exception as e:
                 logging.error("Error while creating embeddings: "+e)
+            print("embeddings created")
 
             try:
                 # Save the embeddings in QDrant
@@ -92,6 +94,7 @@ class DocumentManager:
                     return None, "Error saving embeddings"
             except Exception as e:
                 logging.error("Error while saving embeddings in QDrant: "+e)
+            print("embeddings saved")
 
             try:
                 # Create a summary for the document
@@ -99,12 +102,14 @@ class DocumentManager:
                 new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             except Exception as e:
                 logging.error("Error while creating summary: "+e)
+            print("summary created")
 
             try:
                 # Save new_doc in the database
                 new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
             except Exception as e:
                 logging.error("Error while saving document: "+e)
+            print("document saved")
             
             try:
                 is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
@@ -112,6 +117,7 @@ class DocumentManager:
                     return None, "Error adding document to chat"
             except Exception as e:
                 logging.error("Error while adding document to chat: "+e)
+            print("document added to chat")
 
             return new_doc, "File uploaded successfully"
         except Exception as e:

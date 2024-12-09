@@ -142,7 +142,7 @@ async def query_pixtral_with_ssh_async(doc:Document):
         for img in tqdm(doc.imgList, desc="Processing images"):
             try:
                 image_class = await get_image_class_async(img.link)
-
+                print(image_class)
                 img.type = image_class
 
                 # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
