@@ -73,8 +73,8 @@ class SimailaritySearchService:
         for img in doc.imgList:
             if(img.imgtext):
                 tasks.append(self.fetch_embedding_async(img.imgtext, img.id))
-            if(img.llm_output):
-                tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
+            #if(img.llm_output):
+            #    tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
         
         embeddings = await asyncio.gather(*tasks)
         
