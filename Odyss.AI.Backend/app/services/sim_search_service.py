@@ -81,12 +81,12 @@ class SimailaritySearchService:
             if(img.imgtext):
                 words = []
                 words = img.imgtext.strip().split()
-                print("imgtextlenght: " + str(len(words)+ "ID: " + str(chunk.id)))
+                print("imgtextlenght: " + str(len(words)+ "ID: " + str(img.id)))
                 tasks.append(self.fetch_embedding_async(img.imgtext, img.id))
             if(img.llm_output):
                 words = []
                 words = img.llm_output.strip().split()
-                print("llm_outputlength: " + str(len(words)+ "ID: " + str(chunk.id)))
+                print("llm_outputlength: " + str(len(words)+ "ID: " + str(img.id)))
                 tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
         
         embeddings = await asyncio.gather(*tasks)
