@@ -30,73 +30,57 @@ class SimailaritySearchService:
             self._initialize_collection()
             self._initialized = True
 
-    async def fetch_embedding_async(self, to_embed: str, chunk_id: str):
+    async def fetch_embedding_async(self, to_embed: list, chunk_ids: list):
         """
-        Fetches the embedding for a given text asynchronously.
-
+        Fetches the embeddings for a given list of texts asynchronously.
+ 
         Args:
-            to_embed (str): The text to be embedded.
-            chunk_id (str): The ID of the chunk.
-
+            to_embed (list): The list of texts to be embedded.
+            chunk_ids (list): The list of chunk IDs.
+ 
         Returns:
-            list: A list containing the embedding and the chunk ID, or None if an error occurs.
+            list: A list containing the embeddings and the chunk IDs, or None if an error occurs.
         """
         try:
-            payload = {"inputs": to_embed}
-            payload_size_bytes = len(json.dumps(payload).encode('utf-8'))  # Größe des JSON-Payloads in Bytes
-            payload_size_mb = payload_size_bytes / 1024 / 1024 # Größe in Megabyte
-            print(f"Payload size for chunk {chunk_id}: {payload_size_mb:.2f} MB")
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
                     if response.status == 200:
-                        response_json = await response.json()  # Stelle sicher, dass await verwendet wird
-                        if isinstance(response_json, list) and len(response_json) > 0 and isinstance(response_json[0], list):
-                            return [response_json[0], chunk_id]  # Rückgabe des ersten Elements der Liste
+                        response_json = await response.json()
+                        if isinstance(response_json, list) and all(isinstance(item, list) for item in response_json):
+                            return list(zip(response_json, chunk_ids))
                         else:
-                            logging.error(f"Error fetching embedding at {chunk_id}: Invalid response")
+                            logging.error(f"Error fetching embeddings: Invalid response")
                             return None
-                    elif response.status == 413:
-                        # Fehler 413 - Payload Too Large
-                        logging.error(f"Error at {chunk_id}: 413 Payload Too Large. Text length: {len(to_embed.split())}")
-                        logging.error(f"Text causing the issue: {to_embed[:500]}...")  # Nur die ersten 500 Zeichen ausgeben
-                        return None
                     else:
-                        print(f"Error at {chunk_id}: {response.status}")
+                        logging.error(f"Error: {response.status}")
                         return None
         except aiohttp.ClientError as e:
-            logging.error(f"HTTP-Error at {chunk_id}: {e}")
+            logging.error(f"HTTP-Error: {e}")
             return None
+        
 
     async def create_embeddings_async(self, doc: Document):
         """
         Creates embeddings for the text and image chunks in a document asynchronously.
-
+ 
         Args:
             doc (Document): The document containing text and image chunks.
-
+ 
         Returns:
             list: A list of embeddings.
         """
         tasks = []
-        for chunk in doc.textList:
-            tasks.append(self.fetch_embedding_async(chunk.text, chunk.id))
-            words = chunk.text.strip().split()
-            print("textchunklength: " + str(len(words)))
-        for img in doc.imgList:
-            if(img.imgtext):
-                words = []
-                words = img.imgtext.strip().split()
-                print("imgtextlenght: " + str(len(words)))
-                tasks.append(self.fetch_embedding_async(img.imgtext, img.id))
-            if(img.llm_output):
-                words = []
-                words = img.llm_output.strip().split()
-                print("llm_outputlength: " + str(len(words)))
-                tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
-        
+        chunks = [(chunk.text, chunk.id) for chunk in doc.textList]
+        chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
+        chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
+ 
+        for i in range(0, len(chunks), 32):
+            batch = chunks[i:i + 32]
+            texts, ids = zip(*batch)
+            tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
+ 
         embeddings = await asyncio.gather(*tasks)
-        
-        return embeddings
+        return [item for sublist in embeddings for item in sublist] if embeddings else None
     
     async def save_embedding_async(self, id, embeddings):
         """
