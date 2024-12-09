@@ -2,11 +2,10 @@
 
 ## Einleitung
 
-In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit und Benutzerfreundlichkeit zu bewerten mit **PDFReader**. Wir testen verschiedene Dokumenttypen, darunter:
+In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit und Benutzerfreundlichkeit zu bewerten im Vergleich zu einem **PDFReader**. Wir testen verschiedene Dokumenttypen, darunter:
 
 1. Normale Dokumente mit markierbarem Text und Bildern **(Fall 1)**
 2. Dokumente, die nur aus Bildern bestehen **(Fall 2)**
-3. Word- und PowerPoint-Dokumente, die in PDFs konvertiert wurden **(Fall 3)**
 
 Die folgenden Kriterien werden zur Bewertung herangezogen.
 
@@ -101,14 +100,14 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 - **Bilderkennung:** "\n\n# DocLLM: A layout-aware generative language model for multimodal document understanding\n\nDongsheng Wang\n\nThese authors contributed equally to this work.\n\nNatraj Raman\n\nThis work was supported by the National Science Foundation of China (No. 116731002) and the National Science Foundation of China (No. 116731002).\n\nMathieu Sibue1\n\nZhiqiang Ma\n\nPetr Babkin\n\nSmerjot Kaur\n\nYulong Pei\n\nArmineh Nourbakhsh\n\nXiaomo Liu\n\nJPMorgan AI Research\n\n{first.last}@jpmchase.com\n\nFootnote 1: footnotemark:\n\n###### Abstract\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records, often carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered by their complex layouts play a crucial role in comprehending these documents effectively. In this paper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for reasoning over visual documents, taking into account both textual semantics and spatial layout. Our model differs from existing multimodal LLMs by avoiding expensive image encoders and focuses exclusively on bounding box information to incorporate the spatial layout structure. Specifically, the cross-alignment between text and spatial modalities is captured by decomposing the attention mechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a pre-training objective that learns to infill text segments. This approach allows us to address irregular layouts and heterogeneous content frequently encountered in visual documents. The pre-trained model is fine-tuned using a large-scale instruction dataset, covering four core document intelligence tasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all tasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nDocAI \\(\\cdot\\) VRDU \\(\\cdot\\) LLM \\(\\cdot\\) GPT \\(\\cdot\\) Spatial Attention\n\n## 1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion of enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [1], which has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts, bespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has made tremendous progress in various tasks including extraction, classification and question answering, there remains a significant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and generalization to previously unseen domains continues to be a challenge [2].\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being critical to understanding the documents. It requires solutions distinct from conventional large language models such as GPT-3.5 [3], Llama [4], Falcon [5] or PaLM [6] that primarily accept text-only inputs and assume that the documents exhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous vision-language frameworks [7] that can process documents as images and capture the interactions between textual and visual modalities are available. However, these frameworks necessitate the use of complex vision backbone architectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual signal [10][11].\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form understanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is"
 - **Skalierbarkeit:** [Details]
 - **Fehlerrate:** [Details]
-- **Benutzerfreundlichkeit:** [Details]
+- **Benutzerfreundlichkeit:** mittel
 - **Sonderzeichen/Formeln:** [Details]
 
 ## Zusammenfassung der Ergebnisse
 
-- **Tesseract:** [Kurze Zusammenfassung, z.B. "Tesseract erzielte die höchste Textgenauigkeit, hatte jedoch eine längere Verarbeitungszeit."]
-- **Paddle:** [Kurze Zusammenfassung, z.B. "Paddle bot eine gute Balance zwischen Genauigkeit und Geschwindigkeit."]
-- **Nougat:** [Kurze Zusammenfassung, z.B. "Nougat war benutzerfreundlich, jedoch weniger genau."]
+- **Tesseract:** Sehr gut für Standard-Textextraktion, unterstützt viele Sprachen, jedoch probleme bei komplexeren Layouts oder Dokumenten mi tspeziellenFormatierungen und Handwriting
+- **Paddle:** Bietet herausragende Performance bei der Erkennung von Text aus Bildern mit komplexen Layouts und liefert gute Ergebnisse bei handschriftlichen und gemischten Dokumenten, jedoch etwas ressourcenintensiv und benötigt mehr Rechenleistung
+- **Nougat:** Sehr gut bei der Erkennung von Texten aus schwer lesbaren Quellen und Dokumenten mitungewöhnlichen Layouts. Fokussiert auf unstrukturierte Textdaten und Bildverarbeitung, jedoch Noch in der Entwicklung, sodass es weniger dokumentierte Funktionen und eine kleinere Nutzerbasis gibt und sehr ressourcenintensiv und benötigt viel mehr Rechenleistung
 
 Diese Ergebnisse werden im Detail in den folgenden Abschnitten beschrieben.
 
@@ -134,7 +133,6 @@ Basierend auf den durchgeführten Tests lässt sich Folgendes feststellen:
 
 Zusammenfassend kann gesagt werden, dass jede OCR-Technologie ihre Stärken und Schwächen hat, und die Wahl der besten Technologie hängt stark von den spezifischen Anforderungen des Anwendungsfalls ab.
 
-
 # Ausführen der DocumentOCRResults-Klasse
 
 Um die `DocumentOCRResults`-Klasse auszuführen, folge diesen Schritten:
@@ -142,7 +140,6 @@ Um die `DocumentOCRResults`-Klasse auszuführen, folge diesen Schritten:
 ### Wechsle zum richtigen Verzeichnis:
 
 Wechsle in das Verzeichnis, in dem sich die Datei `DocumentOCRResults.py` befindet. In diesem Fall ist das Verzeichnis:
-
 
 Du kannst dies im Terminal mit folgendem Befehl tun:
 
