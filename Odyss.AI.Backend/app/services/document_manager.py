@@ -57,7 +57,7 @@ class DocumentManager:
                 mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
             except Exception as e:
                 logging.error("Error while uploading file to Mongodb: "+ e)
-
+            print("started OCR")
             try:
                 # Get all PDF informations (text/images)
                 new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
@@ -66,7 +66,7 @@ class DocumentManager:
                 logging.error("Error while extracing information while using ocr: "+e)
 
             # TODO: Upload extracted pictures to mongoDB (maybe not necessary anymore)
-            
+            print("started imaged information extraction")
             try:
                 # Tag Images and delete them after processing
                 new_doc = await query_pixtral_with_ssh_async(new_doc)
@@ -77,7 +77,7 @@ class DocumentManager:
             except Exception as e:
                 logging.error("Error while Image evaluation and deleting: "+e)
             print("images tagged and deleted")
-
+            print("started embedding creation")
             try:
                 # Create embeddings for the document
                 # print("new doc: "+ str(new_doc))
@@ -86,7 +86,7 @@ class DocumentManager:
             except Exception as e:
                 logging.error("Error while creating embeddings: "+e)
             print("embeddings created")
-
+            print("started saving embeddings")
             try:
                 # Save the embeddings in QDrant
                 is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
@@ -95,7 +95,7 @@ class DocumentManager:
             except Exception as e:
                 logging.error("Error while saving embeddings in QDrant: "+e)
             print("embeddings saved")
-
+            print("started summary creation")
             try:
                 # Create a summary for the document
                 # TODO: Fix batching loop so ssh tunnel is not opened for every batch
@@ -103,14 +103,14 @@ class DocumentManager:
             except Exception as e:
                 logging.error("Error while creating summary: "+e)
             print("summary created")
-
+            print("started document saving")
             try:
                 # Save new_doc in the database
                 new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
             except Exception as e:
                 logging.error("Error while saving document: "+e)
             print("document saved")
-            
+            print("started adding document to chat")
             try:
                 is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
                 if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):

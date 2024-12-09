@@ -43,7 +43,6 @@ class SimailaritySearchService:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
-                    print(len(to_embed))
                     if response.status == 200:
                         response_json = await response.json()  # Stelle sicher, dass await verwendet wird
                         if isinstance(response_json, list) and len(response_json) > 0 and isinstance(response_json[0], list):
@@ -71,11 +70,11 @@ class SimailaritySearchService:
         tasks = []
         for chunk in doc.textList:
             tasks.append(self.fetch_embedding_async(chunk.text, chunk.id))
-            print("Chunk ebedded succesfully)")
         for img in doc.imgList:
             if(img.imgtext):
                 tasks.append(self.fetch_embedding_async(img.imgtext, img.id))
             if(img.llm_output):
+                print(len(img.llm_output))
                 tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
         
         embeddings = await asyncio.gather(*tasks)
