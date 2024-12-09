@@ -45,7 +45,7 @@ class SimailaritySearchService:
             payload = {"inputs": to_embed}
             payload_size_bytes = len(json.dumps(payload).encode('utf-8'))  # Größe des JSON-Payloads in Bytes
             payload_size_mb = payload_size_bytes / 1024 / 1024 # Größe in Megabyte
-            logging.info(f"Payload size for chunk {chunk_id}: {payload_size_mb:.2f} MB")
+            print(f"Payload size for chunk {chunk_id}: {payload_size_mb:.2f} MB")
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
                     if response.status == 200:
