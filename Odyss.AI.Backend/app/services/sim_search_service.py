@@ -50,6 +50,11 @@ class SimailaritySearchService:
                         else:
                             logging.error(f"Error fetching embedding at {chunk_id}: Invalid response")
                             return None
+                    elif response.status == 413:
+                        # Fehler 413 - Payload Too Large
+                        logging.error(f"Error at {chunk_id}: 413 Payload Too Large. Text length: {len(to_embed.split())}")
+                        logging.debug(f"Text causing the issue: {to_embed[:500]}...")  # Nur die ersten 500 Zeichen ausgeben
+                        return None
                     else:
                         print(f"Error at {chunk_id}: {response.status}")
                         return None
