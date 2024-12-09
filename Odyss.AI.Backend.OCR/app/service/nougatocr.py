@@ -170,23 +170,27 @@ class OCRNougat:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
-        # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
-        sections = full_text.split('\n\n')
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512):
+        # Text in Wörter aufteilen
+        words = full_text.split()
 
-        for section in sections:
-            if enable_chunking:
-                # Teile den Abschnitt weiter auf, wenn er länger als max_chunk_size ist
-                while len(section) > max_chunk_size:
-                    # Füge einen TextChunk mit max_chunk_size hinzu
-                    text_chunk = TextChunk(id=str(ObjectId()), text=section[:max_chunk_size].strip(), page=page_num)
-                    doc.textList.append(text_chunk)
-                    section = section[max_chunk_size:]  # Rest des Abschnitts
-                
-            # Füge den verbleibenden Abschnitt hinzu, wenn nicht leer
-            if section.strip():
-                text_chunk = TextChunk(id=str(ObjectId()), text=section.strip(), page=page_num)
+        # Temporäre Liste, um Wörter zwischenzuspeichern
+        chunk_text = []
+        
+        # Schleife durch alle Wörter im Text
+        for idx, word in enumerate(words):
+            chunk_text.append(word)  # Füge das Wort dem aktuellen Chunk hinzu
+
+            # Wenn der Chunk die maximale Anzahl von Wörtern erreicht, erstelle einen neuen TextChunk
+            if len(chunk_text) >= max_chunk_size:
+                text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
                 doc.textList.append(text_chunk)
+                chunk_text = []  # Leere den temporären Chunk, um mit dem nächsten zu starten
+
+        # Wenn nach der Schleife noch ein nicht leerer Chunk übrig ist, füge ihn ebenfalls hinzu
+        if chunk_text:
+            text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
+            doc.textList.append(text_chunk)
 
     def ocr_image(self, image_stream):
         try:
