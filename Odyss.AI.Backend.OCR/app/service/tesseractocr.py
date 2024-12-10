@@ -167,7 +167,7 @@ class OCRTesseract:
         matches = re.findall(formula_pattern, text, re.DOTALL)
         return [match.strip() for match in matches if match]
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=80):
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=30):
         # Text in Wörter aufteilen
         words = full_text.split()
 
