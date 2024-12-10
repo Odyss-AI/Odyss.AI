@@ -21,3 +21,4 @@ quart-cors
 bson
 pix2tex
 pdf2image
+spacy
