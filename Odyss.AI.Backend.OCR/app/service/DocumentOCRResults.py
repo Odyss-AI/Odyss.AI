@@ -1,5 +1,3 @@
-# document_ocr_results.py
-
 from difflib import SequenceMatcher
 from rapidfuzz.distance import Levenshtein
 from PyPDF2 import PdfReader
@@ -61,6 +59,7 @@ class DocumentOCRResults:
         for ocr_name, metrics in results.items():
             print(f"\n--- {ocr_name} ---")
             print(f"Textgenauigkeit: {metrics['char_accuracy']:.2f}%")
+            print(f"Fehlerrate (CER): {metrics['char_error_rate']:.2f}%")
             print(f"Verarbeitungszeit: {metrics['processing_time']:.2f} Sekunden")
             print(f"Levenshtein-Distanz: {metrics['levenshtein_distance']}")
             print(f"Ähnlichkeitsrate: {metrics['similarity_ratio']:.2f}%")
@@ -69,18 +68,32 @@ class DocumentOCRResults:
         levenshtein_distance = Levenshtein.distance(self.ground_truth, ocr_text)
         char_accuracy = self._calculate_char_accuracy(self.ground_truth, ocr_text)
         similarity_ratio = SequenceMatcher(None, self.ground_truth, ocr_text).ratio() * 100
+        char_error_rate = self._calculate_char_error_rate(self.ground_truth, ocr_text, levenshtein_distance)
 
         return {
             "levenshtein_distance": levenshtein_distance,
             "char_accuracy": char_accuracy,
+            "char_error_rate": char_error_rate,
             "similarity_ratio": similarity_ratio,
         }
 
     @staticmethod
     def _calculate_char_accuracy(ground_truth, ocr_text):
-        correct_chars = sum(1 for gt, oc in zip(ground_truth, ocr_text) if gt == oc)
-        total_chars = max(len(ground_truth), len(ocr_text))
-        return (correct_chars / total_chars) * 100
+        # Länge der Texte angleichen
+        min_length = min(len(ground_truth), len(ocr_text))
+        max_length = max(len(ground_truth), len(ocr_text))
+
+        # Zähle korrekt übereinstimmende Zeichen
+        correct_chars = sum(1 for i in range(min_length) if ground_truth[i] == ocr_text[i])
+
+        # Genauigkeit berechnen
+        return (correct_chars / max_length) * 100 if max_length > 0 else 0
+
+    @staticmethod
+    def _calculate_char_error_rate(ground_truth, ocr_text, levenshtein_distance):
+        # CER: Anzahl der Edit-Operationen (Levenshtein-Distanz) geteilt durch die Länge der Ground Truth
+        ground_truth_length = len(ground_truth)
+        return (levenshtein_distance / ground_truth_length) * 100 if ground_truth_length > 0 else 0
 
     @staticmethod
     def main(pdf_path):
