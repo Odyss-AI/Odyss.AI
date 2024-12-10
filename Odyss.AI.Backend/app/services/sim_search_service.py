@@ -71,6 +71,10 @@ class SimailaritySearchService:
         """
         tasks = []
         chunks = [(chunk.text, chunk.id) for chunk in doc.textList]
+        # Wörter zählen in den Texten der Liste
+        for text, chunk_id in chunks:
+            anzahl_woerter = len(text.split())
+            print(f"Chunk ID: {chunk_id}, Anzahl der Wörter: {anzahl_woerter}")
         #chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
         #chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
         #for i in tqdm(range(0, len(chunks), 32), desc="Processing embeddings"):
