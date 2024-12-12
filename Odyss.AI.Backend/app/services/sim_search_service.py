@@ -207,7 +207,7 @@ class SimailaritySearchService:
                 ),
                 optimizers_config=OptimizersConfigDiff(
                     deleted_threshold=0.0,
-                    vacuum_min_vector_number=100,
+                    vacuum_min_vector_number=0,
                     indexing_threshold=10000,
                     flush_interval_sec=5
                 )
