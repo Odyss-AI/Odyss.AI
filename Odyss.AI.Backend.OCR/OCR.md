@@ -16,17 +16,16 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 1)
 
-| Kriterium                                              | Tesseract      | PaddleOCR      | Nougat         |
-| :----------------------------------------------------- | -------------- | -------------- | -------------- |
-| **Textgenauigkeit (%)**                          | 5.30           | 5.27           | 5.23           |
-| **Verarbeitungszeit (min)**                      | 0:30           | 0:28           | 14:05          |
-| **Formatierung (ja*/ja/nein)**                        | ja*            | ja             | ja*            |
-| **Bilderkennung (Anzahl)**                       | 5              | 5              | 5              |
-| **Skalierbarkeit**                               | [Skalierung T] | [Skalierung P] | [Skalierung N] |
-| **Fehlerrate (%)**                               | 6.26           | 9.24           | 23.04          |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut            | mittel         | schlecht       |
-| **Sonderzeichen/Formeln (%)**                    | [Formeln T]    | [Formeln P]    | [Formeln N]    |
-| **Ähnlichkeitsrate (%)**                        | 85.90          | 61.25          | 72.44          |
+| Kriterium                                              | Tesseract   | PaddleOCR   | Nougat      |
+| :----------------------------------------------------- | ----------- | ----------- | ----------- |
+| **Textgenauigkeit (%)**                          | 5.30        | 5.27        | 5.23        |
+| **Verarbeitungszeit (min)**                      | 0:30        | 0:28        | 14:05       |
+| **Formatierung *(*ja*****/ja/nein)**           | ja*         | ja          | ja*         |
+| **Bilderkennung (Anzahl)**                       | 5           | 5           | 5           |
+| **Fehlerrate (%)**                               | 6.26        | 9.24        | 23.04       |
+| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut         | mittel      | schlecht    |
+| **Sonderzeichen/Formeln (%)**                    | [Formeln T] | [Formeln P] | [Formeln N] |
+| **Ähnlichkeitsrate (%)**                        | 85.90       | 61.25       | 72.44       |
 
 ## Kriteriumserklärungen
 
