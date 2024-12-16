@@ -11,6 +11,8 @@ import pytesseract
 from pix2tex.cli import LatexOCR
 from pdf2image import convert_from_bytes
 
+import tempfile  # Für temporäre Dateien
+
 class OCRTesseract:
     def __init__(self):
         # Initialisiere LaTeX-OCR-Modell
@@ -36,30 +38,35 @@ class OCRTesseract:
     def extract_text_from_pdf(self, pdf_stream, doc):
         try:
             print("Extrahiere Text aus PDF mit Tesseract OCR...")
-            
+
             # Konvertiere PDF-Seiten in Bilder
             images = convert_from_bytes(pdf_stream.getvalue(), fmt='JPEG')
 
             for page_num, image in enumerate(images):
                 print(f"Verarbeite Seite {page_num + 1} mit Tesseract OCR...")
-                
+
                 # Wandle das Bild in einen Byte-Stream für die OCR-Methode um
                 img_byte_stream = BytesIO()
                 image.save(img_byte_stream, format='JPEG')
                 img_byte_stream.seek(0)
-                
+
                 # Führe OCR auf dem Bild aus
                 page_text = self.ocr_image(img_byte_stream)
-                
+
+                # Führe LaTeX-OCR auf dem Bild aus
+                latex_result = self.extract_latex_from_image(img_byte_stream)
+
                 # Prüfe, ob Text erkannt wurde
-                if page_text.strip():
-                    print(f"Text auf Seite {page_num + 1} erkannt.")
+                if page_text.strip() or latex_result:
+                    print(f"Text oder LaTeX auf Seite {page_num + 1} erkannt.")
+
                     # Text in Chunks aufteilen und hinzufügen
-                    self.split_text_into_chunks(page_text.strip(), doc, page_num + 1)
+                    self.split_text_into_chunks(page_text.strip(), latex_result, doc, page_num + 1)
                 else:
-                    print(f"Kein Text auf Seite {page_num + 1} erkannt.")
+                    print(f"Kein Text oder LaTeX auf Seite {page_num + 1} erkannt.")
         except Exception as e:
             print(f"Fehler beim Extrahieren des Textes aus dem PDF: {e}")
+
 
     def extract_images_from_pdf(self, pdf_stream, doc):
         try:
@@ -152,41 +159,54 @@ class OCRTesseract:
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-    def extract_latex_from_image(self, image_path):
+
+    def extract_latex_from_image(self, image_stream):
         try:
-            print(f"Starte LaTeX-OCR für Bild {image_path}...")
-            result = self.latex_ocr(image_path)
+            print("Starte LaTeX-OCR...")
+
+            # Öffne das Bild direkt aus dem BytesIO-Stream
+            image = PilImage.open(image_stream)
+            print("Bild erfolgreich geladen.")
+
+            # Speichern des Bildes in einen Byte-Stream, anstatt in eine temporäre Datei
+            byte_stream = BytesIO()
+            image.save(byte_stream, format="PNG")
+            byte_stream.seek(0)  # Setze den Stream-Zeiger an den Anfang
+
+            # Führe LaTeX-OCR mit dem Byte-Stream aus (wenn die Library das unterstützt)
+            result = self.latex_ocr(byte_stream)  # Falls 'latex_ocr' den Stream akzeptiert
+            print(f"LaTeX-OCR Ergebnis: {result}")
             return result if result else None
         except Exception as e:
             print(f"Fehler bei der LaTeX-OCR: {e}")
             return None
-        
-    def extract_formulas(self, text):
-        # LaTeX-Formeln suchen (unverändert)
-        formula_pattern = r'\$(.*?)\$|\\\[.*?\\\]|\\begin{.*?}.*?\\end{.*?}'
-        matches = re.findall(formula_pattern, text, re.DOTALL)
-        return [match.strip() for match in matches if match]
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=100):
-        # Text in Wörter aufteilen
+ 
+    def split_text_into_chunks(self, full_text, latex_text, doc, page_num, max_chunk_size=100):
         words = full_text.split()
-
-        # Temporäre Liste, um Wörter zwischenzuspeichern
         chunk_text = []
-        
-        # Schleife durch alle Wörter im Text
+
         for idx, word in enumerate(words):
-            chunk_text.append(word)  # Füge das Wort dem aktuellen Chunk hinzu
-
-            # Wenn der Chunk die maximale Anzahl von Wörtern erreicht, erstelle einen neuen TextChunk
+            chunk_text.append(word)
             if len(chunk_text) >= max_chunk_size:
-                text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
+                chunk_text_text = " ".join(chunk_text)
+                text_chunk = TextChunk(
+                    id=str(ObjectId()),
+                    text=chunk_text_text,
+                    page=page_num,
+                    formula=[latex_text] if latex_text else []  # LaTeX-Ergebnis hinzufügen
+                )
                 doc.textList.append(text_chunk)
-                chunk_text = []  # Leere den temporären Chunk, um mit dem nächsten zu starten
+                chunk_text = []
 
-        # Wenn nach der Schleife noch ein nicht leerer Chunk übrig ist, füge ihn ebenfalls hinzu
         if chunk_text:
-            text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
+            chunk_text_text = " ".join(chunk_text)
+            text_chunk = TextChunk(
+                id=str(ObjectId()),
+                text=chunk_text_text,
+                page=page_num,
+                formula=[latex_text] if latex_text else []  # LaTeX-Ergebnis hinzufügen
+            )
             doc.textList.append(text_chunk)
 
 

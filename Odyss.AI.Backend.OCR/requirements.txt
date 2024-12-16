@@ -21,3 +21,8 @@ quart-cors
 bson
 pix2tex
 pdf2image
+git+https://github.com/DeepMath/MathOCR.git
+opencv-python
+tensorflow
+scipy
+tqdm
