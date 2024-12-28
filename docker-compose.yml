@@ -22,6 +22,7 @@ services:
     ports:
       - "443:443"
     volumes:
+      - ./Odyss.AI.Backend:/app
       - shared_data:/shared_data
       - /etc/ssh/id_ed25519:/root/.ssh/id_ed25519:ro
       - /etc/ssh/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
@@ -38,6 +39,7 @@ services:
       context: ./Odyss.AI.Backend.OCR
     container_name: ocr
     volumes:
+      - ./Odyss.AI.Backend.OCR:/app
       - shared_data:/shared_data
     ports:
       - "5050:5050"
@@ -72,6 +74,8 @@ services:
     container_name: llm
     ports:
       - "5150:5150"
+    volumes:
+      - ./Odyss.AI.Backend.LLM:/app
     depends_on:
       - mongodb
       - qdrant
