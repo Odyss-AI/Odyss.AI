@@ -10,8 +10,8 @@ from app.config import Config
 import pytesseract
 from pix2tex.cli import LatexOCR
 from pdf2image import convert_from_bytes
-
-import tempfile  # Für temporäre Dateien
+from pdf2image import convert_from_path
+import numpy as np
 
 class OCRTesseract:
     def __init__(self):
@@ -54,7 +54,7 @@ class OCRTesseract:
                 page_text = self.ocr_image(img_byte_stream)
 
                 # Führe LaTeX-OCR auf dem Bild aus
-                latex_result = self.extract_latex_from_image(img_byte_stream)
+                latex_result = self.extract_latex_from_image(image)
 
                 # Prüfe, ob Text erkannt wurde
                 if page_text.strip() or latex_result:
@@ -92,7 +92,7 @@ class OCRTesseract:
 
                                 # Debugging und Analyse bei unbekanntem Filter
                                 if "/Filter" not in xobject or xobject["/Filter"] not in ["/FlateDecode", "/DCTDecode", "/JPXDecode"]:
-                                    raw_save_path = os.path.join(Config.LOCAL_IMG_PATH, f"raw_image_{page_num + 1}_{image_counter}.bin")
+                                    raw_save_path = os.path.join(Config.LOCAL_DOC_PATH, f"raw_image_{page_num + 1}_{image_counter}.bin")
                                     with open(raw_save_path, "wb") as f:
                                         f.write(data)
                                     print(f"Rohdaten für Bild {image_counter} auf Seite {page_num + 1} gespeichert: {raw_save_path}")
@@ -108,7 +108,7 @@ class OCRTesseract:
                                             data = zlib.decompress(data)
                                             img = PilImage.frombytes("RGB", (width, height), data)
                                             img_save_path = os.path.join(
-                                                Config.LOCAL_IMG_PATH,
+                                                Config.LOCAL_DOC_PATH,
                                                 f"extracted_image_{page_num + 1}_{image_counter}.png"
                                             )
                                             img.save(img_save_path)
@@ -118,7 +118,7 @@ class OCRTesseract:
                                     elif xobject["/Filter"] == "/DCTDecode":
                                         file_extension = "jpg"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_IMG_PATH,
+                                            Config.LOCAL_DOC_PATH,
                                             f"extracted_image_{page_num + 1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -126,7 +126,7 @@ class OCRTesseract:
                                     elif xobject["/Filter"] == "/JPXDecode":
                                         file_extension = "jp2"
                                         img_save_path = os.path.join(
-                                            Config.LOCAL_IMG_PATH,
+                                            Config.LOCAL_DOC_PATH,
                                             f"extracted_image_{page_num + 1}_{image_counter}.{file_extension}"
                                         )
                                         with open(img_save_path, "wb") as f:
@@ -141,7 +141,7 @@ class OCRTesseract:
                                     img_text = self.ocr_image(img_save_path)  # Tesseract OCR-Funktion
                                     # Erstelle ein TextChunk für den OCR-Text und füge es zur textList hinzu
                                     if img_text.strip():  # Nur hinzufügen, wenn Text erkannt wurde
-                                        self.split_text_into_chunks(img_text, doc, page_num)  # OCR-Text in Chunks speichern
+                                        self.split_text_into_chunks(img_text, None, doc, page_num + 1)
                                     # Erstelle ein Image-Objekt
                                     image_obj = Image(
                                         id=str(ObjectId()),
@@ -159,29 +159,43 @@ class OCRTesseract:
         except Exception as e:
             print(f"Fehler beim Extrahieren der Bilder aus dem PDF: {e}")
 
-
-    def extract_latex_from_image(self, image_stream):
+    def extract_latex_from_image(self, img):
+        """
+        Extrahiert LaTeX-Formeln aus einem Bild.
+        :param img: Das Bild als PIL.Image oder numpy.ndarray.
+        :return: LaTeX-Ergebnisse aus dem Bild.
+        """
         try:
-            print("Starte LaTeX-OCR...")
+            print(f"Extrahiere LaTeX aus Bild...")
+            print(f"Bild-Typ: {type(img)}")  # Bild-Typ überprüfen
 
-            # Öffne das Bild direkt aus dem BytesIO-Stream
-            image = PilImage.open(image_stream)
-            print("Bild erfolgreich geladen.")
+            # Wenn das Bild ein PIL.Image ist, lassen wir es unverändert
+            if isinstance(img, PilImage.Image):
+                pil_image = img
+                print("Bild ist bereits ein PIL.Image.")
+            # Wenn es ein numpy.ndarray ist, konvertieren wir es in ein PIL.Image
+            elif isinstance(img, np.ndarray):
+                pil_image = PilImage.fromarray(img)
+                print("Bild wurde von numpy.ndarray zu PIL.Image konvertiert.")
+            else:
+                raise TypeError("Das Bild muss entweder ein PIL.Image oder numpy.ndarray sein.")
 
-            # Speichern des Bildes in einen Byte-Stream, anstatt in eine temporäre Datei
-            byte_stream = BytesIO()
-            image.save(byte_stream, format="PNG")
-            byte_stream.seek(0)  # Setze den Stream-Zeiger an den Anfang
+            # Bildgröße prüfen
+            print(f"Bildgröße: {pil_image.size}")
 
-            # Führe LaTeX-OCR mit dem Byte-Stream aus (wenn die Library das unterstützt)
-            result = self.latex_ocr(byte_stream)  # Falls 'latex_ocr' den Stream akzeptiert
-            print(f"LaTeX-OCR Ergebnis: {result}")
-            return result if result else None
+            # Konvertiere das Bild in Graustufen, um mögliche Probleme mit Arrays zu vermeiden
+            pil_image = pil_image.convert('L')
+            print("Bild in Graustufen konvertiert.")
+
+            # Jetzt das Bild in LaTeX-OCR verarbeiten
+            print("Bild wird an latex_ocr übergeben...")
+            result = self.latex_ocr(pil_image)  # latex_ocr erwartet ein PIL.Image
+            print("LaTeX-Ergebnis:", result)
+
         except Exception as e:
-            print(f"Fehler bei der LaTeX-OCR: {e}")
-            return None
+            print(f"Fehler bei der LaTeX-Extraktion aus dem Bild: {e}")
 
- 
+
     def split_text_into_chunks(self, full_text, latex_text, doc, page_num, max_chunk_size=100):
         words = full_text.split()
         chunk_text = []
