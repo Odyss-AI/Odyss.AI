@@ -1,7 +1,7 @@
 # Odyss.AI 🤖
 Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu deren Inhalten. Mithilfe von Mistral und Pixtral werden relevante Informationen extrahiert und verständlich aufbereitet.
 
-- ✨ Funktionen
+### ✨ Funktionen
 - 📂 Dokumente hochladen (PDF, DOCX, PPX usw.)
 - 🤖 Fragen zu den Dokumenten stellen
 - 🔍 Schnelle und präzise Antworten basierend auf dem Inhalt
