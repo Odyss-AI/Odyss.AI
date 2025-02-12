@@ -91,11 +91,40 @@ sudo rm -rf /var/lib/apt/lists/*
 https://www.th-nuernberg.de/fileadmin/zentrale-einrichtungen/zit/zit_docs/ZIT_HR_VPN-Linux.pdf
 
 #### Starte einen MongoDB, QDrant und TEI Container
+- MongoDB
 ```bash
-apt-get update && \
-apt-get install -y libreoffice libreoffice-writer libreoffice-impress libreoffice-calc default-jre && \
-apt-get clean && \
-rm -rf /var/lib/apt/lists/*
+docker run -d \
+  --name mongodb \
+  -p 27017:27017 \
+  -v mongo_data:/data/db \
+  -e MONGO_INITDB_ROOT_USERNAME=odyss \
+  -e MONGO_INITDB_ROOT_PASSWORD=odyss1 \
+  --network odyss.ai \
+  mongo:latest
+```
+- QDrant
+```bash
+docker run -d \
+  --name qdrant \
+  -p 6333:6333 \
+  -v qdrant_storage:/qdrant/storage \
+  --network odyss.ai \
+  qdrant/qdrant:latest
+```
+- TEI
+```bash
+docker run -d \
+  --name text_embeddings_inference \
+  -p 8080:8080 \
+  -v tei:/data/tei \
+  --network odyss.ai \
+  ghcr.io/huggingface/text-embeddings-inference:cpu-1.5 \
+  --model-id BAAI/bge-large-en-v1.5 \
+  --hostname 0.0.0.0 \
+  --port 8080 \
+  --payload-limit 20000000 \
+  --max-batch-tokens 1000000 \
+  --max-client-batch-size 16
 ```
 
 ## ToDos🎯
