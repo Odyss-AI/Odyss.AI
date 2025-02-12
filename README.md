@@ -123,5 +123,17 @@ docker run -d \
   --max-batch-tokens 1000000 \
   --max-client-batch-size 16
 ```
+#### Installiere Python und Pakete für Backend, LLM und OCR Service
+```bash
+sudo apt update
+sudo apt install python3 python3-venv python3-pip -y
+python3 -m venv venv
+```
+Öffne ein Terminal in jedem Unterordner der jeweiligen Services und führe folgende Befehle aus
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## ToDos🎯
