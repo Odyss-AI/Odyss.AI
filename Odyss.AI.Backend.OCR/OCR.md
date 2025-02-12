@@ -156,8 +156,6 @@ Die drei implementierten OCR-Engines haben jeweils ihre eigene Klasse und Logik:
 
 ### PDF-Verarbeitung und Datenextraktion
 
-> ![OCR-Code-Ablauf](image\OCR\OCR-Code-Ablauf.png)
-
 Unabhängig von der verwendeten OCR-Engine erfolgt die grundlegende Verarbeitung eines PDFs in mehreren Schritten:
 
 1. **PDF-Öffnen und Umwandeln:**
@@ -196,9 +194,6 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
   Über `run.py` wird der Hauptserver gestartet. Innerhalb der `app/routes/routes.py` findest Du die API-Endpunkte, die die Dokumente entgegennehmen und an den entsprechenden OCR-Service weiterleiten.
 * **OCR-Anfrage:**
 
-  > ![Api-Anfrage](image/OCR/Api-Anfrage.png)
-  >
-
   Ein Dokument (z. B. PDF) wird an den entsprechenden API-Endpunkt geschickt. Der Service:
 
   * Liest das Dokument
@@ -210,13 +205,7 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
   Das finale JSON beinhaltet:
 
   * Eine Liste von `TextChunk`-Objekten (mit Text, Seitenangabe und ggf. LaTeX-Ergebnissen)
-
-    > ![textchunk-response](image/OCR/textchunk-response.png)
-    >
   * Eine Liste von `Image`-Objekten (mit Pfad, Seitennummer, Dateityp und extrahiertem Bildtext)
-
-    > ![Image-response](image/OCR/Image-response.png)
-    >
 
 ---
 
@@ -247,11 +236,10 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 1)
 
-
-| Kriterium                                        | Tesseract   | PaddleOCR   | Nougat      |
-| :------------------------------------------------- | ------------- | ------------- | ------------- |
+| Kriterium                                              | Tesseract   | PaddleOCR   | Nougat      |
+| :----------------------------------------------------- | ----------- | ----------- | ----------- |
 | **Verarbeitungszeit (min)**                      | 0:30        | 0:28        | 14:05       |
-| **Formatierung *(*ja*****/ja/nein)**             | ja*         | ja          | ja*         |
+| **Formatierung *(*ja*****/ja/nein)**         | ja*         | ja          | ja*         |
 | **Bilderkennung (Anzahl)**                       | 5           | 5           | 5           |
 | **Fehlerrate (%)**                               | 6.26        | 9.24        | 23.04       |
 | **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut         | mittel      | schlecht    |
@@ -301,9 +289,8 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 2)
 
-
-| Kriterium                                        | Tesseract | Paddle     | Nougat   |
-| -------------------------------------------------- | ----------- | ------------ | ---------- |
+| Kriterium                                              | Tesseract | Paddle     | Nougat   |
+| ------------------------------------------------------ | --------- | ---------- | -------- |
 | **Verarbeitungszeit (min)**                      | 0:30      | 0:22       | 14:30    |
 | **Formatierung (ja/nein)**                       | ja        | nein       | ja       |
 | **Fehlerrate (%)**                               | 6.26      | 9.24       | 23.04    |
