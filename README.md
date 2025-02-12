@@ -1,8 +1,20 @@
-# Odyss.AI
+# Odyss.AI 🤖
+Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu deren Inhalten. Mithilfe von Mistral und Pixtral werden relevante Informationen extrahiert und verständlich aufbereitet.
 
-## Um alle Pakete für das Backend automatisch in einer virtuellen Umgebung zu installieren folgender Befehl im Ordner Odyss.AI.Backend:  
-### python setup.py
+### ✨ Funktionen
+- 📂 Dokumente hochladen (PDF, DOCX, PPX usw.)
+- 🤖 Fragen zu den Dokumenten stellen
+- 🔍 Schnelle und präzise Antworten basierend auf dem Inhalt
+- 🛠 Einfache Nutzung über die Web-Oberfläche
+- 🚀 Starte jetzt und lass die KI deine Dokumente für dich durchsuchen!
 
+## Inhaltsverzeichnis
+- [Übersicht🥽](#installation)
+- [Installation⚙️](#übersicht)
+- [ToDos🎯](#todos)
 
+## Übersicht🥽
 
-![architecture_odyss_ai](https://github.com/user-attachments/assets/b4ab5e91-c680-4194-be49-83a83e6e0a59)
+## Installation⚙️
+
+## ToDos🎯
