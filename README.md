@@ -79,5 +79,23 @@ sudo systemctl enable --now docker
 
 ✅ **Fertig!** Jetzt kannst du Docker und Docker Compose auf deinem Ubuntu-System nutzen. 🚀
 
+#### Installiere LibreOffice
+```bash
+apt-get update && \
+apt-get install -y libreoffice libreoffice-writer libreoffice-impress libreoffice-calc default-jre && \
+apt-get clean && \
+rm -rf /var/lib/apt/lists/*
+```
+
+#### Installiere Global Protect für Uni VPN
+https://www.th-nuernberg.de/fileadmin/zentrale-einrichtungen/zit/zit_docs/ZIT_HR_VPN-Linux.pdf
+
+#### Starte einen MongoDB, QDrant und TEI Container
+```bash
+apt-get update && \
+apt-get install -y libreoffice libreoffice-writer libreoffice-impress libreoffice-calc default-jre && \
+apt-get clean && \
+rm -rf /var/lib/apt/lists/*
+```
 
 ## ToDos🎯
