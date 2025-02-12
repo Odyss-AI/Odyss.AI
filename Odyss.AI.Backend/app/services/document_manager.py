@@ -14,7 +14,7 @@ from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async
+from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async, query_pixtral_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
@@ -68,6 +68,8 @@ class DocumentManager:
                 # Get all PDF informations (text/images)
                 new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
                 new_doc = await extract_pdf_information_with_ocr(new_doc)
+                if(len(new_doc.textList) == 0):
+                    return None, "Found no text in document"
             except Exception as e:
                 logging.error("Error while extracing information while using ocr: "+e)
             print("OCR finished")
@@ -77,7 +79,7 @@ class DocumentManager:
             print("started imaged information extraction")
             try:
                 # Tag Images and delete them after processing
-                new_doc = await query_pixtral_with_ssh_async(new_doc)
+                # new_doc = await query_pixtral_with_ssh_async(new_doc)
                 for img in new_doc.imgList:
                     if os.path.exists(img.link):
                         os.remove(img.link)
