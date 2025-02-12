@@ -86,7 +86,12 @@ sudo apt-get install -y libreoffice libreoffice-writer libreoffice-impress libre
 sudo apt-get clean && \
 sudo rm -rf /var/lib/apt/lists/*
 ```
-
+#### Falls Teseract als OCR verwendet werden soll, muss folgendes noch installiert werden
+```bash
+sudo apt-get update && \
+sudo apt-get install -y ffmpeg libsm6 libxext6 poppler-utils tesseract-ocr && \
+rm -rf /var/lib/apt/lists/*  # Entferne die nicht mehr benötigten Installationsdateien
+```
 #### Installiere Global Protect für Uni VPN
 https://www.th-nuernberg.de/fileadmin/zentrale-einrichtungen/zit/zit_docs/ZIT_HR_VPN-Linux.pdf
 
