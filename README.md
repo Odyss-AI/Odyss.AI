@@ -127,13 +127,34 @@ docker run -d \
 ```bash
 sudo apt update
 sudo apt install python3 python3-venv python3-pip -y
-python3 -m venv venv
 ```
 Öffne ein Terminal in jedem Unterordner der jeweiligen Services und führe folgende Befehle aus
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
+Starte die einzelnen Services mit sudo .venv/bin/python3 run.py
+Passe zum debuggen die launch.json an
+
+#### Starte das Frontend
+Falls nicht installiert, hole npm
+```bash
+sudo apt update
+sudo apt install npm
+npm install
+```
+
+### Nutze VM mit allen vorherigen Einstellungen vorbereitet
+- Ziehe VM von:
+- Öffne VMware und füge die VM hinzu
+- Starte die VM, dort ist das komplette Projekt vorhanden auf dem dev-local Branch. Es gibt eine launch.json für debugging der Services. Beachte das die Ports für Backend geändert wurde. Entsprechend müssen in OCR, LLM und Frontend (utils.js) geändert werden. Auf dev-local ist das bereits umgestellt, reiner debugging Branch.
+
+### Nutze Docker Compose
+Mithilfe von Docker Compose können alle Services einfach hochgefahren werden. Deployment auf den Uni Server genau damit durchgeführt.
 
 ## ToDos🎯
+- Darstellung der hochgeladenen Dokumente nach erneuten einloggen
+- Finaler Dokumentenspeicher finden
+- Leere Textliste von OCR zurückgegeben
+- TEI Embeddings Tokenoverlow
