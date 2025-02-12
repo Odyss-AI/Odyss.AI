@@ -1,4 +1,5 @@
-![Logo](odyss_logo.png)# Odyss.AI 🤖
+![Logo](odyss_logo.png)
+# Odyss.AI 🤖
 Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu deren Inhalten. Mithilfe von Mistral und Pixtral werden relevante Informationen extrahiert und verständlich aufbereitet.
 
 ### ✨ Funktionen
