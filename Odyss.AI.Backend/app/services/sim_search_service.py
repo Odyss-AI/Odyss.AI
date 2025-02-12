@@ -78,8 +78,8 @@ class SimailaritySearchService:
         #    anzahl_woerter = len(text.split())
         #    print(f"Chunk ID: {chunk_id}, Anzahl der Wörter: {anzahl_woerter}")
         #for i in tqdm(range(0, len(chunks), 32), desc="Processing embeddings"):
-        for i in range(0, len(chunks), 32):
-            batch = chunks[i:i + 32]
+        for i in range(0, len(chunks), 14):
+            batch = chunks[i:i + 14]
             texts, ids = zip(*batch)
             tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
  
