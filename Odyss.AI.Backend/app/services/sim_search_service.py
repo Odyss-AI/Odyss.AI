@@ -137,7 +137,6 @@ class SimailaritySearchService:
             logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
 
-
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
         """
         Searches for similar documents based on the provided query and document IDs asynchronously.
@@ -150,10 +149,11 @@ class SimailaritySearchService:
         Returns:
             list: A list of chunk IDs and their scores, or None if an error occurs.
         """
+        query_embeddings = await self.fetch_embedding_async([query], ["q"])
+        print("query_embeddings: " + str(query_embeddings))
+
         try:
             # Fetch embeddings for the query
-            query_embeddings = await self.fetch_embedding_async([query], ["q"])
-            print("query_embeddings: "+str(query_embeddings))
 
             filter = Filter(
                 must=[
@@ -167,21 +167,20 @@ class SimailaritySearchService:
             )
 
             search_result = self.qdrant_client.query_points(
-                collection_name=self.collection_name, 
-                query=query_embeddings[0], 
-                limit=5,
+                collection_name=self.collection_name,
+                query=query_embeddings[0][0],  # Verwende nur den Vektor aus dem Tupel
+                limit=count,
                 query_filter=filter,
                 with_payload=True,
                 with_vectors=True
             ).points
-                        
+
             # Extract chunk_ids from the payload of the top results
-            chunk_ids = []
             chunk_ids = [[result.payload['chunk_id'], result.score] for result in search_result]
-            print("chunk_ids: "+str(chunk_ids))
+            print("chunk_ids: " + str(chunk_ids))
             return chunk_ids
         except Exception as e:
-            print("Error while searching similar docs: "+str(e))
+            print("Error while searching similar docs: " + str(e))
             logging.error(f"Error while searching similar docs: {str(e)}")
             return None
 
