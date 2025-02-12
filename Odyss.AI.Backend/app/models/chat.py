@@ -6,7 +6,7 @@ from app.models.enum import AvailibleModels
 class Message(BaseModel):
     id: str
     content: str
-    timestamp: datetime
+    timestamp: str
     is_user: bool
     selected_model: str = AvailibleModels.MISTRAL.value
 

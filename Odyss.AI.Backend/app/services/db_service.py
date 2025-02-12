@@ -79,7 +79,8 @@ class MongoDBService:
                 return None  # Benutzername existiert bereits
             user = User(id=str(ObjectId()), username=username)
             await self.user_collection.insert_one(user.model_dump(by_alias=True))
-            return user
+            inserted_user = await self.get_user_async(username)
+            return inserted_user
         except Exception as e:
             logging.error(f"Error creating user: {e}")
             return None
@@ -174,31 +175,25 @@ class MongoDBService:
         """
         
         try:
-            async with await self.client.start_session() as session:
-                async with session.start_transaction():
-                    user = await self.get_user_async(username)
-                    if not user:
-                        return None
-                    
-                    docs = await self.get_documents_of_user_async(username)
-                    for doc in docs:
-                        if doc.doc_id == document.doc_id:
-                            return doc.id
-                    
-                    document.id = str(ObjectId())  # Generiere eine eindeutige ID für das Dokument
-                    await self.user_collection.update_one(
-                        {"username": username},
-                        {"$push": {"documents": document.model_dump(by_alias=True)}},
-                        session=session
-                    )
+            user = await self.get_user_async(username)
+            if not user:
+                return None
 
-                    return document.id
-        except asyncio.CancelledError:
-            logging.error("Die Operation wurde abgebrochen.")
-            raise
+            docs = await self.get_documents_of_user_async(username)
+            for doc in docs:
+                if doc.doc_id == document.doc_id:
+                    return doc.id
+
+            document.id = str(ObjectId())  # Generiere eine eindeutige ID für das Dokument
+            await self.user_collection.update_one(
+                {"username": username},
+                {"$push": {"documents": document.model_dump(by_alias=True)}}
+            )
+            return document.id
         except Exception as e:
             logging.error(f"Fehler beim Hinzufügen des Dokuments: {e}")
             return None
+
 
 
     async def delete_document_of_user_async(self, username, document_id):
@@ -337,6 +332,99 @@ class MongoDBService:
         except Exception as e:
             logging.error(f"Error getting messages from chat: {e}")
             return []
+        
+    async def add_document_to_chat_async(self, chat_id, doc_id):
+        """
+        Adds a document to a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to add the document to.
+            doc_id (str): The ID of the document to add.
+
+        Returns:
+            bool: True if the document was successfully added, False otherwise.
+        """
+        
+        try:
+            chat = await self.get_chat_async(chat_id)
+            if not chat:
+                return None
+            
+            result = await self.chat_collection.update_one(
+                {"id": chat_id},
+                {"$push": {"doc_ids": doc_id}}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            logging.error(f"Error adding document to chat: {e}")
+            return None
+        
+    async def delete_document_from_chat_async(self, chat_id, doc_id):
+        """
+        Deletes a document from a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to delete the document from.
+            doc_id (str): The ID of the document to delete.
+
+        Returns:
+            bool: True if the document was successfully deleted, False otherwise.
+        """
+        
+        try:
+            chat = await self.get_chat_async(chat_id)
+            if not chat:
+                return None
+            
+            result = await self.chat_collection.update_one(
+                {"id": chat_id},
+                {"$pull": {"doc_ids": doc_id}}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            logging.error(f"Error deleting document from chat: {e}")
+            return None
+        
+    async def get_documents_from_chat_async(self, chat_id):
+        """
+        Retrieves all documents from a chat asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to retrieve documents from.
+
+        Returns:
+            list: A list of document IDs, or an empty list if the chat is not found or an error occurs.
+        """
+        
+        try:
+            chat = await self.get_chat_async(chat_id)
+            if chat:
+                return chat.get("doc_ids", [])
+            return []
+        except Exception as e:
+            logging.error(f"Error getting documents from chat: {e}")
+            return []
+
+        
+    async def delete_chat_async(self, chat_id):
+        """
+        Deletes a chat from the database asynchronously.
+
+        Args:
+            chat_id (str): The ID of the chat to delete.
+
+        Returns:
+            bool: True if the chat was successfully deleted, False otherwise.
+        """
+        
+        try:
+            result = await self.chat_collection.delete_one({"id": chat_id})
+            return result.deleted_count > 0
+        except Exception as e:
+            logging.error(f"Error deleting chat: {e}")
+            return False
 
     
 

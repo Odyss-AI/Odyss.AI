@@ -2,6 +2,8 @@ import uuid
 import aiohttp
 import asyncio
 import logging
+import traceback
+import tqdm
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchAny, VectorParams, HnswConfigDiff, OptimizersConfigDiff 
@@ -28,56 +30,61 @@ class SimailaritySearchService:
             self._initialize_collection()
             self._initialized = True
 
-    async def fetch_embedding_async(self, to_embed: str, chunk_id: str):
+    async def fetch_embedding_async(self, to_embed: list, chunk_ids: list):
         """
-        Fetches the embedding for a given text asynchronously.
-
+        Fetches the embeddings for a given list of texts asynchronously.
+ 
         Args:
-            to_embed (str): The text to be embedded.
-            chunk_id (str): The ID of the chunk.
-
+            to_embed (list): The list of texts to be embedded.
+            chunk_ids (list): The list of chunk IDs.
+ 
         Returns:
-            list: A list containing the embedding and the chunk ID, or None if an error occurs.
+            list: A list containing the embeddings and the chunk IDs, or None if an error occurs.
         """
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(self.tei_url, json={"inputs": to_embed}) as response:
                     if response.status == 200:
-                        response_json = await response.json()  # Stelle sicher, dass await verwendet wird
-                        if isinstance(response_json, list) and len(response_json) > 0 and isinstance(response_json[0], list):
-                            return [response_json[0], chunk_id]  # Rückgabe des ersten Elements der Liste
+                        response_json = await response.json()
+                        if isinstance(response_json, list) and all(isinstance(item, list) for item in response_json):
+                            return list(zip(response_json, chunk_ids))
                         else:
-                            logging.error(f"Error fetching embedding at {chunk_id}: Invalid response")
+                            logging.error(f"Error fetching embeddings: Invalid response")
                             return None
                     else:
-                        print(f"Error at {chunk_id}: {response.status}")
+                        logging.error(f"Error: {response.status}")
                         return None
         except aiohttp.ClientError as e:
-            logging.error(f"HTTP-Error at {chunk_id}: {e}")
+            logging.error(f"HTTP-Error: {e}")
             return None
+        
 
     async def create_embeddings_async(self, doc: Document):
         """
         Creates embeddings for the text and image chunks in a document asynchronously.
-
+ 
         Args:
             doc (Document): The document containing text and image chunks.
-
+ 
         Returns:
             list: A list of embeddings.
         """
         tasks = []
-        for chunk in doc.textList:
-            tasks.append(self.fetch_embedding_async(chunk.text, chunk.id))
-        for img in doc.imgList:
-            if(img.imgtext):
-                tasks.append(self.fetch_embedding_async(img.imgtext, img.id))
-            if(img.llm_output):
-                tasks.append(self.fetch_embedding_async(img.llm_output, img.id))
-        
+        chunks = [(chunk.text, chunk.id) for chunk in doc.textList]
+        chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
+        chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
+        # Wörter zählen in den Texten der Liste
+        #for text, chunk_id in chunks:
+        #    anzahl_woerter = len(text.split())
+        #    print(f"Chunk ID: {chunk_id}, Anzahl der Wörter: {anzahl_woerter}")
+        #for i in tqdm(range(0, len(chunks), 32), desc="Processing embeddings"):
+        for i in range(0, len(chunks), 32):
+            batch = chunks[i:i + 32]
+            texts, ids = zip(*batch)
+            tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
+ 
         embeddings = await asyncio.gather(*tasks)
-        
-        return embeddings
+        return [item for sublist in embeddings for item in sublist] if embeddings else None
     
     async def save_embedding_async(self, id, embeddings):
         """
@@ -90,22 +97,40 @@ class SimailaritySearchService:
         Returns:
             bool: True if the embeddings were successfully saved, False otherwise.
         """
+
         try:
+            print("Saving process started for Qdrant")
             points = []
+
+            #print(embeddings)
+
             for embedding in embeddings:
                 points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
 
+            print("points: "+str(points))
+
             result = self.qdrant_client.upsert(
-                collection_name=self.collection_name, 
-                wait=True, 
+                collection_name=self.collection_name,
+                wait=True,
                 points=points
-                )
+            )
             
             return result.status == 'completed'
-            
-        except Exception as e:
-            logging.error(f"Error while saving embeddings at document {id}: {e}")
+
+        except ValueError as ve:
+            logging.error(f"ValueError while saving embeddings for document {id}: {ve}")
+            logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
+
+        except ConnectionError as ce:
+            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {ce}")
+            return None
+
+        except Exception as e:
+            logging.error(f"Unexpected error while saving embeddings for document {id}: {e}")
+            logging.debug(traceback.format_exc())  # Log full stack trace for debugging
+            return None
+
 
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
         """

@@ -15,7 +15,7 @@ msg_manager = MessageManager()
 def home():
     return "<h1>Hallo bei Odyss.AI</h1>"
 
-@main.websocket('/chat')
+@main.websocket('/v1/chat')
 async def chat():
     db = get_db()
     
@@ -23,10 +23,12 @@ async def chat():
         message = await websocket.receive()
         data = json.loads(message)
         
+        print("New chat messages")
         username = data.get('username')
         msg = data.get('message')
         chat_id = data.get('chatId')
         model = data.get('model')
+        timestamp = data.get('timestamp')
 
         if not chat_id:
             chat_id = None
@@ -44,7 +46,7 @@ async def chat():
             id=str(ObjectId()),
             is_user=True,
             content=msg,
-            timestamp=datetime.datetime.now(),
+            timestamp=timestamp,
             selected_model=model
         )
 
@@ -54,8 +56,13 @@ async def chat():
             await websocket.send(json.dumps({"error": chunks}))
             continue
 
-        llm_res_dict = llm_res.model_dump(by_alias=True)
-        llm_res_dict = convert_datetime(llm_res_dict)
+        llm_res_dict = {
+            "id": llm_res.id,
+            "content": llm_res.content,
+            "timestamp": llm_res.timestamp,
+            "is_user": llm_res.is_user,
+            "selected_model": llm_res.selected_model
+        }
 
         res = {
             "chatId": chat_id,

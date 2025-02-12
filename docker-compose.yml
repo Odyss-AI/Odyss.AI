@@ -23,6 +23,8 @@ services:
       - "443:443"
     volumes:
       - shared_data:/shared_data
+      - /etc/ssh/id_ed25519:/root/.ssh/id_ed25519:ro
+      - /etc/ssh/id_ed25519.pub:/root/.ssh/id_ed25519.pub:ro
     depends_on:
       - mongodb
       - qdrant
@@ -81,12 +83,17 @@ services:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
     container_name: text_embeddings_inference
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - tei:/data/tei
-    command: --model-id BAAI/bge-large-en-v1.5
+    command: --model-id BAAI/bge-large-en-v1.5 --hostname 0.0.0.0 --port 8080 --payload-limit 20000000 --max-batch-tokens 1000000 --max-client-batch-size 16 # 10MB
+    environment:
+      - PAYLOAD_LIMIT=20000000
+      - MAX_BATCH_TOKENS=1000000
+      - PORT=8080
     networks:
       - odyss.ai
+
 
   
 volumes:

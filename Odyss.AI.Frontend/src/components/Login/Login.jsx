@@ -1,12 +1,18 @@
 // src/components/Login.js
 import React, { useState } from 'react';
 import useAuthStore from '../../store/authStore.jsx';
-import { getUser, getChats } from '../../utils.js';
+import useChatStore from '../../store/chatStore.jsx';
+import { getUser, getChats, createUser } from '../../utils.js';
+import useWebSocket from '../../useWebSocket.jsx';
 
 function Login() {
     const [username, setUsername] = useState('');  // Benutzername
     const [password, setPassword] = useState('');  // Passwort
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
+    const addChat = useChatStore((state) => state.addChat);  // Chat hinzufügen
+    const sendMessage = useChatStore((state) => state.sendMessage);  // Nachricht senden
+
+    const { initializeWebSocket } = useWebSocket();
 
     const handleLogin = async () => {
         if (username && password) {
@@ -24,6 +30,16 @@ function Login() {
                 alert('Error fetching chats');
                 return;
             }
+            
+            chats.forEach(chat => {
+                //TODO: Hole tatsächliche Dokumente anhand der file_ids
+                addChat(chat.chat_name, [], chat.messages, chat.id);  // Chat hinzufügen
+                chat.messages.forEach(message => {
+                    sendMessage(chat.id, message.content, message.is_user, message.timestamp);  // Nachrichten hinzufügen
+                })
+            });
+
+            initializeWebSocket();  // WebSocket initialisieren
         }
         else {
             alert('Please enter username and password');

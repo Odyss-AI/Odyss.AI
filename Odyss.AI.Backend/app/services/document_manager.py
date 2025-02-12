@@ -5,6 +5,7 @@ import aiohttp
 import asyncio
 import uuid
 import logging
+import time
 
 from bson import ObjectId
 
@@ -13,7 +14,7 @@ from datetime import datetime
 from app.models.user import Document
 from app.utils.test_data_provider import get_test_document
 from app.utils.db import get_db
-from app.utils.ml_connection import query_mixtral_async, query_pixtral_async
+from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.utils.prompts import summary_prompt_builder
 from app.services.sim_search_service import SimailaritySearchService
@@ -29,7 +30,7 @@ class DocumentManager:
         # self.tei_url = Config.TEI_URL + "/embed"
         self.sim_search = SimailaritySearchService()
 
-    async def handle_document_async(self, file, username, is_local = True):
+    async def handle_document_async(self, file, username, chat_id):
         """
         Handles the document upload, processing, and storage asynchronously. Refer software architecture pattern Integration Operation Segregation Principle (IOSP)
 
@@ -44,55 +45,99 @@ class DocumentManager:
         
         try:
             db = get_db()
+            start = time.time()
+            parttime = time.time()
             # Generate a unique name for the document
             hash_doc, hash = self.generate_filename(file.filename)
-
-            # Convert file to PDF, OCR just uses PDFs
-            converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
-            if self.handle_error(converted_file_path is None, "Error converting file", file, username):
-                return None, "Error converting file"
-
-            # Upload the PDF to MongoDB and get the file objectID back
-            mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
-            if self.handle_error(mongo_file_id is None, "Error uploading file on MongoDB", file, username):
-                return None, "Error uploading file on MongoDB"
-
-            # Get all PDF informations (text/images)
-            new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
-            new_doc = await extract_pdf_information_with_ocr(new_doc)
-            if self.handle_error(new_doc is None, "Error extracting information while using ocr", file, username):
-                return None, "Error extracting information while using ocr"
-
+            try:
+                # Convert file to PDF, OCR just uses PDFs
+                converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
+            except Exception as e:
+                logging.error("Error while converting file: "+e)
+            print("Dauer zum konvertieren und Speichern der Datei: ", time.time()-parttime)
+            parttime = time.time()
+            try:
+                # Upload the PDF to MongoDB and get the file objectID back
+                mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
+            except Exception as e:
+                logging.error("Error while uploading file to Mongodb: "+ e)
+            print("Dauer zum hochladen der Datei in die Datenbank: ", time.time()-parttime)
+            parttime = time.time()
+            print("started OCR")
+            try:
+                # Get all PDF informations (text/images)
+                new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
+                new_doc = await extract_pdf_information_with_ocr(new_doc)
+            except Exception as e:
+                logging.error("Error while extracing information while using ocr: "+e)
+            print("OCR finished")
+            print("Dauer zum extrahieren der Informationen: ", time.time()-parttime)
+            parttime = time.time()
             # TODO: Upload extracted pictures to mongoDB (maybe not necessary anymore)
-            
-            # Tag Images and delete them after processing
-            new_doc = await query_pixtral_async(new_doc)
-            for img in new_doc.imgList:
-                if os.path.exists(img.link):
-                    os.remove(img.link)
-                    img.link = "Image is successfully evaluated and deleted"
-
-            # Create embeddings for the document
-            embeddings = await self.sim_search.create_embeddings_async(new_doc)
-            if self.handle_error(embeddings is None, "Error creating embeddings", file, username):
-                return None, "Error creating embeddings"
-
-            # Save the embeddings in QDrant
-            is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
-            if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
-                return None, "Error saving embeddings"
-
-            # Create a summary for the document
-            # TODO: Fix batching loop so ssh tunnel is not opened for every batch
-            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
-            if self.handle_error(new_doc.summary is None, "Error creating summary", file, username):
-                return None, "Error creating summary"
-
-            # Save new_doc in the database
-            doc_id = await db.add_document_to_user_async(username, new_doc)
-            if self.handle_error(doc_id is None, "Error saving document", file, username):
-                return None, "Error saving document"
-
+            print("started imaged information extraction")
+            try:
+                # Tag Images and delete them after processing
+                new_doc = await query_pixtral_with_ssh_async(new_doc)
+                for img in new_doc.imgList:
+                    if os.path.exists(img.link):
+                        os.remove(img.link)
+                        img.link = "Image is successfully evaluated and deleted"
+            except Exception as e:
+                logging.error("Error while Image evaluation and deleting: "+e)
+            print("images tagged and deleted")
+            print("Dauer zum taggen und löschen der Bilder: ", time.time()-parttime)
+            parttime = time.time()
+            print("started embedding creation")
+            try:
+                # Create embeddings for the document
+                # print("new doc: "+ str(new_doc))
+                embeddings = await self.sim_search.create_embeddings_async(new_doc)
+                # print("embeddings doc_manager: "+ str(embeddings))
+            except Exception as e:
+                logging.error("Error while creating embeddings: "+e)
+            print("embeddings created")
+            print("Dauer zum erstellen der Embeddings: ", time.time()-parttime)
+            parttime = time.time()
+            print("started saving embeddings")
+            try:
+                # Save the embeddings in QDrant
+                is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
+                if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
+                    return None, "Error saving embeddings"
+            except Exception as e:
+                logging.error("Error while saving embeddings in QDrant: "+e)
+            print("embeddings saved")
+            print("Dauer zum speichern der Embeddings: ", time.time()-parttime)
+            parttime = time.time()
+            print("started summary creation")
+            try:
+                # Create a summary for the document
+                # TODO: Fix batching loop so ssh tunnel is not opened for every batch
+                new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
+            except Exception as e:
+                logging.error("Error while creating summary: "+e)
+            print("summary created")
+            print("Dauer zum erstellen der Zusammenfassung: ", time.time()-parttime)
+            parttime = time.time()
+            print("started document saving")
+            try:
+                # Save new_doc in the database
+                new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
+            except Exception as e:
+                logging.error("Error while saving document: "+e)
+            print("document saved")
+            print("Dauer zum speichern des Dokuments: ", time.time()-parttime)
+            parttime = time.time()
+            print("started adding document to chat")
+            try:
+                is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
+                if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):
+                    return None, "Error adding document to chat"
+            except Exception as e:
+                logging.error("Error while adding document to chat: "+e)
+            print("document added to chat")
+            print("Dauer zum hinzufügen des Dokuments zum Chat: ", time.time()-parttime)
+            print("Gesamtdauer: ", time.time()-start)
             return new_doc, "File uploaded successfully"
         except Exception as e:
             logging.error(f"Error handling document {file.filename} from {username}: {str(e)}")
