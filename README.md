@@ -99,7 +99,6 @@ docker run -d \
   -v mongo_data:/data/db \
   -e MONGO_INITDB_ROOT_USERNAME=odyss \
   -e MONGO_INITDB_ROOT_PASSWORD=odyss1 \
-  --network odyss.ai \
   mongo:latest
 ```
 - QDrant
@@ -108,7 +107,6 @@ docker run -d \
   --name qdrant \
   -p 6333:6333 \
   -v qdrant_storage:/qdrant/storage \
-  --network odyss.ai \
   qdrant/qdrant:latest
 ```
 - TEI
@@ -117,7 +115,6 @@ docker run -d \
   --name text_embeddings_inference \
   -p 8080:8080 \
   -v tei:/data/tei \
-  --network odyss.ai \
   ghcr.io/huggingface/text-embeddings-inference:cpu-1.5 \
   --model-id BAAI/bge-large-en-v1.5 \
   --hostname 0.0.0.0 \
