@@ -14,6 +14,7 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 - [ToDos🎯](#todos)
 
 ## Übersicht🥽
+![Alt-Text](odyss_overview.png)
 
 ## Installation⚙️
 
