@@ -152,8 +152,9 @@ class SimailaritySearchService:
         """
         try:
             # Fetch embeddings for the query
-            query_embeddings = await self.fetch_embedding_async(query, "q")
-            
+            query_embeddings = await self.fetch_embedding_async([query], ["q"])
+            print("query_embeddings: "+str(query_embeddings))
+
             filter = Filter(
                 must=[
                     FieldCondition(
@@ -177,7 +178,7 @@ class SimailaritySearchService:
             # Extract chunk_ids from the payload of the top results
             chunk_ids = []
             chunk_ids = [[result.payload['chunk_id'], result.score] for result in search_result]
-            
+            print("chunk_ids: "+str(chunk_ids))
             return chunk_ids
         except Exception as e:
             print("Error while searching similar docs: "+str(e))
