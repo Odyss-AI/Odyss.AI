@@ -1,13 +1,12 @@
-
 ## Odyss.AI Backend OCR
 
 Dieses Projekt implementiert den OCR-Teil eines Systems, bei dem Nutzer Dokumente hochladen können, um anschließend Fragen zu den Inhalten zu stellen oder „über das Dokument zu schreiben“. Im Kern wird das hochgeladene Dokument verarbeitet und in strukturierte JSON-Daten umgewandelt, sodass das Backend die extrahierten Inhalte (Text, Bilder und ggf. LaTeX-Formeln) weiterverwenden kann.
 
 Das Besondere an diesem System ist, dass **drei verschiedene OCR-Implementierungen** angeboten werden:
 
-* **Tesseract** (mit zusätzlicher LaTeX-Erkennung über  *pix2tex* ),
-* **Nougat** (basierend auf einem Vision2Seq-Modell von Facebook und mit benutzerdefinierter Stopping-Kriterium-Logik),
-* **PaddleOCR** (konfiguriert für die Verarbeitung deutscher Texte).
+* **Tesseract**
+* **Nougat**
+* **PaddleOCR**
 
 Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebettete Bilder aus PDF-Dokumenten. Zusätzlich werden Texte in kleinere „Chunks“ aufgeteilt, um sie später besser verarbeiten zu können.
 
@@ -15,7 +14,7 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
 
 ## Inhaltsverzeichnis
 
-* [Überblick](#überblick)
+* [Überblick](#Überblick)
 * [Projektstruktur](#projektstruktur)
 * [Funktionsweise und Ablauf](#funktionsweise-und-ablauf)
 
@@ -25,6 +24,33 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
 * [Installation und Setup](#installation-und-setup)
 * [Ausführung und Nutzung](#ausführung-und-nutzung)
 * [Hinweise und Erweiterungsmöglichkeiten](#hinweise-und-erweiterungsmöglichkeiten)
+* [OCR Vergleich: Tesseract vs. Paddle vs. Nougat](#ocr-vergleich-tesseract-vs-paddle-vs-nougat)
+
+- [Einleitung](#einleitung)
+- [Allgemeine Informationen (Fall 1)](#allgemeine-informationen-fall-1)
+- [Vergleichskriterien (Fall 1)](#vergleichskriterien-fall-1)
+- [Kriteriumserklärungen](#kriteriumserklarungen)
+- [Ergebnisse im Detail (Seite 1, Fall 1)](#ergebnisse-im-detail-seite-1-fall-1)
+
+  - [Tesseract](#tesseract)
+  - [Paddle](#paddle)
+  - [Nougat](#nougat)
+- [Allgemeine Informationen (Fall 2)](#allgemeine-informationen-fall-2)
+- [Vergleichskriterien (Fall 2)](#vergleichskriterien-fall-2)
+- [Ergebnisse im Detail (Seite 1, Fall 2)](#ergebnisse-im-detail-seite-1-fall-2)
+
+  - [Tesseract](#tesseract-1)
+  - [Paddle](#paddle-1)
+  - [Nougat](#nougat-1)
+- [Zusammenfassung der Ergebnisse](#zusammenfassung-der-ergebnisse)
+- [Fehleranalyse](#fehleranalyse)
+
+  - [Häufigste Fehlerarten](#haeufigste-fehlerarten)
+  - [Vergleich der Fehlerhäufigkeit](#vergleich-der-fehlerhaeufigkeit)
+- [Ausführen der DocumentOCRResults-Klasse](#ausfuehren-der-documentocrresults-klasse)
+
+  - [Wechsle zum richtigen Verzeichnis:](#wechsle-zum-richtigen-verzeichnis)
+- [To Do](#To-Do)
 
 ---
 
@@ -130,6 +156,8 @@ Die drei implementierten OCR-Engines haben jeweils ihre eigene Klasse und Logik:
 
 ### PDF-Verarbeitung und Datenextraktion
 
+> ![OCR-Code-Ablauf](image\OCR\OCR-Code-Ablauf.png)
+
 Unabhängig von der verwendeten OCR-Engine erfolgt die grundlegende Verarbeitung eines PDFs in mehreren Schritten:
 
 1. **PDF-Öffnen und Umwandeln:**
@@ -168,6 +196,9 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
   Über `run.py` wird der Hauptserver gestartet. Innerhalb der `app/routes/routes.py` findest Du die API-Endpunkte, die die Dokumente entgegennehmen und an den entsprechenden OCR-Service weiterleiten.
 * **OCR-Anfrage:**
 
+  > ![Api-Anfrage](image/OCR/Api-Anfrage.png)
+  >
+
   Ein Dokument (z. B. PDF) wird an den entsprechenden API-Endpunkt geschickt. Der Service:
 
   * Liest das Dokument
@@ -178,8 +209,14 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
 
   Das finale JSON beinhaltet:
 
-  * Eine Liste von `TextChunk`-Objekten (mit Text, Seitenangabe und ggf. LaTeX-Ergebnissen),
-  * Eine Liste von `Image`-Objekten (mit Pfad, Seitennummer, Dateityp und extrahiertem Bildtext).
+  * Eine Liste von `TextChunk`-Objekten (mit Text, Seitenangabe und ggf. LaTeX-Ergebnissen)
+
+    > ![textchunk-response](image/OCR/textchunk-response.png)
+    >
+  * Eine Liste von `Image`-Objekten (mit Pfad, Seitennummer, Dateityp und extrahiertem Bildtext)
+
+    > ![Image-response](image/OCR/Image-response.png)
+    >
 
 ---
 
@@ -196,7 +233,7 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
 
 ## Einleitung
 
-In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit und Benutzerfreundlichkeit zu bewerten im Vergleich zu einem **PDFReader**. Wir testen verschiedene Dokumenttypen, darunter:
+In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit und Benutzerfreundlichkeit zu bewerten im Vergleich zu einem **PDFReader**. Wir testen mit diesem Dokument [arXiv:2401.00908](https://arxiv.org/abs/2401.00908) verschiedene Dokumenttypen, darunter:
 
 1. Normale Dokumente mit markierbarem Text und Bildern **(Fall 1)**
 2. Dokumente, die nur aus Bildern bestehen **(Fall 2)**
@@ -210,10 +247,11 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 1)
 
-| Kriterium                                              | Tesseract   | PaddleOCR   | Nougat      |
-| :----------------------------------------------------- | ----------- | ----------- | ----------- |
+
+| Kriterium                                        | Tesseract   | PaddleOCR   | Nougat      |
+| :------------------------------------------------- | ------------- | ------------- | ------------- |
 | **Verarbeitungszeit (min)**                      | 0:30        | 0:28        | 14:05       |
-| **Formatierung *(*ja*****/ja/nein)**         | ja*         | ja          | ja*         |
+| **Formatierung *(*ja*****/ja/nein)**             | ja*         | ja          | ja*         |
 | **Bilderkennung (Anzahl)**                       | 5           | 5           | 5           |
 | **Fehlerrate (%)**                               | 6.26        | 9.24        | 23.04       |
 | **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut         | mittel      | schlecht    |
@@ -263,14 +301,15 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Vergleichskriterien (Fall 2)
 
-| Kriterium                                              | Tesseract  | Paddle     | Nougat     |
-| ------------------------------------------------------ | ---------- | ---------- | ---------- |
-| **Verarbeitungszeit (min)**                      | 0:30       | 0:22       | 14:30      |
-| **Formatierung (ja/nein)**                       | ja         | nein       | ja         |
-| **Fehlerrate (%)**                               | [Fehler T] | [Fehler P] | [Fehler N] |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut        | gut/mittel | schlecht   |
-| **Sonderzeichen/Formeln (%)**                    |            |            |            |
-| **Ähnlichkeitsrate (%)**                        |            |            |            |
+
+| Kriterium                                        | Tesseract | Paddle     | Nougat   |
+| -------------------------------------------------- | ----------- | ------------ | ---------- |
+| **Verarbeitungszeit (min)**                      | 0:30      | 0:22       | 14:30    |
+| **Formatierung (ja/nein)**                       | ja        | nein       | ja       |
+| **Fehlerrate (%)**                               | 6.26      | 9.24       | 23.04    |
+| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut       | gut/mittel | schlecht |
+| **Sonderzeichen/Formeln (%)**                    |           |            |          |
+| **Ähnlichkeitsrate (%)**                        | 85.90     | 61.25      | 72.44    |
 
 ## Ergebnisse im Detail (Seite 1, Fall 2)
 
@@ -285,7 +324,6 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 ### Nougat
 
 - **Bilderkennung:** "\n\n# DocLLM: A layout-aware generative language model for multimodal document understanding\n\nDongsheng Wang\n\nThese authors contributed equally to this work.\n\nNatraj Raman\n\nThis work was supported by the National Science Foundation of China (No. 116731002) and the National Science Foundation of China (No. 116731002).\n\nMathieu Sibue1\n\nZhiqiang Ma\n\nPetr Babkin\n\nSmerjot Kaur\n\nYulong Pei\n\nArmineh Nourbakhsh\n\nXiaomo Liu\n\nJPMorgan AI Research\n\n{first.last}@jpmchase.com\n\nFootnote 1: footnotemark:\n\n###### Abstract\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records, often carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered by their complex layouts play a crucial role in comprehending these documents effectively. In this paper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for reasoning over visual documents, taking into account both textual semantics and spatial layout. Our model differs from existing multimodal LLMs by avoiding expensive image encoders and focuses exclusively on bounding box information to incorporate the spatial layout structure. Specifically, the cross-alignment between text and spatial modalities is captured by decomposing the attention mechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a pre-training objective that learns to infill text segments. This approach allows us to address irregular layouts and heterogeneous content frequently encountered in visual documents. The pre-trained model is fine-tuned using a large-scale instruction dataset, covering four core document intelligence tasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all tasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nDocAI \\(\\cdot\\) VRDU \\(\\cdot\\) LLM \\(\\cdot\\) GPT \\(\\cdot\\) Spatial Attention\n\n## 1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion of enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [1], which has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts, bespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has made tremendous progress in various tasks including extraction, classification and question answering, there remains a significant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and generalization to previously unseen domains continues to be a challenge [2].\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being critical to understanding the documents. It requires solutions distinct from conventional large language models such as GPT-3.5 [3], Llama [4], Falcon [5] or PaLM [6] that primarily accept text-only inputs and assume that the documents exhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous vision-language frameworks [7] that can process documents as images and capture the interactions between textual and visual modalities are available. However, these frameworks necessitate the use of complex vision backbone architectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual signal [10][11].\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form understanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is"
-- 
 
 ## Zusammenfassung der Ergebnisse
 
@@ -298,14 +336,56 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 ### Häufigste Fehlerarten
 
 - **Tesseract:**
-- **Paddle:**
+
+  - **Zeichenfehler:**
+    - Falsche Erkennung von Zeichen, z. B. wird „JPMorgan AI Research“ teilweise als „JPMorgan Al Research“ ausgegeben.
+    - Verwechslungen bei Sonderzeichen wie Anführungszeichen (z. B. „Dongsheng Wang”“).
+  - **Interpunktions- und Formatierungsfehler:**
+    - Unregelmäßigkeiten bei Klammer- und Zitationszeichen (z. B. fehlerhafte Erkennung von eckigen Klammern, wie in „Falcon [5]]“).
+  - **Layout-Inkonsistenzen:**
+    - Teilweise fehlerhafte Trennung und Anordnung von Textabschnitten.
+- **PaddleOCR:**
+
+  - **Zeilenumbruch- und Einfügefehler:**
+    - Fehlende oder überflüssige Zeilenumbrüche, was zu fragmentierten Sätzen führt (Beispiel: „Dec '“ oder das Einfügen von „00908v1“ mitten im Text).
+  - **Zeichenersetzung:**
+    - Fehlerhafte Erkennung von Sonderzeichen, wie das Verwechseln von „DocAI“ mit „DocAIl“.
+  - **Unklare Segmentierung bei Zitaten:**
+    - Probleme bei der korrekten Erkennung von Zitations- und Referenzelementen (z. B. fehlerhafte eckige Klammern und inkonsistente Zitatnummern).
 - **Nougat:**
+
+  - **Kleine Namens- und Fußnotenfehler:**
+    - Zusätzliche Zeichen in Namen, z. B. „Mathieu Sibue1“ statt „Mathieu Sibue“.
+    - Unvollständige oder unsauber formatierte Fußnoten („Footnote 1: footnotemark:“).
+  - **Numerische Artefakte:**
+    - Seltenes Einfügen von Zahlen oder Zeichen, die nicht zum Originaltext gehören.
+  - **Allgemeine Sauberkeit:**
+    - Insgesamt klarere Struktur und bessere Trennung von Titeln, Abstract und Fließtext, wenngleich kleinere Fehler auftreten.
 
 ### Vergleich der Fehlerhäufigkeit
 
-Zusammenfassend kann gesagt werden, dass jede OCR-Technologie ihre Stärken und Schwächen hat, und die Wahl der besten Technologie hängt stark von den spezifischen Anforderungen des Anwendungsfalls ab.
+- **Struktur und Sauberkeit:**
 
-# Ausführen der DocumentOCRResults-Klasse
+  - **Nougat** liefert im Allgemeinen die sauberste und am besten strukturierte Ausgabe, mit klar abgegrenzten Abschnitten und wenigen Fehlern.
+  - **Tesseract** weist ähnliche Fehler auf, die typischerweise in der Zeichen- und Interpunktionswiedergabe liegen, jedoch ist die Grundstruktur weitgehend erkennbar.
+- **Zeichen- und Formatierungsfehler:**
+
+  - **Tesseract** tendiert zu typischen OCR-Zeichenfehlern (z. B. „Al“ statt „AI“, doppelte oder fehlende Klammern).
+  - **PaddleOCR** hat häufiger Probleme mit falschen Zeilenumbrüchen und unerwünschten Einfügungen, was zu einer inkonsistenteren Textausgabe führt.
+- **Spezifische Detailgenauigkeit:**
+
+  - Während **Nougat** auch kleinere Fehler (wie Namenszusätze) aufweist, scheinen diese im Vergleich zur insgesamt besseren Formatierung unbedeutend.
+  - **PDFReader** liefert Ergebnisse, die in vielen Aspekten mit denen von Tesseract vergleichbar sind, enthält jedoch zusätzliche Metadaten (z. B. Versionsangaben), die nicht immer zum eigentlichen Text gehören.
+
+### Zusammenfassung
+
+- **Nougat** ist hinsichtlich der Struktur und Klarheit der Ausgabe am besten geeignet, mit nur marginalen Fehlern bei Namen und Fußnoten.
+- **Tesseract**  liefert vergleichbare Ergebnisse, bei denen jedoch typische OCR-Fehler wie falsche Zeichen und inkonsistente Interpunktion auftreten.
+- **PaddleOCR** zeigt die häufigsten Probleme bei Zeilenumbrüchen und der falschen Erkennung von Sonderzeichen, was zu einer insgesamt weniger konsistenten Textausgabe führt.
+
+Diese Analyse hilft, die Stärken und Schwächen der einzelnen OCR-Technologien zu bewerten und zeigt, dass die Wahl der passenden Lösung vom spezifischen Anwendungsfall abhängt.
+
+## Ausführen der DocumentOCRResults-Klasse
 
 Um die `DocumentOCRResults`-Klasse auszuführen, folge diesen Schritten:
 
@@ -320,3 +400,22 @@ cd Odyss.AI.Backend.OCR
 
 python -m app.service.DocumentOCRResults
 ```
+
+---
+
+## To Do
+
+* **Datensatz-Erstellung:**
+  * Ziel: Die OCRs sollen auf einem umfangreichen Datensatz getestet werden, um ein realitätsnahes Szenario (z. B. wissenschaftliche Arbeiten oder Skripte) abzubilden.
+  * Aktueller Stand: Es wurde bislang kein passender Datensatz gefunden, der unser Szenario widerspiegelt.
+  * Nächste Schritte:
+    * Einen eigenen Datensatz erstellen oder geeignete Quellen identifizieren, die wissenschaftliche Arbeiten bzw. Skripte beinhalten.
+    * Den erstellten Datensatz in die Testumgebung integrieren und die OCR-Engines darauf anwenden.
+* **Formelerkennung:**
+  * Ziel: Formeln sollen direkt aus kompletten Dokumenten extrahiert werden können.
+  * Aktueller Stand:
+    * Die einzige gefundene Open-Source-Lösung (`LaTeX-OCR` – [GitHub-Link](https://github.com/lukas-blecher/LaTeX-OCR)) funktioniert nur, wenn die Formel isoliert vorliegt.
+    * Es gibt zwar weitere Programme zur Formelerkennung aus Dokumenten, diese sind jedoch nicht Open Source.
+  * Nächste Schritte:
+    * Eine eigene Lösung zur Extraktion von Formeln aus vollständigen Dokumenten entwickeln oder bestehende Ansätze erweitern.
+    * Mögliche Ansätze evaluieren und in das bestehende System integrieren.
