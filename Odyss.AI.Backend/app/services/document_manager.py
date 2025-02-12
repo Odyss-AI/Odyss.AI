@@ -60,7 +60,7 @@ class DocumentManager:
                 # Upload the PDF to MongoDB and get the file objectID back
                 mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
             except Exception as e:
-                logging.error("Error while uploading file to Mongodb: "+ e)
+                logging.error("Error while uploading file to Mongodb: "+ str(e))
             print("Dauer zum hochladen der Datei in die Datenbank: ", time.time()-parttime)
             parttime = time.time()
             print("started OCR")
@@ -69,7 +69,7 @@ class DocumentManager:
                 new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
                 new_doc = await extract_pdf_information_with_ocr(new_doc)
             except Exception as e:
-                logging.error("Error while extracing information while using ocr: "+e)
+                logging.error("Error while extracing information while using ocr: "+ str(e))
             print("OCR finished")
             print("Dauer zum extrahieren der Informationen: ", time.time()-parttime)
             parttime = time.time()
@@ -83,7 +83,7 @@ class DocumentManager:
                         os.remove(img.link)
                         img.link = "Image is successfully evaluated and deleted"
             except Exception as e:
-                logging.error("Error while Image evaluation and deleting: "+e)
+                logging.error("Error while Image evaluation and deleting: "+ str(e))
             print("images tagged and deleted")
             print("Dauer zum taggen und löschen der Bilder: ", time.time()-parttime)
             parttime = time.time()
@@ -94,7 +94,7 @@ class DocumentManager:
                 embeddings = await self.sim_search.create_embeddings_async(new_doc)
                 # print("embeddings doc_manager: "+ str(embeddings))
             except Exception as e:
-                logging.error("Error while creating embeddings: "+e)
+                logging.error("Error while creating embeddings: "+str(e))
             print("embeddings created")
             print("Dauer zum erstellen der Embeddings: ", time.time()-parttime)
             parttime = time.time()
@@ -115,7 +115,7 @@ class DocumentManager:
                 # TODO: Fix batching loop so ssh tunnel is not opened for every batch
                 new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             except Exception as e:
-                logging.error("Error while creating summary: "+e)
+                logging.error("Error while creating summary: "+ str(e))
             print("summary created")
             print("Dauer zum erstellen der Zusammenfassung: ", time.time()-parttime)
             parttime = time.time()
@@ -124,7 +124,7 @@ class DocumentManager:
                 # Save new_doc in the database
                 new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
             except Exception as e:
-                logging.error("Error while saving document: "+e)
+                logging.error("Error while saving document: "+str(e))
             print("document saved")
             print("Dauer zum speichern des Dokuments: ", time.time()-parttime)
             parttime = time.time()
@@ -134,7 +134,7 @@ class DocumentManager:
                 if self.handle_error(not is_doc_added_to_chat, "Error adding document to chat", file, username):
                     return None, "Error adding document to chat"
             except Exception as e:
-                logging.error("Error while adding document to chat: "+e)
+                logging.error("Error while adding document to chat: "+str(e))
             print("document added to chat")
             print("Dauer zum hinzufügen des Dokuments zum Chat: ", time.time()-parttime)
             print("Gesamtdauer: ", time.time()-start)
