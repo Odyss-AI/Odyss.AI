@@ -105,7 +105,7 @@ class DocumentManager:
                 if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
                     return None, "Error saving embeddings"
             except Exception as e:
-                logging.error("Error while saving embeddings in QDrant: "+e)
+                logging.error("Error while saving embeddings in QDrant: "+ str(e))
             print("embeddings saved")
             print("Dauer zum speichern der Embeddings: ", time.time()-parttime)
             parttime = time.time()

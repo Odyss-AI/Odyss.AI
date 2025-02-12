@@ -49,12 +49,15 @@ class SimailaritySearchService:
                         if isinstance(response_json, list) and all(isinstance(item, list) for item in response_json):
                             return list(zip(response_json, chunk_ids))
                         else:
+                            print(f"Error fetching embeddings: Invalid response")
                             logging.error(f"Error fetching embeddings: Invalid response")
                             return None
                     else:
+                        print(f"Error: {response.status}")
                         logging.error(f"Error: {response.status}")
                         return None
         except aiohttp.ClientError as e:
+            logging.error(f"Client-Error: {e}")
             logging.error(f"HTTP-Error: {e}")
             return None
         
@@ -118,16 +121,19 @@ class SimailaritySearchService:
             return result.status == 'completed'
 
         except ValueError as ve:
-            logging.error(f"ValueError while saving embeddings for document {id}: {ve}")
+            print("ValueError while saving embeddings for document {id}: "+str(ve))
+            logging.error(f"ValueError while saving embeddings for document {id}: {str(ve)}")
             logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
 
         except ConnectionError as ce:
-            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {ce}")
+            print("ConnectionError with Qdrant while saving embeddings for document {id}: "+str(ce))
+            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {str(ce)}")
             return None
 
         except Exception as e:
-            logging.error(f"Unexpected error while saving embeddings for document {id}: {e}")
+            print("Unexpected error while saving embeddings for document {id}: "+str(e))
+            logging.error(f"Unexpected error while saving embeddings for document {id}: {str(e)}")
             logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
 
@@ -174,7 +180,8 @@ class SimailaritySearchService:
             
             return chunk_ids
         except Exception as e:
-            logging.error(f"Error while searching similar docs: {e}")
+            print("Error while searching similar docs: "+str(e))
+            logging.error(f"Error while searching similar docs: {str(e)}")
             return None
 
     def _initialize_collection(self):
@@ -188,7 +195,8 @@ class SimailaritySearchService:
                 if len(collection[1]) > 0:
                     col_names.append(str(collection[1][0].name))
         except Exception as e:
-            logging.error(f"Error while getting collections: {e}")
+            print("Error while getting collections: "+str(e))
+            logging.error(f"Error while getting collections: {str(e)}")
             return
         
         if self.collection_name not in col_names:
@@ -214,4 +222,5 @@ class SimailaritySearchService:
             )
             logging.info(f"Collection '{self.collection_name}' created.")
         else:
+            print(f"Access to vector collection '{self.collection_name}'.")
             logging.info(f"Access to vector collection '{self.collection_name}'.")
