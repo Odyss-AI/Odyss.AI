@@ -7,9 +7,6 @@ Diese Doku bezieht sich nur auf das Backend und alle Komponenten davon.
 Das Odyss.AI Backend ist eine serverseitige Anwendung, die mit Quart, einem asynchronen Web-Framework für Python, entwickelt wurde. Es bietet verschiedene Funktionen, einschließlich Benutzerverwaltung, Chat-Verarbeitung, Dokumentenverarbeitung und WebSocket-Kommunikation für Echtzeit-Interaktionen.
 
 ## Inhaltsverzeichnis
-## Inhaltsverzeichnis
-
-## Projektstruktur
 - [Projektstruktur](#projektstruktur)
 - [Setup Dateien](#setup-dateien)
   - [setup.py](#setuppy)
