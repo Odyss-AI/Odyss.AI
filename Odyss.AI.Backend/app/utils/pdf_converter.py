@@ -1,24 +1,18 @@
 import os
 import subprocess
 import asyncio
-import logging
 
 from app.config import config
 
 async def save_and_convert_file(file, hash_filename: str, db) -> str:
-    
+    # Originaldatei speichern
     file_path_original = os.path.join(config.local_doc_path, hash_filename)
+    await file.save(file_path_original)
 
-    try:
-        await file.save(file_path_original)
-    except Exception as e:
-        print(f"Error while saving file: {str(e)}")
-        logging.error(f"Error while saving file: {str(e)}")
-        return None
-    
     file_extension = file_path_original.rsplit('.', 1)[1].lower()
     base_filename = os.path.splitext(os.path.basename(file_path_original))[0]
 
+    # Wenn es sich bereits um ein PDF handelt, keine Konvertierung notwendig
     if file_extension == 'pdf':
         converted_file = await asyncio.to_thread(open, file_path_original, 'rb')
         return file_path_original, converted_file
@@ -48,7 +42,6 @@ async def save_and_convert_file(file, hash_filename: str, db) -> str:
             return output_path, converted_file
         except Exception as e:
             print(f"Fehler bei der Konvertierung von {file_path_original}: {e}")
-            logging.error(f"Fehler bei der Konvertierung von {file_path_original}: {e}")
             return None
 
     return None
