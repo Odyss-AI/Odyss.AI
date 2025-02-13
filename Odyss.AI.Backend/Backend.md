@@ -6,6 +6,36 @@ Diese Doku bezieht sich nur auf das Backend und alle Komponenten davon.
 
 Das Odyss.AI Backend ist eine serverseitige Anwendung, die mit Quart, einem asynchronen Web-Framework für Python, entwickelt wurde. Es bietet verschiedene Funktionen, einschließlich Benutzerverwaltung, Chat-Verarbeitung, Dokumentenverarbeitung und WebSocket-Kommunikation für Echtzeit-Interaktionen.
 
+## Inhaltsverzeichnis
+## Inhaltsverzeichnis
+
+## Projektstruktur
+- [Projektstruktur](#projektstruktur)
+- [Setup Dateien](#setup-dateien)
+  - [setup.py](#setuppy)
+  - [run.py](#runpy)
+  - [Dockerfile](#dockerfile)
+- [Routes](#routes)
+  - [user_routes.py](#routes--user_routespy)
+  - [websocket_routes.py](#routes--websocket_routespy)
+- [Services](#services)
+  - [db_service.py](#services--db_servicepy)
+  - [caching.py](#services--cachingpy)
+  - [sim_search_service.py](#services--sim_search_servicepy)
+  - [message_manager.py](#services--message_managerpy)
+  - [document_manager.py](#services--document_managerpy)
+- [utils](#utils)
+  - [batching.py](#utils--batchingpy)
+  - [prompts.py](#utils--promptspy)
+  - [auth.py](#utils--authpy)
+  - [db.py](#utils--dbpy)
+  - [test_data_provider.py](#utils--test_data_providerpy)
+  - [pdf_converter.py](#utils--pdf_converterpy)
+  - [ocr_connection.py](#utils--ocr_connectionpy)
+  - [ml_connection.py](#utils--ml_connectionpy)
+  - [img_tagger_connection.py](#utils--img_tagger_connectionpy)
+  - [converters.py](#utils--converterspy)
+
 ## Projektstruktur
 ```
 Odyss.AI.Backend/ 
