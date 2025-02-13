@@ -1,5 +1,6 @@
 # Odyss.AI ![Logo](odyss_logo.png)
 Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu deren Inhalten. Mithilfe von Mistral und Pixtral werden relevante Informationen extrahiert und verständlich aufbereitet.
+**Zu Odyss.AI (Uni-VPN): ** http://141.75.150.74
 
 ### ✨ Funktionen
 - 📂 Dokumente hochladen (PDF, DOCX, PPX usw.)
