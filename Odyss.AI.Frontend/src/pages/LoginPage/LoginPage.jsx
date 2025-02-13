@@ -10,6 +10,7 @@ function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const login = useAuthStore((state) => state.login); 
 
     const toggleRegister = () => {
         setIsRegister((prev) => !prev);
