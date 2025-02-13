@@ -42,15 +42,21 @@ Odyss.AI.Backend/
 │ ├── models/ 
 │ ├── routes/ 
 │ │ ├── init.py 
-│ │ ├── user_routes.py 
+│ │ ├── user_routes.py
+│ │ ├── document_routes.py 
 │ │ ├── websocket_routes.py 
-│ ├── services/ 
+│ ├── services/
+│ │ ├── caching.py
 │ │ ├── db_service.py
 │ │ ├── document_manager.py 
-│ │ ├── message_manager.py 
+│ │ ├── message_manager.py
+│ │ ├── sim_search_service.py
 │ ├── utils/ 
 │ │ ├── converters.py 
-│ │ ├── prompts.py 
+│ │ ├── prompts.py
+│ │ ├── auth.py
+│ │ ├── batching.py
+│ │ ├── ...
 ├── .dockerignore 
 ├── Dockerfile 
 ├── requirements.txt 
