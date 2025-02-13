@@ -47,8 +47,6 @@ class DocumentManager:
             time_logger.exit_func("Save and convert file locally")
 
             mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
-            if mongo_file_id is None:
-                return None, "Error saving file in MongoDB"
             time_logger.exit_func("Save file in MongoDB")
             
             new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
