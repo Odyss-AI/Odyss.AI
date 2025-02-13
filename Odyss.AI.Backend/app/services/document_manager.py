@@ -68,7 +68,7 @@ class DocumentManager:
             time_logger.exit_func("Create embeddings", "Save embeddings")
             
             is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
-            if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
+            if not is_save_successfull:
                 return None, "Error saving embeddings"
             time_logger.exit_func("Save embeddings", "Create summary")
 
