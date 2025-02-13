@@ -18,13 +18,38 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 ## Übersicht🥽
 ![Pbersicht Architektur Odyss.AI](odyss_overview.png)
 
-## Installation⚙️
+### Ports:
+- Frontend: 80
+- Backend: 443
+- OCR: 5050
+- ImageTagger: 5150
+- MongoDB: 27017
+- QDrant: 6333
+- TEI: 8080
+
+### Deployment:
+Aktuell wird eine Ubuntu VM auf dem Uni Server verwendet. Bei Push auf dev-Branch wird per Workflow mithilfe von Docker Compose alle Services auf der VM deployed.
+
+## Installation (Lokales Debugging)⚙️
 ### Installation VMware 
 https://support.broadcom.com/group/ecx/productdownloads?subfamily=VMware+Workstation+Pro
 
+### Nutze vorbereitete VM:
+
+#### Lade die VM unter folgenden Link herunter: https://technischehochschulen.sharepoint.com/:f:/s/ITProjektML/EjC_i8xo09lNiDksOgHPKUABv0gYrsBETuw8B6bp4vrtzg?e=pK1Ot1
+
+#### Füge die VM in VMware hinzu und starte diese
+- Benutzername: Odyss
+- Passwort: odyss
+- Branch dev-local als Beispiel für lokales debugging, bei anderem Branch -> (Backend) In config.py env auf linux stetzen, Port auf 8443 o.ä. (443 ist geblockt) (Frontend) Passe URL in utils.js und useWebsocket.jsx entsprechend an für Verbindung mit Backend
+- Einstellung für Debugging der Services in launch.json vorbereitet
+
 ### Setup neue Virtual Machine
+
 #### Erstelle eine neue VM mit Ubuntu Linux (downloade die entsprechende ISO Datei)
+
 #### Installiere Git: sudo apt install git
+
 #### 🐳 Docker und Docker Compose auf Ubuntu installieren
 - 1.1 Paketliste aktualisieren und Abhängigkeiten installieren
 ```bash
@@ -152,16 +177,11 @@ sudo apt install npm
 npm install
 ```
 
-### Nutze VM mit allen vorherigen Einstellungen vorbereitet
-- Ziehe VM von:
-- Öffne VMware und füge die VM hinzu
-- Starte die VM, dort ist das komplette Projekt vorhanden auf dem dev-local Branch. Es gibt eine launch.json für debugging der Services. Beachte das die Ports für Backend geändert wurde. Entsprechend müssen in OCR, LLM und Frontend (utils.js) geändert werden. Auf dev-local ist das bereits umgestellt, reiner debugging Branch.
-
-### Nutze Docker Compose
-Mithilfe von Docker Compose können alle Services einfach hochgefahren werden. Deployment auf den Uni Server genau damit durchgeführt.
-
 ## ToDos🎯
-- Darstellung der hochgeladenen Dokumente nach erneuten einloggen
+- Darstellung der hochgeladenen Dokumente nach erneuten einloggen (werden nicht angezeigt, in der DB weiterhin hinterlegt, also chatten mit Dokumenten trotzdem möglich)
 - Finaler Dokumentenspeicher finden
-- Leere Textliste von OCR zurückgegeben
-- TEI Embeddings Tokenoverlow
+- Performanceoptimierung bei Bildauswertung (Pixtral) und Zusammenfassung (Mixtral) -> Vermeidung mehrmaliges öffnen des SSH Tunnels wegen Batching
+- Logausgabe funktioniert nicht in der Konsole (aktuell mit Prints gelöst)
+- Formeln korrekt aus Dokumentauslesen
+- Ausführliche Tests durchführen
+- Code weiter aufräumen und optimieren
