@@ -51,7 +51,7 @@ class DocumentManager:
             
             new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
             new_doc = await extract_pdf_information_with_ocr(new_doc)
-            if len(new_doc.imgList) == 0 and len(new_doc.textList) == 0:
+            if not new_doc.imgList and not new_doc.textList:
                 return None, "Document is empty"
             time_logger.exit_func("Extract PDF information with OCR")
 
