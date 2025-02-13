@@ -6,20 +6,17 @@ from app.utils.db import get_db
 from app.services.document_manager import DocumentManager
 from app.config import config
 
-# Document Manager initialisieren
 doc_manager = DocumentManager()
 
-# Dokumente des Benutzers abrufen
 @main.route('/v1/doc/get', methods=['GET'])
 async def get_documents():
     try:
         db = get_db()
         username = request.args.get('username')
 
-        # Dokumente des Benutzers abrufen
         documents = await db.get_documents_of_user_async(username)
         if documents is None:
-                    return jsonify({"error": "Benutzer nicht gefunden"}), 404
+                    return jsonify({"error": "User not found"}), 404
         
         res = [
             {
@@ -34,23 +31,21 @@ async def get_documents():
         return jsonify(res), 200
 
     except Exception as e:
-        return jsonify({"error": f"Fehler beim Abrufen der Dokumente: {e}"}), 500
+        return jsonify({"error": f"Error while getting document: {e}"}), 500
 
-# Dokument hochladen
 @main.route('/v1/doc/upload', methods=['POST'])
 async def upload_document():
     try:
         db = get_db()
         username = request.args.get('username')
         chat_id = request.args.get('chatId')
-        file_data = await request.files  # PDF-Datei direkt aus dem Request-Body
+        file_data = await request.files 
 
         if not username:
-            return jsonify({"error": "Username ist erforderlich"}), 400
+            return jsonify({"error": "Username is requiered"}), 400
         
-        # Prüfen, ob der Benutzername in der Datenbank vorhanden ist
         if await db.get_user_async(username) is None:
-            return jsonify({"error": "Benutzer nicht gefunden"}), 400
+            return jsonify({"error": "User was not found"}), 400
 
         for key, f in file_data.items():
             if f and allowed_file(f.filename):
@@ -63,7 +58,7 @@ async def upload_document():
                 return jsonify({'error': 'File type not allowed'}), 400
 
     except Exception as e:
-        return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {str(e)}"}), 500
+        return jsonify({"error": f"Error while adding document: {str(e)}"}), 500
     
 @main.route('/v1/doc/upload/filepath', methods=['GET'])
 async def upload_document_path():
@@ -76,8 +71,8 @@ async def upload_document_path():
         if id:
             file = await db.get_files(id)
 
-        return jsonify({"message": "Dokument erfolgreich hochgeladen", "id": id}), 200
+        return jsonify({"message": "Document was succesful uploaded", "id": id}), 200
 
     except Exception as e:
-        return jsonify({"error": f"Fehler beim Hinzufügen des Dokuments: {str(e)}"}), 500
+        return jsonify({"error": f"Error while adding document: {str(e)}"}), 500
 

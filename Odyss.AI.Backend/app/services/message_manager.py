@@ -12,6 +12,7 @@ from app.services.db_service import MongoDBService
 from app.services.sim_search_service import SimailaritySearchService
 from app.models.enum import AvailibleModels
 from typing import List, Optional
+from app.utils.time_logger import TimeLogger
 
 class MessageManager:
     """
@@ -36,45 +37,47 @@ class MessageManager:
         """
         
         db = get_db()
+        time_logger = TimeLogger("Message handling")
 
         # Load the chat from the cache or the database
         chat = await self.get_chat_async(db, message, user, chat_id)
         if chat is None:
             raise ValueError("Failed to get or create chat")
+        time_logger.exit_func("Get chat ", str(chat.id))
 
-        print(f"Chat ID: {chat.id}")
-        # Load the documents from the database
         docs = await self.get_docs_async(db, user, chat.doc_ids)
         if docs is None:
             raise ValueError("Failed to get documents")
+        time_logger.exit_func("Get documents ", str(chat.doc_ids))
 
-        # print(f"Docs: {docs}")
-        # Search for similar text chunks in the documents
-        print(f"Chat doc_ids: {chat.doc_ids}")
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
+        if sim_chunks is None:
+            raise ValueError("Failed to get similar chunks")
+        time_logger.exit_func("Search similar documents ", str(sim_chunks))
+
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
+        if not chunks:
+            raise ValueError("Failed to get chunks")
+        time_logger.exit_func("Get chunks ", str(chunks))
 
         print(f"Chunks: {chunks}")
+
         try:
-            # Build the prompt for the LLM
             prompt = qna_prompt_builder(chunks, message.content)
-            print(f"Prompt: {prompt}")
             if message.selected_model == AvailibleModels.CHATGPT.value:
                 answer = await call_chatgpt_api_async(prompt)
             else:
                 answer = await query_mixtral_with_ssh_async(prompt)
-                print(f"Answer: {answer}")
         except Exception as e:
+            print(f"Error building prompt or calling LLM API: {e}")
             logging.error(f"Error building prompt or calling LLM API: {e}")
             return None, f"Error building prompt or calling LLM API: {e}", chat.id
+        time_logger.exit_func("Build prompt and call LLM API ", str(answer))
 
-        try:
-            # Build the answer
-            bot_msg = await self.write_bot_msg_async(db, chat, answer)
-            print(f"Bot message: {bot_msg}")
-        except Exception as e:
-            logging.error(f"Error writing bot message: {e}")
-            return None, f"Error writing bot message: {e}", chat.id
+        bot_msg = await self.write_bot_msg_async(db, chat, answer)
+        if bot_msg is None:
+            raise ValueError("Failed to write bot message")
+        time_logger.exit_func("Write bot message ", str(bot_msg.id))
 
         return bot_msg, chunks, chat.id
 
@@ -178,19 +181,23 @@ class MessageManager:
         Returns:
             Message: The bot's response message object.
         """
-        
-        bot_msg = Message(
-            id=str(ObjectId()),
-            is_user=False,
-            content=answer,
-            timestamp=str(datetime.datetime.now())
-        )
+        try:
+            bot_msg = Message(
+                id=str(ObjectId()),
+                is_user=False,
+                content=answer,
+                timestamp=str(datetime.datetime.now())
+            )
 
-        await db.add_message_to_chat_async(chat.id, bot_msg)
-        chat.messages.append(bot_msg)
-        await self.cache.update(chat.id, chat)
+            await db.add_message_to_chat_async(chat.id, bot_msg)
+            chat.messages.append(bot_msg)
+            await self.cache.update(chat.id, chat)
 
-        return bot_msg
+            return bot_msg
+        except Exception as e:
+            logging.error(f"Error in write_bot_msg_async: {e}")
+            print(f"Error in write_bot_msg_async: {str(e)}")
+            return None
     
     def get_chunks_from_docs(self, docs: list[Document] = [], chunk_ids: list = None):
         """
