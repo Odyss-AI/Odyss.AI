@@ -103,8 +103,6 @@ class SimailaritySearchService:
             for embedding in embeddings:
                 points.append(PointStruct(id=str(uuid.uuid4()), vector=embedding[0], payload={"doc_id": id, "chunk_id": embedding[1]}))
 
-            print("points: "+str(points))
-
             result = self.qdrant_client.upsert(
                 collection_name=self.collection_name,
                 wait=True,
