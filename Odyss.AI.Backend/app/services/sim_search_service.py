@@ -49,12 +49,15 @@ class SimailaritySearchService:
                         if isinstance(response_json, list) and all(isinstance(item, list) for item in response_json):
                             return list(zip(response_json, chunk_ids))
                         else:
+                            print(f"Error fetching embeddings: Invalid response")
                             logging.error(f"Error fetching embeddings: Invalid response")
                             return None
                     else:
+                        print(f"Error: {response.status}")
                         logging.error(f"Error: {response.status}")
                         return None
         except aiohttp.ClientError as e:
+            logging.error(f"Client-Error: {e}")
             logging.error(f"HTTP-Error: {e}")
             return None
         
@@ -78,8 +81,8 @@ class SimailaritySearchService:
         #    anzahl_woerter = len(text.split())
         #    print(f"Chunk ID: {chunk_id}, Anzahl der Wörter: {anzahl_woerter}")
         #for i in tqdm(range(0, len(chunks), 32), desc="Processing embeddings"):
-        for i in range(0, len(chunks), 32):
-            batch = chunks[i:i + 32]
+        for i in range(0, len(chunks), 14):
+            batch = chunks[i:i + 14]
             texts, ids = zip(*batch)
             tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
  
@@ -118,19 +121,21 @@ class SimailaritySearchService:
             return result.status == 'completed'
 
         except ValueError as ve:
-            logging.error(f"ValueError while saving embeddings for document {id}: {ve}")
+            print("ValueError while saving embeddings for document {id}: "+str(ve))
+            logging.error(f"ValueError while saving embeddings for document {id}: {str(ve)}")
             logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
 
         except ConnectionError as ce:
-            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {ce}")
+            print("ConnectionError with Qdrant while saving embeddings for document {id}: "+str(ce))
+            logging.error(f"ConnectionError with Qdrant while saving embeddings for document {id}: {str(ce)}")
             return None
 
         except Exception as e:
-            logging.error(f"Unexpected error while saving embeddings for document {id}: {e}")
+            print("Unexpected error while saving embeddings for document {id}: "+str(e))
+            logging.error(f"Unexpected error while saving embeddings for document {id}: {str(e)}")
             logging.debug(traceback.format_exc())  # Log full stack trace for debugging
             return None
-
 
     async def search_similar_documents_async(self, doc_ids: list, query: str, count: int = 5):
         """
@@ -144,10 +149,12 @@ class SimailaritySearchService:
         Returns:
             list: A list of chunk IDs and their scores, or None if an error occurs.
         """
+        query_embeddings = await self.fetch_embedding_async([query], ["q"])
+        print("query_embeddings: " + str(query_embeddings))
+
         try:
             # Fetch embeddings for the query
-            query_embeddings = await self.fetch_embedding_async(query, "q")
-            
+
             filter = Filter(
                 must=[
                     FieldCondition(
@@ -160,21 +167,21 @@ class SimailaritySearchService:
             )
 
             search_result = self.qdrant_client.query_points(
-                collection_name=self.collection_name, 
-                query=query_embeddings[0], 
-                limit=5,
+                collection_name=self.collection_name,
+                query=query_embeddings[0][0],  # Verwende nur den Vektor aus dem Tupel
+                limit=count,
                 query_filter=filter,
                 with_payload=True,
                 with_vectors=True
             ).points
-                        
+
             # Extract chunk_ids from the payload of the top results
-            chunk_ids = []
             chunk_ids = [[result.payload['chunk_id'], result.score] for result in search_result]
-            
+            print("chunk_ids: " + str(chunk_ids))
             return chunk_ids
         except Exception as e:
-            logging.error(f"Error while searching similar docs: {e}")
+            print("Error while searching similar docs: " + str(e))
+            logging.error(f"Error while searching similar docs: {str(e)}")
             return None
 
     def _initialize_collection(self):
@@ -188,7 +195,8 @@ class SimailaritySearchService:
                 if len(collection[1]) > 0:
                     col_names.append(str(collection[1][0].name))
         except Exception as e:
-            logging.error(f"Error while getting collections: {e}")
+            print("Error while getting collections: "+str(e))
+            logging.error(f"Error while getting collections: {str(e)}")
             return
         
         if self.collection_name not in col_names:
@@ -214,4 +222,5 @@ class SimailaritySearchService:
             )
             logging.info(f"Collection '{self.collection_name}' created.")
         else:
+            print(f"Access to vector collection '{self.collection_name}'.")
             logging.info(f"Access to vector collection '{self.collection_name}'.")
