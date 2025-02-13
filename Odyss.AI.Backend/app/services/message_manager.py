@@ -43,22 +43,22 @@ class MessageManager:
         chat = await self.get_chat_async(db, message, user, chat_id)
         if chat is None:
             raise ValueError("Failed to get or create chat")
-        time_logger.exit_func("Get chat ", str(chat.id))
+        time_logger.exit_func(f"Get chat {str(chat.id)}", "Get documents")
 
         docs = await self.get_docs_async(db, user, chat.doc_ids)
         if docs is None:
             raise ValueError("Failed to get documents")
-        time_logger.exit_func("Get documents ", str(chat.doc_ids))
+        time_logger.exit_func(f"Get documents {str(chat.doc_ids)}", "Search similar documents")
 
         sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
         if sim_chunks is None:
             raise ValueError("Failed to get similar chunks")
-        time_logger.exit_func("Search similar documents ", str(sim_chunks))
+        time_logger.exit_func(f"Search similar documents {str(sim_chunks)}", "Get chunks")
 
         chunks = self.get_chunks_from_docs(docs, sim_chunks)
         if not chunks:
             raise ValueError("Failed to get chunks")
-        time_logger.exit_func("Get chunks ", str(chunks))
+        time_logger.exit_func(f"Get chunks str(chunks)", "Build prompt and call LLM API")
 
         print(f"Chunks: {chunks}")
 
@@ -72,13 +72,14 @@ class MessageManager:
             print(f"Error building prompt or calling LLM API: {e}")
             logging.error(f"Error building prompt or calling LLM API: {e}")
             return None, f"Error building prompt or calling LLM API: {e}", chat.id
-        time_logger.exit_func("Build prompt and call LLM API ", str(answer))
+        time_logger.exit_func(f"Build prompt and call LLM API str(answer)", "Write bot message")
 
         bot_msg = await self.write_bot_msg_async(db, chat, answer)
         if bot_msg is None:
             raise ValueError("Failed to write bot message")
-        time_logger.exit_func("Write bot message ", str(bot_msg.id))
+        time_logger.exit_func(f"Write bot message str(bot_msg.id)", "Finishing process")
 
+        time_logger.exit_process()
         return bot_msg, chunks, chat.id
 
 

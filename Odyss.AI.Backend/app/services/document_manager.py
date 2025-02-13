@@ -44,48 +44,48 @@ class DocumentManager:
             converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
             if converted_file is None:
                 return None, "Error saving file locally"
-            time_logger.exit_func("Save and convert file locally")
+            time_logger.exit_func("Save and convert file locally", "Save file in MongoDB")
 
             mongo_file_id = await db.upload_pdf_async(converted_file, file.filename, hash, username)
-            time_logger.exit_func("Save file in MongoDB")
+            time_logger.exit_func("Save file in MongoDB", "Extract PDF information with OCR")
             
             new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
             new_doc = await extract_pdf_information_with_ocr(new_doc)
             if new_doc.imgList is not None and len(new_doc.imgList) > 0 and new_doc.textList is not None and len(new_doc.textList) > 0:
                 return None, "Document is empty"
-            time_logger.exit_func("Extract PDF information with OCR")
+            time_logger.exit_func("Extract PDF information with OCR", "Extract image information with Pixtral (or create Embeddings if no pictures in doc)")
 
             if new_doc.imgList is not None and len(new_doc.imgList) > 0:
                 new_doc = await query_mixtral_with_ssh_async(new_doc)
-                time_logger.exit_func("Extract image information with Pixtral")
+                time_logger.exit_func("Extract image information with Pixtral", "Create embeddings")
 
             self.delete_local_file(new_doc)
-            time_logger.exit_func("Delete local file")
+            time_logger.exit_func("Delete local file", "Create embeddings")
 
             embeddings = await self.sim_search.create_embeddings_async(new_doc)
             if embeddings is None:
                 return None, "Error creating embeddings"
-            time_logger.exit_func("Create embeddings")
+            time_logger.exit_func("Create embeddings", "Save embeddings")
             
             is_save_successfull = await self.sim_search.save_embedding_async(hash, embeddings)
             if self.handle_error(not is_save_successfull, "Error saving embeddings", file, username):
                 return None, "Error saving embeddings"
-            time_logger.exit_func("Save embeddings")
+            time_logger.exit_func("Save embeddings", "Create summary")
 
             new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
             if not new_doc.summary:
                 return None, "Error creating summary"
-            time_logger.exit_func("Create summary")
+            time_logger.exit_func("Create summary", "Upload to MongoDB (user+chat)")
             
             new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
-            time_logger.exit_func("Add document to user")
+            time_logger.exit_func(f"Add document {new_doc.doc_id} to user {username}", f"Add document {new_doc.doc_id} to chat {chat_id}")
             
             is_doc_added_to_chat = await db.add_document_to_chat_async(chat_id, hash)
             if not is_doc_added_to_chat:
                 return None, "Error adding document to chat"
-            time_logger.exit_func("Add document to chat")
+            time_logger.exit_func(f"Add document {new_doc.doc_id} to chat {username}", "Finishing process")
 
-            time_logger.exit_process("Total document handling")
+            time_logger.exit_process()
             return new_doc, "File uploaded successfully"
         
         except Exception as e:
@@ -109,12 +109,6 @@ class DocumentManager:
             textList = [],
             path = path
         )
-    
-    def handle_error(self, condition, error_message, file, username):
-        if condition:
-            logging.error(f"{error_message}: {file.filename} from user {username}")
-            return None, error_message
-        return condition
 
     def delete_local_file(self, new_doc):
         try:
