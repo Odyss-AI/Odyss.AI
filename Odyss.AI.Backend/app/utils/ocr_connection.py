@@ -22,4 +22,5 @@ async def extract_pdf_information_with_ocr(doc: Document):
                 return Document(**response_data)
     except Exception as e:
         logging.error(f"Error extracting information while using ocr: {e}")
+        print(f"Error extracting information while using ocr: {str(e)}")
         return None

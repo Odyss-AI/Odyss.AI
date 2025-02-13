@@ -3,6 +3,7 @@ import base64
 import requests
 import json
 import aiohttp
+import logging
 
 from tqdm import tqdm
 from openai import OpenAI
@@ -45,49 +46,54 @@ async def query_pixtral_async(doc:Document):
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
 
-    models = client.models.list()
-    model = models.data[0].id
+    try:
+        models = client.models.list()
+        model = models.data[0].id
 
-    print(model)
+        print(model)
 
-    for img in tqdm(doc.imgList, desc="Processing images"):
-        image_class = await get_image_class_async(img.link)
+        for img in tqdm(doc.imgList, desc="Processing images"):
+            image_class = await get_image_class_async(img.link)
 
-        # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
-        if image_class == "just_img":
-            continue
+            # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
+            if image_class == "just_img":
+                continue
 
-        # Bild laden und in Base64 kodieren
-        image = PILImage.open(img.link)
-        buffered = BytesIO()
-        image.save(buffered, format="PNG")  # Speichern im PNG-Format
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            # Bild laden und in Base64 kodieren
+            image = PILImage.open(img.link)
+            buffered = BytesIO()
+            image.save(buffered, format="PNG")  # Speichern im PNG-Format
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-        # Pixtral-Anfrage mit der eingebetteten Klasse
-        chat_completion_from_base64 = client.chat.completions.create(
-            messages=[{
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"The image shows a {image_class}. Please describe what I see."
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{img_str}"
+            # Pixtral-Anfrage mit der eingebetteten Klasse
+            chat_completion_from_base64 = client.chat.completions.create(
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"The image shows a {image_class}. Please describe what I see."
                         },
-                    },
-                ],
-            }],
-            model=model,  
-            max_tokens=256,
-        )
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{img_str}"
+                            },
+                        },
+                    ],
+                }],
+                model=model,  
+                max_tokens=256,
+            )
 
-        # Ergebnis anzeigen
-        img.llm_output = chat_completion_from_base64.choices[0].message.content
+            # Ergebnis anzeigen
+            img.llm_output = chat_completion_from_base64.choices[0].message.content
 
-    return doc
+        return doc
+    except Exception as e:
+        print("Error while processing image: ", str(e))
+        logging.error(f"Error while processing image: {e}")
+        return None
     
     
 
@@ -111,10 +117,12 @@ async def query_mixtral_async(prompt: list):
             answer = result[0]['generated_text']
             return answer
         else:
-            print("Fehler beim Abrufen der Antwort:", response.status_code, response.text)
+            print("Error while getting answer from Mistral:", response.status_code, response.text)
+            return None
 
     except Exception as e:
-        print("Verbindungsfehler:", e)    
+        print("Error while connecting to Mistral:", str(e))    
+        return None
             
 
 
@@ -126,61 +134,68 @@ async def query_pixtral_with_ssh_async(doc:Document):
     client = OpenAI(api_key=openai_api_key, base_url=openai_api_base)
     # Bildklasse vom Image Tagger holen
 
-    with SSHTunnelForwarder(
-    (config.ssh_host, config.ssh_port),
-    ssh_username=config.ssh_username,
-    local_bind_address=('localhost', config.local_port_pixtral),
-    remote_bind_address=('localhost', config.remote_port_pixtral)
-) as tunnel:
-        print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
-        tunnel.start()  # Ensure tunnel is started
-        models = client.models.list()
-        model = models.data[0].id
+    try:
+        with SSHTunnelForwarder(
+        (config.ssh_host, config.ssh_port),
+        ssh_username=config.ssh_username,
+        local_bind_address=('localhost', config.local_port_pixtral),
+        remote_bind_address=('localhost', config.remote_port_pixtral)
+    ) as tunnel:
+            print(f"SSH-Tunnel hergestellt: localhost:{config.local_port} -> {config.ssh_host}:{config.remote_port}")
+            tunnel.start()  # Ensure tunnel is started
+            models = client.models.list()
+            model = models.data[0].id
 
-        print(model)
+            print(model)
 
-        for img in tqdm(doc.imgList, desc="Processing images"):
-            try:
-                image_class = await get_image_class_async(img.link)
-                print(image_class)
-                img.type = image_class
+            for img in tqdm(doc.imgList, desc="Processing images"):
+                try:
+                    image_class = await get_image_class_async(img.link)
+                    print(image_class)
+                    img.type = image_class
 
-                # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
-                if image_class == "just_img":
-                    continue   
+                    # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
+                    if image_class == "just_img":
+                        continue   
 
-                # Bild laden und in Base64 kodieren
-                image = PILImage.open(img.link)
-                buffered = BytesIO()
-                image.save(buffered, format="PNG")  # Speichern im PNG-Format
-                img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                    # Bild laden und in Base64 kodieren
+                    image = PILImage.open(img.link)
+                    buffered = BytesIO()
+                    image.save(buffered, format="PNG")  # Speichern im PNG-Format
+                    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-                # Pixtral-Anfrage mit der eingebetteten Klasse
-                chat_completion_from_base64 = client.chat.completions.create(
-                    messages=[{
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"The image shows a {image_class}. Please describe what I see."
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{img_str}"
+                    # Pixtral-Anfrage mit der eingebetteten Klasse
+                    chat_completion_from_base64 = client.chat.completions.create(
+                        messages=[{
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"The image shows a {image_class}. Please describe what I see."
                                 },
-                            },
-                        ],
-                    }],
-                    model=model,  
-                    max_tokens=256,
-                )
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{img_str}"
+                                    },
+                                },
+                            ],
+                        }],
+                        model=model,  
+                        max_tokens=256,
+                    )
 
-                # Ergebnis anzeigen
-                img.llm_output = chat_completion_from_base64.choices[0].message.content
-            except Exception as e:
-                print(img.id + ": Error while processing image: ", e)
-        return doc
+                    # Ergebnis anzeigen
+                    img.llm_output = chat_completion_from_base64.choices[0].message.content
+                except Exception as e:
+                    print(img.id + ": Error while processing image: ", e)
+                    logging.error(f"Error while processing image: {e}")
+                    return None
+            return doc
+    except Exception as e:
+        print("Error while processing image: ", str(e))
+        logging.error(f"Error while processing image: {e}")
+        return None
     
     
 
@@ -217,11 +232,11 @@ async def query_mixtral_with_ssh_async(prompt: list):
                             if isinstance(result, list) and 'generated_text' in result[0]:
                                 return result[0]['generated_text']
                             else:
-                                print("Unerwartetes Antwortformat:", result)
+                                print("Unexpected response format:", str(result))
                         except Exception as e:
-                            print("Fehler beim Verarbeiten der JSON-Antwort:", e)
+                            print("Error while process JSON response from Mistral:", str(e))
                     else:
-                        print("Fehler beim Abrufen der Antwort:", response.status, await response.text())
+                        print("Error while getting response from Mistral:", str(response.status), await response.text())
 
     except Exception as e:
-        print("Verbindungsfehler:", e) 
+        print("Error while connecting to Mixtral:", e) 
