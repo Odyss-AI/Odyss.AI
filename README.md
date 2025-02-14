@@ -182,6 +182,8 @@ npm install
 - Finaler Dokumentenspeicher finden
 - Performanceoptimierung bei Bildauswertung (Pixtral) und Zusammenfassung (Mixtral) -> Vermeidung mehrmaliges öffnen des SSH Tunnels wegen Batching
 - Logausgabe funktioniert nicht in der Konsole (aktuell mit Prints gelöst)
+- Optimierung UI/UX Design
+- Authentifizierung durch z.B. Uni Credentials
 - Formeln korrekt aus Dokumentauslesen
 - Ausführliche Tests durchführen
 - Code weiter aufräumen und optimieren
