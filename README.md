@@ -86,7 +86,12 @@ sudo apt-get install -y libreoffice libreoffice-writer libreoffice-impress libre
 sudo apt-get clean && \
 sudo rm -rf /var/lib/apt/lists/*
 ```
-
+#### Falls Teseract als OCR verwendet werden soll, muss folgendes noch installiert werden
+```bash
+sudo apt-get update && \
+sudo apt-get install -y ffmpeg libsm6 libxext6 poppler-utils tesseract-ocr && \
+rm -rf /var/lib/apt/lists/*  # Entferne die nicht mehr benötigten Installationsdateien
+```
 #### Installiere Global Protect für Uni VPN
 https://www.th-nuernberg.de/fileadmin/zentrale-einrichtungen/zit/zit_docs/ZIT_HR_VPN-Linux.pdf
 
@@ -123,5 +128,38 @@ docker run -d \
   --max-batch-tokens 1000000 \
   --max-client-batch-size 16
 ```
+#### Installiere Python und Pakete für Backend, LLM und OCR Service
+```bash
+sudo apt update
+sudo apt install python3 python3-venv python3-pip -y
+```
+Öffne ein Terminal in jedem Unterordner der jeweiligen Services und führe folgende Befehle aus
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+Starte die einzelnen Services mit sudo .venv/bin/python3 run.py
+Passe zum debuggen die launch.json an
+
+#### Starte das Frontend
+Falls nicht installiert, hole npm
+```bash
+sudo apt update
+sudo apt install npm
+npm install
+```
+
+### Nutze VM mit allen vorherigen Einstellungen vorbereitet
+- Ziehe VM von:
+- Öffne VMware und füge die VM hinzu
+- Starte die VM, dort ist das komplette Projekt vorhanden auf dem dev-local Branch. Es gibt eine launch.json für debugging der Services. Beachte das die Ports für Backend geändert wurde. Entsprechend müssen in OCR, LLM und Frontend (utils.js) geändert werden. Auf dev-local ist das bereits umgestellt, reiner debugging Branch.
+
+### Nutze Docker Compose
+Mithilfe von Docker Compose können alle Services einfach hochgefahren werden. Deployment auf den Uni Server genau damit durchgeführt.
 
 ## ToDos🎯
+- Darstellung der hochgeladenen Dokumente nach erneuten einloggen
+- Finaler Dokumentenspeicher finden
+- Leere Textliste von OCR zurückgegeben
+- TEI Embeddings Tokenoverlow

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import useChatStore from './store/chatStore';
 import useAuthStore from './store/authStore';
 
-const URL = 'http://141.75.150.145:443/v1/chat';
+const URL = 'http://141.75.150.74:443/v1/chat';
 
 const useWebSocket = () => {
   const [socket, setSocket] = useState(null);
