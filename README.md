@@ -22,6 +22,7 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 - Model: XLM-RoBERTa --> https://hf.co/intfloat/multilingual-e5-large-instruct
 - Batchsize: 7/8 (max)
 - Tokens per chunk: 500/512 (max)
+- Embedding Dimesion: 1024 
 
 ### Ports:
 - Frontend: 80
