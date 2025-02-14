@@ -34,12 +34,12 @@ async def chat():
             chat_id = None
         
         if not username:
-            await websocket.send(json.dumps({"error": "User is not authenticated"}))
+            await websocket.send(json.dumps({"error": "Nicht authentifiziert"}))
             continue
         else:
             user = await db.get_user_async(username)
             if user is None:
-                await websocket.send(json.dumps({"error": "User not found"}))
+                await websocket.send(json.dumps({"error": "Benutzer nicht gefunden"}))
                 continue
 
         msg = Message(

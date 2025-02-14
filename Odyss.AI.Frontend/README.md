@@ -1,7 +1,3 @@
-
-# Projektstruktur
-
-```plaintext
 project-root/
 │
 ├── node_modules/            # Alle installierten Abhängigkeiten
@@ -61,20 +57,20 @@ project-root/
 │   │   ├── chatStore.js     # Zustand für Chats und Nachrichten
 │   │   └── fileStore.js     # Zustand für hochgeladene Dateien
 │   │
-│   ├── api/                 # 🔴 Neuer Ordner für API-Interaktionen
-│   │   ├── api.js           # 🔴 Zentrale Datei für die API-Aufrufe
-│   │   └── auth.js          # 🔴 Datei für Authentifizierungsbezogene API-Aufrufe
+│   ├── **api/**             # 🔴 Neuer Ordner für API-Interaktionen
+│   │   ├── **api.js**       # 🔴 Zentrale Datei für die API-Aufrufe
+│   │   └── **auth.js**      # 🔴 Datei für Authentifizierungsbezogene API-Aufrufe
 │   │
-│   ├── services/            # 🔴 Service-Layer für komplexere Logik
-│   │   ├── chatService.js   # 🔴 Service-Datei für Chat-Logik (wie Kommunikation mit Backend)
-│   │   └── fileService.js   # 🔴 Service-Datei für Datei-Upload-Logik
+│   ├── **services/**        # 🔴 Service-Layer für komplexere Logik
+│   │   ├── **chatService.js**  # 🔴 Service-Datei für Chat-Logik (wie Kommunikation mit Backend)
+│   │   └── **fileService.js**  # 🔴 Service-Datei für Datei-Upload-Logik
 │   │
 │   ├── hooks/               # Custom React Hooks für verschiedene Logiken
 │   │   ├── useAuth.js       # Custom Hook für Authentifizierungs-Logik (z.B. ist der Nutzer eingeloggt?)
 │   │   └── useFetch.js      # Custom Hook für allgemeine Fetch-API-Anfragen
 │   │
 │   ├── utils/               # Hilfsfunktionen und Tools, die in der gesamten App verwendet werden können
-│   │   ├── constants.js     # 🔴 Konstante Werte, die in der App genutzt werden (z.B. API URLs)
+│   │   ├── **constants.js**   # 🔴 Konstante Werte, die in der App genutzt werden (z.B. API URLs)
 │   │   └── helpers.js       # Hilfsfunktionen, wie z.B. ein Formatierungs-Helper oder ein Fehler-Handler
 │   │
 │   ├── App.jsx              # Hauptkomponente der App, die die Seiten rendert
@@ -87,32 +83,3 @@ project-root/
 ├── package.json             # Abhängigkeiten und Scripts
 ├── vite.config.js           # Konfiguration für Vite
 └── README.md                # Informationen über das Projekt
-```
-
-## Beschreibung
-
-Diese Struktur bietet eine saubere und skalierbare Architektur für eine React- und Vite-basierte Anwendung. Sie trennt:
-
-- **Statische Assets** (`public/assets` vs. `src/assets`)
-- **Komponenten** (`components`) von **Seiten** (`pages`)
-- **State Management** (`store`) mit Zustand
-- **API-Interaktionen** (`api`)
-- **Service Layer** (`services`)
-- **Hilfsfunktionen und Hooks** (`utils` & `hooks`)
-
-## Verwendete Technologien
-
-- **Frontend:** React
-- **State Management:** Zustand
-
-## Projekt lokal starten
-
-1. Installiere die Abhängigkeiten:
-   ```sh
-   npm install
-   ```
-2. Starte die Entwicklungsumgebung:
-   ```sh
-   npm run dev
-   ```
-3. Öffne die angezeigte URL in deinem Browser (meist `http://localhost:5173/`).
