@@ -80,13 +80,13 @@ services:
       - odyss.ai
 
   text_embeddings_inference:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
     container_name: text_embeddings_inference
     ports:
       - "8080:8080"
     volumes:
       - tei:/data/tei
-    command: --model-id BAAI/bge-large-en-v1.5 --hostname 0.0.0.0 --port 8080 --payload-limit 20000000 --max-batch-tokens 1000000 --max-client-batch-size 16 # 10MB
+    command: --model-id intfloat/multilingual-e5-large-instruct --hostname 0.0.0.0 --port 8080 --payload-limit 20000000 --max-batch-tokens 1000000 --max-client-batch-size 8 # 10MB
     environment:
       - PAYLOAD_LIMIT=20000000
       - MAX_BATCH_TOKENS=1000000

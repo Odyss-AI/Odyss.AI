@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const BaseUrl = "http://141.75.150.74:443";
+// const BaseUrl = "http://0.0.0.0:443";
 
 // GET-Anfrage
 const getUser = async (user) => {
@@ -19,6 +20,7 @@ const getUser = async (user) => {
 }
 
 const createUser = async (user) => {
+    console.log(user);
     try{
         const response = await axios.post(`${BaseUrl}/v1/user/add`, {
             username: user
@@ -37,7 +39,7 @@ const uploadDocument = async (files, user, chatId) => {
         files.forEach((file, index) => {
             formData.append('file' + index, file);
         });
-
+        console.log("Start uploading new document");
         const response = await axios.post(`${BaseUrl}/v1/doc/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             params: {

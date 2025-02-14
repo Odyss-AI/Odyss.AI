@@ -167,30 +167,31 @@ class OCRTesseract:
         matches = re.findall(formula_pattern, text, re.DOTALL)
         return [match.strip() for match in matches if match]
 
-    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512):
-        # Text in Wörter aufteilen
-        words = full_text.split()
+    def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=500):
+        start_idx = 0
+        text_length = len(full_text)
 
-        # Temporäre Liste, um Wörter zwischenzuspeichern
-        chunk_text = []
-        
-        # Schleife durch alle Wörter im Text
-        for idx, word in enumerate(words):
-            chunk_text.append(word)  # Füge das Wort dem aktuellen Chunk hinzu
+        while start_idx < text_length:
+            end_idx = start_idx + max_chunk_size
 
-            # Wenn der Chunk die maximale Anzahl von Wörtern erreicht, erstelle einen neuen TextChunk
-            if len(chunk_text) >= max_chunk_size:
-                text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
-                doc.textList.append(text_chunk)
-                chunk_text = []  # Leere den temporären Chunk, um mit dem nächsten zu starten
+            # Vermeide das Abschneiden von Wörtern
+            if end_idx < text_length and full_text[end_idx] != ' ':
+                while end_idx > start_idx and full_text[end_idx] != ' ':
+                    end_idx -= 1
 
-        # Wenn nach der Schleife noch ein nicht leerer Chunk übrig ist, füge ihn ebenfalls hinzu
-        if chunk_text:
-            text_chunk = TextChunk(id=str(ObjectId()), text=" ".join(chunk_text), page=page_num)
+            # Wenn kein Leerzeichen gefunden wurde, setze end_idx auf max_chunk_size
+            if end_idx == start_idx:
+                end_idx = start_idx + max_chunk_size
+
+            chunk_text = full_text[start_idx:end_idx].strip()
+            text_chunk = TextChunk(id=str(ObjectId()), text=chunk_text, page=page_num)
             doc.textList.append(text_chunk)
 
+            # Setze den Startindex für den nächsten Chunk
+            start_idx = end_idx
 
-        # def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=512, enable_chunking=True):
+
+        # def split_text_into_chunks(self, full_text, doc, page_num, max_chunk_size=500, enable_chunking=True):
         # # Text in Abschnitte aufteilen, die durch doppelte Zeilenumbrüche getrennt sind
         # sections = full_text.split('\n\n')
 

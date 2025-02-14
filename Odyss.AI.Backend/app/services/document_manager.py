@@ -8,7 +8,7 @@ from bson import ObjectId
 from datetime import datetime
 from app.models.user import Document
 from app.utils.db import get_db
-from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async
+from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async, query_pixtral_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.services.sim_search_service import SimailaritySearchService
 from app.utils.pdf_converter import save_and_convert_file
@@ -41,6 +41,7 @@ class DocumentManager:
             time_logger = TimeLogger("Document handling")
             
             hash_doc, hash = self.generate_filename(file.filename)
+
             converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
             if converted_file is None:
                 return None, "Error saving file locally"
@@ -51,12 +52,12 @@ class DocumentManager:
             
             new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
             new_doc = await extract_pdf_information_with_ocr(new_doc)
-            if new_doc.imgList is not None and len(new_doc.imgList) > 0 and new_doc.textList is not None and len(new_doc.textList) > 0:
+            if not new_doc.imgList and not new_doc.textList:
                 return None, "Document is empty"
             time_logger.exit_func("Extract PDF information with OCR", "Extract image information with Pixtral (or create Embeddings if no pictures in doc)")
 
-            if new_doc.imgList is not None and len(new_doc.imgList) > 0:
-                new_doc = await query_mixtral_with_ssh_async(new_doc)
+            if new_doc.imgList:
+                # new_doc = await query_mixtral_with_ssh_async(new_doc)
                 time_logger.exit_func("Extract image information with Pixtral", "Create embeddings")
 
             self.delete_local_file(new_doc)
@@ -72,9 +73,9 @@ class DocumentManager:
                 return None, "Error saving embeddings"
             time_logger.exit_func("Save embeddings", "Create summary")
 
-            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
-            if not new_doc.summary:
-                return None, "Error creating summary"
+            # new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
+            # if not new_doc.summary:
+            #     return None, "Error creating summary"
             time_logger.exit_func("Create summary", "Upload to MongoDB (user+chat)")
             
             new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)
@@ -86,6 +87,7 @@ class DocumentManager:
             time_logger.exit_func(f"Add document {new_doc.doc_id} to chat {username}", "Finishing process")
 
             time_logger.exit_process()
+            
             return new_doc, "File uploaded successfully"
         
         except Exception as e:

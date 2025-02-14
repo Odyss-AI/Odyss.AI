@@ -73,17 +73,26 @@ class SimailaritySearchService:
             list: A list of embeddings.
         """
         tasks = []
-        chunks = [(chunk.text, chunk.id) for chunk in doc.textList]
-        chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
-        chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
 
-        for i in range(0, len(chunks), 14):
-            batch = chunks[i:i + 14]
-            texts, ids = zip(*batch)
-            tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
- 
-        embeddings = await asyncio.gather(*tasks)
-        return [item for sublist in embeddings for item in sublist] if embeddings else None
+        chunks = []
+        try:
+            if doc.textList:
+                chunks += [(chunk.text, chunk.id) for chunk in doc.textList]
+            if doc.imgList:
+                chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
+                chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
+
+            for i in range(0, len(chunks), 7):
+                batch = chunks[i:i + 7]
+                texts, ids = zip(*batch)
+                tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
+    
+            embeddings = await asyncio.gather(*tasks)
+            return [item for sublist in embeddings for item in sublist] if embeddings else None
+        except Exception as e:
+            print(f"Error creating embeddings: {str(e)}")
+            logging.error(f"Error creating embeddings: {str(e)}")
+            return None
     
     async def save_embedding_async(self, id, embeddings):
         """
