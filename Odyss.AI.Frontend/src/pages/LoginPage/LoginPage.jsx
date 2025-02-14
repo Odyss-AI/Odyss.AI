@@ -4,6 +4,7 @@ import styles from './LoginPage.module.css';  // Import des spezifischen CSS Mod
 import videoBg from '../../assets/Videos/background1.mp4';  // Beispielhafter Import des Videos
 import Header from '../../components/Header/Header'; // Import des Headers
 import { createUser } from '../../utils';  // Import der Funktion createUser aus dem userService
+import useAuthStore from '../../store/authStore';
 
 function LoginPage() {
     const [isRegister, setIsRegister] = useState(false);
