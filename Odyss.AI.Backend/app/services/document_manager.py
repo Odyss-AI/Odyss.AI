@@ -51,11 +51,11 @@ class DocumentManager:
             
             new_doc = self.get_new_doc(str(mongo_file_id), hash, file.filename, converted_file_path)
             new_doc = await extract_pdf_information_with_ocr(new_doc)
-            if new_doc.imgList is None and len(new_doc.imgList) == 0 and new_doc.textList is None and len(new_doc.textList) == 0:
+            if not new_doc.imgList and not new_doc.textList:
                 return None, "Document is empty"
             time_logger.exit_func("Extract PDF information with OCR", "Extract image information with Pixtral (or create Embeddings if no pictures in doc)")
 
-            if new_doc.imgList is not None and len(new_doc.imgList) > 0:
+            if new_doc.imgList:
                 new_doc = await query_mixtral_with_ssh_async(new_doc)
                 time_logger.exit_func("Extract image information with Pixtral", "Create embeddings")
 
