@@ -37,7 +37,7 @@ const uploadDocument = async (files, user, chatId) => {
         files.forEach((file, index) => {
             formData.append('file' + index, file);
         });
-
+        console.log("Start uploading new document");
         const response = await axios.post(`${BaseUrl}/v1/doc/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             params: {
