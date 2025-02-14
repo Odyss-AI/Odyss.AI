@@ -8,7 +8,7 @@ from bson import ObjectId
 from datetime import datetime
 from app.models.user import Document
 from app.utils.db import get_db
-from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async
+from app.utils.ml_connection import query_mixtral_with_ssh_async, query_pixtral_with_ssh_async, query_pixtral_async
 from app.utils.ocr_connection import extract_pdf_information_with_ocr
 from app.services.sim_search_service import SimailaritySearchService
 from app.utils.pdf_converter import save_and_convert_file
@@ -41,6 +41,7 @@ class DocumentManager:
             time_logger = TimeLogger("Document handling")
             
             hash_doc, hash = self.generate_filename(file.filename)
+
             converted_file_path, converted_file = await save_and_convert_file(file, hash_doc, db)
             if converted_file is None:
                 return None, "Error saving file locally"
@@ -86,6 +87,7 @@ class DocumentManager:
             time_logger.exit_func(f"Add document {new_doc.doc_id} to chat {username}", "Finishing process")
 
             time_logger.exit_process()
+            
             return new_doc, "File uploaded successfully"
         
         except Exception as e:

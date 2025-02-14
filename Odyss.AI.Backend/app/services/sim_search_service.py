@@ -73,6 +73,7 @@ class SimailaritySearchService:
             list: A list of embeddings.
         """
         tasks = []
+
         chunks = []
         try:
             if doc.textList:

@@ -10,7 +10,7 @@ class Config:
             load_dotenv()  # Lädt .env standardmäßig
 
         # Allgemeine Konfigurationen
-        self.environment = os.getenv("ENVIRONMENT", "prod")
+        self.environment = os.getenv("ENVIRONMENT", "linux")
 
         # MongoDB Konfiguration
         self.mongodb_connection_string = os.getenv("MONGODB_CONNECTION_STRING")
@@ -59,5 +59,5 @@ class Config:
         else:
             raise ValueError("Ungültiger OCR-Endpunkt gewählt")
         
-env_file = f".env.{os.getenv('ENVIRONMENT', 'prod')}"
+env_file = f".env.{os.getenv('ENVIRONMENT', 'linux')}"
 config = Config(env_file)
