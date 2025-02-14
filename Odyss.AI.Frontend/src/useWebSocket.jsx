@@ -3,6 +3,7 @@ import useChatStore from './store/chatStore';
 import useAuthStore from './store/authStore';
 
 const URL = 'http://141.75.150.74:443/v1/chat';
+// const BaseUrl = "http://0.0.0.0:443";
 
 const useWebSocket = () => {
   const [socket, setSocket] = useState(null);

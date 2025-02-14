@@ -82,8 +82,8 @@ class SimailaritySearchService:
                 chunks += [(img.imgtext, img.id) for img in doc.imgList if img.imgtext]
                 chunks += [(img.llm_output, img.id) for img in doc.imgList if img.llm_output]
 
-            for i in range(0, len(chunks), 14):
-                batch = chunks[i:i + 14]
+            for i in range(0, len(chunks), 7):
+                batch = chunks[i:i + 7]
                 texts, ids = zip(*batch)
                 tasks.append(self.fetch_embedding_async(list(texts), list(ids)))
     

@@ -57,7 +57,7 @@ class DocumentManager:
             time_logger.exit_func("Extract PDF information with OCR", "Extract image information with Pixtral (or create Embeddings if no pictures in doc)")
 
             if new_doc.imgList:
-                new_doc = await query_mixtral_with_ssh_async(new_doc)
+                # new_doc = await query_mixtral_with_ssh_async(new_doc)
                 time_logger.exit_func("Extract image information with Pixtral", "Create embeddings")
 
             self.delete_local_file(new_doc)
@@ -73,9 +73,9 @@ class DocumentManager:
                 return None, "Error saving embeddings"
             time_logger.exit_func("Save embeddings", "Create summary")
 
-            new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
-            if not new_doc.summary:
-                return None, "Error creating summary"
+            # new_doc.summary = await create_summary_with_batches(new_doc.textList, 1000, 8192)
+            # if not new_doc.summary:
+            #     return None, "Error creating summary"
             time_logger.exit_func("Create summary", "Upload to MongoDB (user+chat)")
             
             new_doc.mongo_file_id = await db.add_document_to_user_async(username, new_doc)

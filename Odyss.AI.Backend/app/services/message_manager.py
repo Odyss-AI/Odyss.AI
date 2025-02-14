@@ -74,6 +74,9 @@ class MessageManager:
             return None, f"Error building prompt or calling LLM API: {e}", chat.id
         time_logger.exit_func(f"Build prompt and call LLM API str(answer)", "Write bot message")
 
+        if answer is None:
+            answer = "Sorry, I could not generate a response."
+
         bot_msg = await self.write_bot_msg_async(db, chat, answer)
         if bot_msg is None:
             raise ValueError("Failed to write bot message")

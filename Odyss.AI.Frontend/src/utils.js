@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-
-// const BaseUrl = "http://141.75.150.145:443";
-const BaseUrl = "http://0.0.0.0:8443";
+const BaseUrl = "http://141.75.150.74:443";
+// const BaseUrl = "http://0.0.0.0:443";
 
 // GET-Anfrage
 const getUser = async (user) => {

@@ -240,3 +240,4 @@ async def query_mixtral_with_ssh_async(prompt: list):
 
     except Exception as e:
         print("Error while connecting to Mixtral:", e) 
+        return None
