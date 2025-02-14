@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-
 // const BaseUrl = "http://141.75.150.145:443";
 const BaseUrl = "http://0.0.0.0:8443";
 
@@ -40,7 +39,7 @@ const uploadDocument = async (files, user, chatId) => {
         files.forEach((file, index) => {
             formData.append('file' + index, file);
         });
-        console.log("Start uploading new document");
+
         const response = await axios.post(`${BaseUrl}/v1/doc/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             params: {

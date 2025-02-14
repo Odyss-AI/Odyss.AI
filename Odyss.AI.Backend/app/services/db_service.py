@@ -82,7 +82,6 @@ class MongoDBService:
             inserted_user = await self.get_user_async(username)
             return inserted_user
         except Exception as e:
-            print(f"Error creating user: {str(e)}")
             logging.error(f"Error creating user: {e}")
             return None
 
@@ -106,7 +105,6 @@ class MongoDBService:
             logging.error("Die Operation wurde abgebrochen.")
             raise
         except Exception as e:
-            print(f"Error getting user: {str(e)}")
             logging.error(f"Error getting user: {e}")
             return None
     
@@ -129,7 +127,6 @@ class MongoDBService:
             documents = user.get("documents", [])
             return [Document(**doc) for doc in documents]
         except Exception as e:
-            print(f"Error getting documents of user {username}: {str(e)}")
             logging.error(f"Error getting documents of user {username}: {e}")
             return None
     
@@ -162,7 +159,6 @@ class MongoDBService:
             
             return chunks
         except Exception as e:
-            print(f"Error getting chunks by IDs: {str(e)}")
             logging.error(f"Error getting chunks by IDs: {e}")
             return None
 
@@ -195,7 +191,6 @@ class MongoDBService:
             )
             return document.id
         except Exception as e:
-            print(f"Fehler beim Hinzufügen des Dokuments: {str(e)}")
             logging.error(f"Fehler beim Hinzufügen des Dokuments: {e}")
             return None
 
@@ -220,7 +215,6 @@ class MongoDBService:
             )
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error deleting document of user: {str(e)}")
             logging.error(f"Error deleting document of user: {e}")
             return False
     
@@ -241,7 +235,6 @@ class MongoDBService:
                 return Chat(**chat) 
             return None
         except Exception as e:
-            print(f"Error getting chat: {str(e)}")
             logging.error(f"Error getting chat: {e}")
             return None
     
@@ -263,7 +256,6 @@ class MongoDBService:
                 chats.append(Chat(**chat))
             return chats
         except Exception as e:
-            print(f"Error getting chats by user: {str(e)}")
             logging.error(f"Error getting chats by user: {e}")
             return None
     
@@ -289,7 +281,6 @@ class MongoDBService:
             await self.chat_collection.insert_one(chat.model_dump(by_alias=True))
             return chat
         except Exception as e:
-            print(f"Error creating chat: {str(e)}")
             logging.error(f"Error creating chat: {e}")
             return None
     
@@ -319,7 +310,6 @@ class MongoDBService:
 
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error adding message to chat: {str(e)}")
             logging.error(f"Error adding message to chat: {e}")
             return None
 
@@ -340,7 +330,6 @@ class MongoDBService:
                 return chat.get("messages", [])
             return []
         except Exception as e:
-            print(f"Error getting messages from chat: {str(e)}")
             logging.error(f"Error getting messages from chat: {e}")
             return []
         
@@ -368,7 +357,6 @@ class MongoDBService:
 
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error adding document to chat: {str(e)}")
             logging.error(f"Error adding document to chat: {e}")
             return None
         
@@ -396,7 +384,6 @@ class MongoDBService:
 
             return result.modified_count > 0
         except Exception as e:
-            print(f"Error deleting document from chat: {str(e)}")
             logging.error(f"Error deleting document from chat: {e}")
             return None
         
@@ -417,7 +404,6 @@ class MongoDBService:
                 return chat.get("doc_ids", [])
             return []
         except Exception as e:
-            print(f"Error getting documents from chat: {str(e)}")
             logging.error(f"Error getting documents from chat: {e}")
             return []
 
@@ -437,7 +423,6 @@ class MongoDBService:
             result = await self.chat_collection.delete_one({"id": chat_id})
             return result.deleted_count > 0
         except Exception as e:
-            print(f"Error deleting chat: {str(e)}")
             logging.error(f"Error deleting chat: {e}")
             return False
 
@@ -458,7 +443,6 @@ class MongoDBService:
                 document["_id"] = str(document["_id"])
             return document
         except Exception as e:
-            print(f"Error converting ObjectId: {str(e)}")
             logging.error(f"Error converting ObjectId: {e}")
             return document
 
@@ -507,8 +491,7 @@ class MongoDBService:
             return file_id
         
         except Exception as e:
-            logging.error(f"Error uploading PDF: {str(e)}")
-            print(f"Error uploading PDF: {str(e)}")
+            logging.error(f"Error uploading PDF: {e}")
             return None
     
     async def upload_image(self, file):
