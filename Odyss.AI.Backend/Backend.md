@@ -12,6 +12,7 @@ Das Odyss.AI Backend ist eine serverseitige Anwendung, die mit Quart, einem asyn
   - [setup.py](#setuppy)
   - [run.py](#runpy)
   - [Dockerfile](#dockerfile)
+- [Datenbankformat](#datenbank)
 - [Routes](#routes)
   - [user_routes.py](#routes--user_routespy)
   - [websocket_routes.py](#routes--websocket_routespy)
@@ -121,6 +122,89 @@ docker build -t odyss-ai-backend .
 ```
 
 Das manuelle Bauen ist im Projektumfeld nicht nötig da die Dockerfiles zentral über `docker-compose.yml` gestartet werden.
+
+## Datenbank
+
+User Objekt in der Datenbank:
+```json
+{
+  "_id": "ObjectId('672bdfe8716172ce07adac73')",
+  "id": "672bdfe8716172ce07adac72",
+  "username": "erik",
+  "documents": [
+    {
+      "id": "672d30995917eb661d687488",
+      "doc_id": "d60e6bd7e5fcec26153ae27f7d56409a66ad96b560a31bcca23d1975e43a8279",
+      "mongo_file_id": "672d30565917eb661d687485",
+      "name": "1c6d0ae6-7e41-40f8-8a0b-db10f9be52cd_SuperMarioBros.pdf",
+      "timestamp": "2024-11-07T22:25:46.000+00:00",
+      "summary": "k: This project uses reinforcement learning to train an agent to maste…",
+      "imgList": [],
+      "textList": [1],
+      "path": "/home/erik/Documents/d60e6bd7e5fcec26153ae27f7d56409a66ad96b560a31bcca…"
+    },
+    {
+      "id": "Object 1"
+    },
+    {
+      "id": "Object 2"
+    },
+    {
+      "id": "Object 3"
+    },
+    {
+      "id": "Object 4"
+    },
+    {
+      "id": "Object 5"
+    },
+    {
+      "id": "Object 6"
+    },
+    {
+      "id": "Object 7"
+    }
+  ]
+}
+```
+Chat Objekt in der Datenbank:
+```json
+{
+  "_id": "ObjectId('672dff46750acda3bc3e9099')",
+  "id": "672dff46750acda3bc3e9098",
+  "user_id": "erik",
+  "messages": [
+    {
+      "id": "672dff86750acda3bc3e909e",
+      "content": "what is reinforcement learning in super mario bros",
+      "timestamp": "2024-11-08T12:09:40.650Z",
+      "is_user": true,
+      "selected_model": "mistral"
+    },
+    {
+      "id": "Object 1"
+    }
+  ],
+  "chat_name": "test",
+  "doc_ids": [
+    "fd1bb014b90b9fbe75028a9a7a3856673026f2875711a1bf99ab5fa786c93453"
+  ]
+}
+```
+Dokumenten Objekt in der Datenbank:
+```json
+{
+  "_id": "ObjectId('672d30565917eb661d687485')",
+  "filename": "1c6d0ae6-7e41-40f8-8a0b-db10f9be52cd_SuperMarioBros.pdf",
+  "contentType": "application/pdf",
+  "metadata": {
+    "hash": "f142f8a0813541e221f38916fecdf457"
+  },
+  "chunkSize": 261120,
+  "length": 43867,
+  "uploadDate": "2024-11-07T21:25:43.165+00:00"
+}
+```
 
 ## Routes 
 
