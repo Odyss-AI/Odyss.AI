@@ -11,15 +11,14 @@ function Sidebar({ chats, onSelectChat, selectedChatId, onDeleteChat }) {
     const username = useAuthStore((state) => state.username);
     const [newChatName, setNewChatName] = React.useState("");
 
-    const msg = { content: "Hallo", is_user: true, timestamp: "2021-07-01T12:00:00.000Z" };
-    const chatTest = { chat_name:  "test", messages: [msg], id: 1 };
+    // const msg1 = { content: "Hallo", isUser: true, timestamp: "2021-07-01T12:00:00.000Z" };
+    // const msg2 = { content: "Hallo zurück", isUser: false, timestamp: "2021-07-01T12:01:00.000Z" };
+    // const chatTest = { chat_name:  "test", messages: [msg1, msg2], id: 2 };
 
     const handleAddChat = async () => {
         console.log(username);
-        // addChat(chatTest.chat_name, [], chatTest.messages, chatTest.id);
-        // return;
         if (newChatName.trim()) {
-            const newChat = await createChat(username.user.username, newChatName);
+            const newChat = await createChat(username, newChatName);
             // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
             if (!newChat) {
                 console.error("Fehler beim Erstellen des Chats");

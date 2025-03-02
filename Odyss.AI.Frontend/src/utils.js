@@ -36,6 +36,7 @@ const createUser = async (user) => {
 const uploadDocument = async (files, user, chatId) => {
     try {
         const formData = new FormData();
+        console.log(user);
         files.forEach((file, index) => {
             formData.append('file' + index, file);
         });
