@@ -1,44 +1,51 @@
 from difflib import SequenceMatcher
 from rapidfuzz.distance import Levenshtein
-from PyPDF2 import PdfReader
+from bs4 import BeautifulSoup
 import time
 import os
-from app.service.tesseractocr import OCRTesseract  # Importiere TesseractOCR
-from app.service.paddleocr import OCRPaddle        # Importiere PaddleOCR
-from app.service.nougatocr import OCRNougat        # Importiere NougatOCR
+import re
+from jiwer import wer
+from app.service.tesseractocr import OCRTesseract
+from app.service.paddleocr import OCRPaddle
+from app.service.nougatocr import OCRNougat
 from app.user import Document
-
-class Document:
-    def __init__(self, path):
-        self.path = path
-        self.textList = []  # Beispielweise werden Textchunks hier gespeichert
+import json
 
 class DocumentOCRResults:
-    def __init__(self, pdf_path):
+    def __init__(self, pdf_path, html_path):
         self.pdf_path = pdf_path
+        self.html_path = html_path
         self.ground_truth = self._extract_ground_truth()
         self.ocr_results = {}
 
     def _extract_ground_truth(self):
+        """Extrahiert Ground Truth aus der HTML-Datei."""
         try:
-            print("Lese Ground Truth aus PDF...")
-            pdf_reader = PdfReader(self.pdf_path)
-            ground_truth_text = ""
-
-            for page in pdf_reader.pages:
-                ground_truth_text += page.extract_text() or ""
-            
-            return self._normalize_text(ground_truth_text)
+            with open(self.html_path, "r", encoding="utf-8") as f:
+                soup = BeautifulSoup(f, "html.parser")
+            text = soup.get_text()
+            return self._normalize_text(text)
         except Exception as e:
-            print(f"Fehler beim Lesen des PDFs: {e}")
+            print(f"Fehler beim Extrahieren der Ground Truth: {e}")
             return ""
 
     def run_ocr(self, ocr_engines):
+        """Führt OCR mit allen angegebenen Engines durch."""
         for engine_name, engine_instance in ocr_engines.items():
-            print(f"Starte OCR mit {engine_name}...")
-            start_time = time.time()  # Zeitmessung starten
-            document = engine_instance.extract_text(Document(path=self.pdf_path))  # Aufruf von process
-            processing_time = time.time() - start_time  # Verarbeitungszeit messen
+            print(f"🔍 Starte OCR mit {engine_name}...")
+            start_time = time.time()
+            document = engine_instance.extract_text(Document(
+            id="dummy_id",
+            doc_id="dummy_doc_id",
+            mongo_file_id="dummy_mongo_id",
+            name=os.path.basename(self.pdf_path),  # Setze den Dateinamen als Dokumentnamen
+            timestamp=time.time(),  # Setze aktuellen Zeitstempel
+            summary="",
+            imgList=[],
+            textList=[],
+            path=self.pdf_path
+            ))
+            processing_time = time.time() - start_time
             ocr_text = self._extract_text_from_document(document)
             self.ocr_results[engine_name] = {
                 "text": self._normalize_text(ocr_text),
@@ -46,117 +53,178 @@ class DocumentOCRResults:
             }
 
     def _extract_text_from_document(self, document):
-        # Extrahiert Text aus den Textchunks des Documents
+        """Extrahiert den OCR-Text aus dem Dokument-Objekt."""
         return "\n".join(chunk.text for chunk in document.textList).strip()
 
     @staticmethod
     def _normalize_text(text):
-        """Normalisiert den Text durch Entfernen von überflüssigen Leerzeichen, Zeilenumbrüchen und Vereinheitlichung."""
-        import re
-        text = text.lower()  # Kleinbuchstaben
-        text = re.sub(r'\s+', ' ', text).strip()  # Mehrfache Leerzeichen entfernen
+        """Bereinigt den Text durch Entfernen von Sonderzeichen und Normalisierung."""
+        text = text.lower()
+        text = re.sub(r'\s+', ' ', text).strip()
         text = text.replace("\n", " ").replace("\n\n", "")
         return text
 
     def compare_results(self):
-        print("\n=== Vergleich der OCR-Ergebnisse ===")
+        """Vergleicht die OCR-Ergebnisse mit der Ground Truth und speichert sie in 'results/'."""
         results = {}
         for ocr_name, data in self.ocr_results.items():
             metrics = self._calculate_metrics(data['text'])
             metrics['processing_time'] = data['processing_time']
             results[ocr_name] = metrics
 
-        for ocr_name, metrics in results.items():
-            print(f"\n--- {ocr_name} ---")
-            print(f"Textgenauigkeit: {metrics['char_accuracy']:.2f}%")
-            print(f"Fehlerrate (CER): {metrics['char_error_rate']:.2f}%")
-            print(f"Fehlerrate (WER): {metrics['word_error_rate']:.2f}%")
-            print(f"Verarbeitungszeit: {metrics['processing_time']:.2f} Sekunden")
-            print(f"Levenshtein-Distanz: {metrics['levenshtein_distance']}")
-            print(f"Ähnlichkeitsrate: {metrics['similarity_ratio']:.2f}%")
+        # Speichere die Ergebnisse im 'results/' Ordner
+        results_folder = os.path.join(os.path.dirname(__file__), "results")
+        os.makedirs(results_folder, exist_ok=True)  # Falls Ordner nicht existiert, erstelle ihn
+
+        output_file = os.path.join(results_folder, os.path.basename(self.pdf_path).replace(".pdf", "_OCR_Ergebnisse.json"))
+        
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=4, ensure_ascii=False)
+
+        print(f"\nErgebnisse gespeichert in: {output_file}")
+
+
 
     def _calculate_metrics(self, ocr_text):
         levenshtein_distance = Levenshtein.distance(self.ground_truth, ocr_text)
-        char_accuracy = self._calculate_char_accuracy(self.ground_truth, ocr_text)
         similarity_ratio = SequenceMatcher(None, self.ground_truth, ocr_text).ratio() * 100
         char_error_rate = self._calculate_char_error_rate(self.ground_truth, levenshtein_distance)
-        word_error_rate = self._calculate_word_error_rate(self.ground_truth, ocr_text)
+        word_error_rate = wer(self.ground_truth, ocr_text) * 100
+        precision, recall, f1_score = self._calculate_precision_recall_f1(self.ground_truth, ocr_text)
 
         return {
             "levenshtein_distance": levenshtein_distance,
-            "char_accuracy": char_accuracy,
+            "normalized_levenshtein": levenshtein_distance / len(self.ground_truth) if len(self.ground_truth) > 0 else 0,
             "char_error_rate": char_error_rate,
             "word_error_rate": word_error_rate,
             "similarity_ratio": similarity_ratio,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1_score
         }
 
-    @staticmethod
-    def _calculate_char_accuracy(ground_truth, ocr_text):
-        min_length = min(len(ground_truth), len(ocr_text))
-        max_length = max(len(ground_truth), len(ocr_text))
-
-        correct_chars = sum(1 for i in range(min_length) if ground_truth[i] == ocr_text[i])
-
-        return (correct_chars / max_length) * 100 if max_length > 0 else 0
 
     @staticmethod
     def _calculate_char_error_rate(ground_truth, levenshtein_distance):
-        ground_truth_length = len(ground_truth)
-        return (levenshtein_distance / ground_truth_length) * 100 if ground_truth_length > 0 else 0
+        return (levenshtein_distance / len(ground_truth)) * 100 if len(ground_truth) > 0 else 0
 
     @staticmethod
-    def _calculate_word_error_rate(ground_truth, ocr_text):
-        gt_words = ground_truth.split()
-        ocr_words = ocr_text.split()
+    def _calculate_precision_recall_f1(ground_truth, ocr_text):
+        gt_words = set(ground_truth.split())
+        ocr_words = set(ocr_text.split())
 
-        levenshtein_distance = Levenshtein.distance(gt_words, ocr_words)
-        return (levenshtein_distance / len(gt_words)) * 100 if len(gt_words) > 0 else 0
+        true_positive = len(gt_words & ocr_words)
+        false_positive = len(ocr_words - gt_words)
+        false_negative = len(gt_words - ocr_words)
+
+        precision = (true_positive / (true_positive + false_positive)) * 100 if (true_positive + false_positive) > 0 else 0
+        recall = (true_positive / (true_positive + false_negative)) * 100 if (true_positive + false_negative) > 0 else 0
+        f1_score = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        return precision, recall, f1_score
 
     @staticmethod
-    def process_folder(folder_path):
-        pdf_files = [f for f in os.listdir(folder_path) if f.endswith('.pdf')]
-        aggregated_results = {}
+    def process_folder(dataset_root):
+        """Verarbeitet nur **ein** PDF in `paper_pdfs/` und vergleicht es mit `paper_htmls/`."""
+        pdf_folder = os.path.join(dataset_root, "paper_pdfs")
+        html_folder = os.path.join(dataset_root, "paper_htmls")
 
-        for pdf_file in pdf_files:
-            print(f"\nVerarbeite Datei: {pdf_file}")
-            pdf_path = os.path.join(folder_path, pdf_file)
-            ocr_comparator = DocumentOCRResults(pdf_path)
+        # Wähle ein bestimmtes PDF zum Testen
+        test_file = "2103.11879v2.pdf"
 
-            ocr_engines = {
-                "Tesseract": OCRTesseract(),
-                "PaddleOCR": OCRPaddle(),
-                "Nougat": OCRNougat()
-            }
+        if test_file not in os.listdir(pdf_folder):
+            print(f"Datei {test_file} nicht gefunden!")
+            return
 
-            ocr_comparator.run_ocr(ocr_engines)
+        pdf_path = os.path.join(pdf_folder, test_file)
+        html_path = os.path.join(html_folder, test_file.replace(".pdf", ".html"))
 
-            for ocr_name, data in ocr_comparator.ocr_results.items():
-                if ocr_name not in aggregated_results:
-                    aggregated_results[ocr_name] = {
-                        "char_accuracy": [],
-                        "char_error_rate": [],
-                        "word_error_rate": [],
-                        "similarity_ratio": [],
-                        "processing_time": []
-                    }
+        if not os.path.exists(html_path):
+            print(f"Keine HTML-Ground-Truth für {test_file} gefunden!")
+            return
 
-                metrics = ocr_comparator._calculate_metrics(data['text'])
-                aggregated_results[ocr_name]["char_accuracy"].append(metrics['char_accuracy'])
-                aggregated_results[ocr_name]["char_error_rate"].append(metrics['char_error_rate'])
-                aggregated_results[ocr_name]["word_error_rate"].append(metrics['word_error_rate'])
-                aggregated_results[ocr_name]["similarity_ratio"].append(metrics['similarity_ratio'])
-                aggregated_results[ocr_name]["processing_time"].append(data['processing_time'])
+        print(f"\nTeste OCR mit Datei: {test_file}")
 
-        print("\n=== Durchschnittliche Ergebnisse ===")
-        for ocr_name, metrics in aggregated_results.items():
-            print(f"\n--- {ocr_name} ---")
-            print(f"Durchschnittliche Textgenauigkeit: {sum(metrics['char_accuracy']) / len(metrics['char_accuracy']):.2f}%")
-            print(f"Durchschnittliche Fehlerrate (CER): {sum(metrics['char_error_rate']) / len(metrics['char_error_rate']):.2f}%")
-            print(f"Durchschnittliche Fehlerrate (WER): {sum(metrics['word_error_rate']) / len(metrics['word_error_rate']):.2f}%")
-            print(f"Durchschnittliche Ähnlichkeitsrate: {sum(metrics['similarity_ratio']) / len(metrics['similarity_ratio']):.2f}%")
-            print(f"Durchschnittliche Verarbeitungszeit: {sum(metrics['processing_time']) / len(metrics['processing_time']):.2f} Sekunden")
+        ocr_comparator = DocumentOCRResults(pdf_path, html_path)
+
+        ocr_engines = {
+            "Tesseract": OCRTesseract(),
+            "PaddleOCR": OCRPaddle(),
+            "Nougat": OCRNougat()
+        }
+
+        ocr_comparator.run_ocr(ocr_engines)
+        ocr_comparator.compare_results()  # Zeigt Ergebnisse für die einzelne Datei an
+
+
+    # @staticmethod
+    # def process_folder(dataset_root):
+    #     """Verarbeitet alle PDFs in `paper_pdfs/` und vergleicht sie mit `paper_htmls/`."""
+    #     pdf_folder = os.path.join(dataset_root, "paper_pdfs")
+    #     html_folder = os.path.join(dataset_root, "paper_htmls")
+
+    #     pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+    #     aggregated_results = {}
+
+    #     for pdf_file in pdf_files:
+    #         print(f"\nVerarbeite Datei: {pdf_file}")
+    #         pdf_path = os.path.join(pdf_folder, pdf_file)
+    #         html_path = os.path.join(html_folder, pdf_file.replace(".pdf", ".html"))
+
+    #         if not os.path.exists(html_path):
+    #             print(f"Keine HTML-Ground-Truth für {pdf_file} gefunden!")
+    #             continue
+
+    #         ocr_comparator = DocumentOCRResults(pdf_path, html_path)
+
+    #         ocr_engines = {
+    #             "Tesseract": OCRTesseract(),
+    #             "PaddleOCR": OCRPaddle(),
+    #             "Nougat": OCRNougat()
+    #         }
+
+    #         ocr_comparator.run_ocr(ocr_engines)
+
+    #         for ocr_name, data in ocr_comparator.ocr_results.items():
+    #             if ocr_name not in aggregated_results:
+    #                 aggregated_results[ocr_name] = {
+    #                     "char_accuracy": [],
+    #                     "char_error_rate": [],
+    #                     "word_error_rate": [],
+    #                     "similarity_ratio": [],
+    #                     "precision": [],
+    #                     "recall": [],
+    #                     "f1_score": [],
+    #                     "processing_time": []
+    #                 }
+
+    #             metrics = ocr_comparator._calculate_metrics(data['text'])
+    #             aggregated_results[ocr_name]["char_accuracy"].append(metrics['char_accuracy'])
+    #             aggregated_results[ocr_name]["char_error_rate"].append(metrics['char_error_rate'])
+    #             aggregated_results[ocr_name]["word_error_rate"].append(metrics['word_error_rate'])
+    #             aggregated_results[ocr_name]["similarity_ratio"].append(metrics['similarity_ratio'])
+    #             aggregated_results[ocr_name]["precision"].append(metrics['precision'])
+    #             aggregated_results[ocr_name]["recall"].append(metrics['recall'])
+    #             aggregated_results[ocr_name]["f1_score"].append(metrics['f1_score'])
+    #             aggregated_results[ocr_name]["processing_time"].append(data['processing_time'])
+
+    #         ocr_comparator.compare_results()  # Zeigt Ergebnisse pro Datei an
+
+    #     # Am Ende: Durchschnittswerte berechnen
+    #     print("\n=== Durchschnittliche OCR-Ergebnisse ===")
+    #     for ocr_name, metrics in aggregated_results.items():
+    #         print(f"\n--- {ocr_name} ---")
+    #         print(f"Durchschnittliche Textgenauigkeit: {sum(metrics['char_accuracy']) / len(metrics['char_accuracy']):.2f}%")
+    #         print(f"Durchschnittliche Fehlerrate (CER): {sum(metrics['char_error_rate']) / len(metrics['char_error_rate']):.2f}%")
+    #         print(f"Durchschnittliche Fehlerrate (WER): {sum(metrics['word_error_rate']) / len(metrics['word_error_rate']):.2f}%")
+    #         print(f"Durchschnittliche Ähnlichkeitsrate: {sum(metrics['similarity_ratio']) / len(metrics['similarity_ratio']):.2f}%")
+    #         print(f"Durchschnittliche Precision: {sum(metrics['precision']) / len(metrics['precision']):.2f}%")
+    #         print(f"Durchschnittliche Recall: {sum(metrics['recall']) / len(metrics['recall']):.2f}%")
+    #         print(f"Durchschnittlicher F1-Score: {sum(metrics['f1_score']) / len(metrics['f1_score']):.2f}%")
+    #         print(f"Durchschnittliche Verarbeitungszeit: {sum(metrics['processing_time']) / len(metrics['processing_time']):.2f} Sekunden")
+
 
 # Wenn die Datei direkt ausgeführt wird
 if __name__ == "__main__":
-    folder_path = "C:\\Users\\ramaz\\Documents\\PDF_Folder"
-    DocumentOCRResults.process_folder(folder_path)
+    dataset_root = os.path.join("app\\service\\dataset_root")
+    DocumentOCRResults.process_folder(dataset_root)

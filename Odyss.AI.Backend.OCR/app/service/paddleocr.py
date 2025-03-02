@@ -12,8 +12,8 @@ from paddleocr import PaddleOCR  # PaddleOCR importieren
 class OCRPaddle:
     def __init__(self):
         # PaddleOCR initialisieren (kann angepasst werden je nach Sprache)
-        print("Initialisiere PaddleOCR mit deutscher Sprache...")
-        self.ocr = PaddleOCR(use_angle_cls=True, lang='de')  # Für deutsche Texte 'de' wählen
+        print("Initialisiere PaddleOCR mit englischer Sprache...")
+        self.ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Für deutsche Texte 'de' wählen
 
     def extract_text(self, doc: Document):
         self.process_pdf(doc.path, doc)
