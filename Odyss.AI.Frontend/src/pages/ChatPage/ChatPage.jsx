@@ -23,9 +23,7 @@ function ChatPage() {
     const chats = useChatStore((state) => state.chatList);
     const allChats = useChatStore((state) => state.chats);
     const sendMessage = useChatStore((state) => state.sendMessage);
-    const addChat = useChatStore((state) => state.addChat);
     const deleteChat = useChatStore((state) => state.deleteChat);
-    const addFilesToChat = useChatStore((state) => state.addFilesToChat);
     const removeFileFromChat = useChatStore((state) => state.removeFileFromChat);
     const setSelectedFile = useChatStore((state) => state.setSelectedFile);
     const toggleDragAndDrop = useChatStore((state) => state.toggleDragAndDrop);
@@ -45,6 +43,7 @@ function ChatPage() {
     }, [chatFiles, selectedFile, selectedChat, setSelectedFile]);
 
     const handleSelectChat = (chat) => {
+        console.log("Chat ausgewählt: ", chat);
         setSelectedChat(chat);
     };
 
@@ -54,24 +53,6 @@ function ChatPage() {
             console.log("Message sent: ", message, selectedChat);
             sendMessage(selectedChat.id, message, true, timestamp);
             sendMessageToOdyss(message, selectedChat.id, username.user.username, selectedModel, timestamp);
-        }
-    };
-
-    const handleAddChat = async () => {
-        console.log(username);
-        if (newChatName.trim()) {
-            const newChat = await createChat(username.user.username, newChatName);
-            // newChat enthält neben dem Chat-Namen auch die ID und andere Informationen
-            if (!newChat) {
-                console.error("Fehler beim Erstellen des Chats");
-                alert("Fehler beim Erstellen des Chats");
-            }
-            else {
-                console.log("Neuer Chat erstellt: ", newChat);
-                addChat(newChat.chat_name, [], newChat.messages, newChat.id);
-            }
-
-            setNewChatName("");
         }
     };
 
@@ -113,15 +94,7 @@ function ChatPage() {
             <div className={styles.mainContent}>
                 {/* Linke Spalte */}
                 <div className={styles.sidebarContainer}>
-                    <div className={styles.newChatContainer}>
-                        <input
-                            type="text"
-                            value={newChatName}
-                            onChange={(e) => setNewChatName(e.target.value)}
-                            placeholder="Neuen Chat hinzufügen..."
-                        />
-                        <button onClick={handleAddChat}>Hinzufügen</button>
-                    </div>
+
                     <Sidebar
                         chats={chats}
                         onSelectChat={handleSelectChat}
@@ -129,19 +102,21 @@ function ChatPage() {
                         onDeleteChat={handleDeleteChat}
                     />
                 </div>
+                {!selectedChat && <div className={styles.noChatSelected}>Wähle einen Chat aus oder erstelle einen neuen 🎯</div>}
+                {selectedChat && <div className={styles.mainContentContainer}>
+                    <div className={styles.chatWindowAndInputContainer}>
+                        {selectedChat && showMiddle && (
+                        <div className={styles.chatWindowContainer}>
+                            {console.log(chatMessages)}
+                            {<ChatWindow messages={chatMessages} /> }
+                        </div>)}
+                        
+                        {selectedChat && <UserInput onSendMessage={handleSendMessage} />}
+                        {selectedChat && <SelectModell setSelectedModel={setSelectedModel}/>}
+                    </div>
 
-                {/* Toggle Button für die mittlere Spalte */}
-                {selectedChat && (
-                    <button className={styles.toggleMiddleButton} onClick={() => setShowMiddle(!showMiddle)}>
-                        {showMiddle ? '<' : '>'}
-                    </button>
-                )}
-
-                {/* Mittlere Spalte */}
-                {selectedChat && showMiddle && (
-                    <div className={styles.middleContainer}>
-                        {showDragAndDrop ? (
-                            <DragAndDrop username={username} selectedChat={selectedChat}/>
+                    <div className={styles.pdfPreviewContainer}>
+                        {showDragAndDrop ? (<DragAndDrop username={username} selectedChat={selectedChat}/>
                         ) : (
                             <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>
                                 Weitere PDF-Dateien hochladen
@@ -151,31 +126,10 @@ function ChatPage() {
                         <PDFPreviewList
                             files={chatFiles}
                             onRemoveFile={handleRemoveFile}
-                            onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}
-                        />
+                            onSelectFile={(file) => setSelectedFile(selectedChat.id, file)}/>
                     </div>
-                )}
-
-                {/* Rechte Spalte */}
-                <div className={
-                    selectedChat
-                        ? showMiddle
-                            ? styles.rightContainer
-                            : styles.rightContainerExpanded
-                        : styles.rightContainerExpanded
-                }>
-                    <div className={styles.chatWindowContainer}>
-                        {selectedChat ? (
-                            <ChatWindow messages={chatMessages} />
-                        ) : (
-                            <p>Wähle einen Chat aus der Seitenleiste aus, um zu starten</p>
-                        )}
-                    </div>
-                    <UserInput onSendMessage={handleSendMessage} />
-                    <SelectModell setSelectedModel={setSelectedModel}/>
-                </div>
+                </div>}
             </div>
-            <Footer />
         </div>
     );
 }

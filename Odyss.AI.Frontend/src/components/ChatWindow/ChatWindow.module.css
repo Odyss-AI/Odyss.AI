@@ -4,14 +4,15 @@
     flex-direction: column; /* Nachrichten untereinander anordnen */
     height: 100%; /* Füllt den verfügbaren Platz */
     overflow-y: auto; /* Scrollen, wenn zu viele Nachrichten vorhanden sind */
+    max-height: 50vh;
+    padding: 0 10px;
 }
 
 .userMessageContainer {
     align-self: flex-end; /* Benutzer-Nachricht rechts ausrichten */
-    margin: 5px 0; /* Abstand zwischen den Nachrichten */
+
 }
 
 .botMessageContainer {
     align-self: flex-start; /* Bot-Nachricht links ausrichten */
-    margin: 5px 0; /* Abstand zwischen den Nachrichten */
 }

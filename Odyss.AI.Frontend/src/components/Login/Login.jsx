@@ -4,6 +4,7 @@ import useAuthStore from '../../store/authStore.jsx';
 import useChatStore from '../../store/chatStore.jsx';
 import { getUser, getChats, createUser } from '../../utils.js';
 import useWebSocket from '../../useWebSocket.jsx';
+import styles from './Login.module.css';
 
 function Login() {
     const [username, setUsername] = useState('');  // Benutzername
@@ -22,7 +23,7 @@ function Login() {
                 alert('User not found');
                 return;
             }
-            login(user);  // Login-Logik hier
+            login(username);  // Login-Logik hier
             
             const chats = await getChats(username);  // Chats des Benutzers laden
             if (!chats) {
@@ -47,21 +48,23 @@ function Login() {
     };
 
     return (
-        <div className="login">
+        <div className={styles.loginForm}>
             <h2>Login</h2>
             <input
                 type="text"
                 placeholder="Username"
                 value={username}
+                className={styles.input}
                 onChange={(e) => setUsername(e.target.value)}
             />
             <input
                 type="password"
                 placeholder="Password"
                 value={password}
+                className={styles.input}
                 onChange={(e) => setPassword(e.target.value)}
             />
-            <button onClick={handleLogin}>Login</button>
+            <button className={styles.loginButton} onClick={handleLogin}>Login</button>
         </div>
     );
 }
