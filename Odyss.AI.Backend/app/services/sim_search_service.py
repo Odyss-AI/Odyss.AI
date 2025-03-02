@@ -150,6 +150,8 @@ class SimailaritySearchService:
             list: A list of chunk IDs and their scores, or None if an error occurs.
         """
         query_embeddings = await self.fetch_embedding_async([query], ["q"])
+        if query_embeddings is None:
+            return None
 
         try:
 
