@@ -150,13 +150,13 @@ async def query_pixtral_with_ssh_async(doc:Document):
 
             for img in tqdm(doc.imgList, desc="Processing images"):
                 try:
-                    image_class = await get_image_class_async(img.link)
-                    print(image_class)
-                    img.type = image_class
+                    #image_class = await get_image_class_async(img.link)
+                    #print(image_class)
+                    #img.type = image_class
 
                     # Wenn die Klasse "just_img" ist, zur nächsten Iteration springen
-                    if image_class == "just_img":
-                        continue   
+                    #if image_class == "just_img":
+                    #    continue   
 
                     # Bild laden und in Base64 kodieren
                     image = PILImage.open(img.link)
@@ -171,7 +171,7 @@ async def query_pixtral_with_ssh_async(doc:Document):
                             "content": [
                                 {
                                     "type": "text",
-                                    "text": f"The image shows a {image_class}. Please describe what I see."
+                                    "text": f"Analysiere das Bild und beschreibe in 3-5 Sätzen nicht nur, was zu sehen ist, sondern auch mögliche Bedeutungen oder Zusammenhänge (max 512 Tokens)"
                                 },
                                 {
                                     "type": "image_url",
@@ -182,7 +182,7 @@ async def query_pixtral_with_ssh_async(doc:Document):
                             ],
                         }],
                         model=model,  
-                        max_tokens=256,
+                        max_tokens=512,
                     )
 
                     # Ergebnis anzeigen
