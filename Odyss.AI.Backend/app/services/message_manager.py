@@ -55,12 +55,12 @@ class MessageManager:
             raise ValueError("Failed to get similar chunks")
         time_logger.exit_func(f"Search similar documents {str(sim_chunks)}", "Get chunks")
 
-        chunks = self.get_chunks_from_docs(docs, sim_chunks)
-        if not chunks:
-            raise ValueError("Failed to get chunks")
+        chunks = []
+        if len(docs) != 0:
+            chunks = self.get_chunks_from_docs(docs, sim_chunks)
+            if not chunks:
+                raise ValueError("Failed to get chunks")
         time_logger.exit_func(f"Get chunks str(chunks)", "Build prompt and call LLM API")
-
-        print(f"Chunks: {chunks}")
 
         try:
             prompt = qna_prompt_builder(chunks, message.content)
