@@ -106,7 +106,8 @@ const DragAndDrop = ({username, selectedChat}) => {
         }
 
         if (selectedChat) {
-            const files = await uploadDocument(pdfFiles, username.user.username, selectedChat.id);
+            console.log("Benutzername:", username);
+            const files = await uploadDocument(pdfFiles, username, selectedChat.id);
             if (!files) {
                 console.error("Fehler beim Hochladen der Datei");
                 alert("Fehler beim Hochladen der Datei");

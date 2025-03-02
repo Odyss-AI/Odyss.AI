@@ -52,7 +52,7 @@ function ChatPage() {
             const timestamp = new Date().toISOString();
             console.log("Message sent: ", message, selectedChat);
             sendMessage(selectedChat.id, message, true, timestamp);
-            sendMessageToOdyss(message, selectedChat.id, username.user.username, selectedModel, timestamp);
+            sendMessageToOdyss(message, selectedChat.id, username, selectedModel, timestamp);
         }
     };
 
@@ -102,7 +102,9 @@ function ChatPage() {
                         onDeleteChat={handleDeleteChat}
                     />
                 </div>
+
                 {!selectedChat && <div className={styles.noChatSelected}>Wähle einen Chat aus oder erstelle einen neuen 🎯</div>}
+
                 {selectedChat && <div className={styles.mainContentContainer}>
                     <div className={styles.chatWindowAndInputContainer}>
                         {selectedChat && showMiddle && (
@@ -116,6 +118,7 @@ function ChatPage() {
                     </div>
 
                     <div className={styles.pdfPreviewContainer}>
+                        {console.log("ChatFiles: ", username)}
                         {showDragAndDrop ? (<DragAndDrop username={username} selectedChat={selectedChat}/>
                         ) : (
                             <button className={styles.toggleDragAndDropButton} onClick={() => toggleDragAndDrop(selectedChat.id)}>

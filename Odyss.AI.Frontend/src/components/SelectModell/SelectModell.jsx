@@ -24,7 +24,7 @@ export default function SelectModell({setSelectedModel}) {
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleClick}
             >
-                Select Model
+                Wähle Modell
             </Button>
             <Menu
                 id="basic-menu"

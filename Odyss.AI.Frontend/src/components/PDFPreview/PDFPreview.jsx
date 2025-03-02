@@ -8,7 +8,7 @@ const PDFPreview = () => {
     console.log("Rendering PDFPreview with file: ", selectedFile);
 
     if (!selectedFile) {
-        return <p>Keine PDF-Datei ausgewählt</p>;
+        return <p></p>;
     }
 
     const fileURL = URL.createObjectURL(selectedFile); // Erzeugt eine URL zur Anzeige der PDF
