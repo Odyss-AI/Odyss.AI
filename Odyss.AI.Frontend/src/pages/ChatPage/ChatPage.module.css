@@ -3,7 +3,7 @@
 .chatPage {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    overflow-y: hidden;
 }
 
 .header {
@@ -17,13 +17,48 @@
 .mainContent {
     display: flex;
     flex: 1;
+    overflow-y: hidden;
+    width:100%;
+}
+
+.mainContentContainer {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    overflow-y: hidden;
+    width:100%;
 }
 
 .sidebarContainer {
     flex: 0 0 auto;
     padding: 20px;
-    border-right: 1px solid #ccc;
-    background-color: #f8f8f8;
+    overflow-y: hidden;
+}
+
+.chatWindowAndInputContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 66vh;
+    width: 100%;
+    overflow-y: hidden;
+    z-index: 1;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 30px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pdfPreviewContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+    width: 10%;
+    overflow-y: hidden;
 }
 
 .middleContainer {
@@ -32,7 +67,9 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    background-color: #ffffff;
+    height: 100%;
+    overflow-y: hidden;
+    width: 40%;
 }
 
 .rightContainer {
@@ -42,26 +79,33 @@
     flex-direction: column;
     justify-content: space-between;
     gap: 20px;
-    background-color: #f0f0f0;
-}
-
-.newChatContainer {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 20px;
+    height: 100%;
+    overflow-y: hidden;
+    width:80%;
 }
 
 .chatWindowContainer {
     flex: 1;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    background-color: #ffffff;
+    
 }
 
 .userInput {
     margin-top: 10px;
     display: flex;
     justify-content: flex-end;
+}
+
+.noChatSelected {
+    position: absolute;
+    z-index: 1;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 30px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
 }

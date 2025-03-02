@@ -3,14 +3,12 @@
     display: flex; /* Flexbox für die horizontale Anordnung */
     justify-content: space-between; /* Verteilt die Elemente gleichmäßig */
     align-items: center; /* Zentriert die Elemente vertikal */
-    padding: 10px 20px; /* Innenabstand für den Header */
     background-color: #007bff; /* Hintergrundfarbe für den Header */
     color: white; /* Textfarbe */
 }
 
 .logo {
-    height: 40px; /* Höhe des Logos */
-    margin-right: 20px; /* Abstand zwischen Logo und Titel */
+    height: 6rem; /* Höhe des Logos */
 }
 
 .title {
@@ -24,8 +22,7 @@
 }
 
 .userIcon {
-    height: 40px; /* Höhe des Benutzer-Icons */
-    margin-left: 20px; /* Abstand zwischen Titel und Benutzer-Icon */
+    height: 6rem; /* Höhe des Logos */
     cursor: pointer;
 }
 

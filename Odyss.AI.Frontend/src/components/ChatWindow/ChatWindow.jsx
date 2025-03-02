@@ -13,8 +13,8 @@ function ChatWindow({ messages }) {
                     <div className={styles.userMessageContainer} key={index}>
                         <UserMessage message={msg.text} />
                     </div> :
-                    <div className={styles.userMessageContainer} key={index}>
-                        <UserMessage message={msg.text} />
+                    <div className={styles.botMessageContainer} key={index}>
+                        <BotMessage message={msg.text} />
                     </div>
             ))}
         </div>
