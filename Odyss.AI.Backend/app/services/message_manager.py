@@ -50,9 +50,11 @@ class MessageManager:
             raise ValueError("Failed to get documents")
         time_logger.exit_func(f"Get documents {str(chat.doc_ids)}", "Search similar documents")
 
-        sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
-        if sim_chunks is None:
-            raise ValueError("Failed to get similar chunks")
+        sim_chunks = []
+        if len(docs) != 0:
+            sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
+            if sim_chunks is None:
+                raise ValueError("Failed to get similar chunks")
         time_logger.exit_func(f"Search similar documents {str(sim_chunks)}", "Get chunks")
 
         chunks = []
