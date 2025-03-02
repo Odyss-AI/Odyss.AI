@@ -44,7 +44,7 @@ function Login() {
             }
             chats.forEach(chat => {
             //     //TODO: Hole tatsächliche Dokumente anhand der file_ids
-                addChat(chat.chat_name, [], chat.messages, chat.id);  // Chat hinzufügen
+                addChat(chat.chat_name, [], [], chat.id);  // Chat hinzufügen
                 chat.messages.forEach(message => {
                     sendMessage(chat.id, message.content, message.is_user, message.timestamp);  // Nachrichten hinzufügen
                 })
