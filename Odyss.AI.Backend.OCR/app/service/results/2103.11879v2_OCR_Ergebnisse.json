@@ -8,7 +8,7 @@
         "precision": 79.27292457948997,
         "recall": 89.57694665849172,
         "f1_score": 84.1105354058722,
-        "processing_time": 16.289172172546387
+        "processing_time": 16.543672561645508
     },
     "PaddleOCR": {
         "levenshtein_distance": 22771,
@@ -19,7 +19,7 @@
         "precision": 71.90876350540216,
         "recall": 73.45187001839363,
         "f1_score": 72.6721261753109,
-        "processing_time": 28.303285121917725
+        "processing_time": 30.75365686416626
     },
     "Nougat": {
         "levenshtein_distance": 5491,
@@ -30,6 +30,6 @@
         "precision": 87.24226804123711,
         "recall": 83.01655426118946,
         "f1_score": 85.07697141061891,
-        "processing_time": 344.0064752101898
+        "processing_time": 352.8855528831482
     }
 }
