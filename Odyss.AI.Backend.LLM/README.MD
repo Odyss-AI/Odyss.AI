@@ -60,7 +60,7 @@ Das Experiment der Formel Extraktion besteht aus mehreren Jupyter Notebooks, die
 ## Schritte zur Reproduktion
 1. Klonen Sie das Git-Repository.
 2. Installieren Sie die notwendigen Anforderungen, die im Notebook `pixtral_formula_extraction` angegeben sind.
-3. Die SSH Verbindungsdetails sind in dem Jupyter Notebook zu finden, funktionieren allerdings nur mit meinem SSH-Key. Passen Sie die SSH Verbindungsdetails auf Ihren SSH-Key an. 
+3. Die SSH Verbindungsdetails sind in dem Jupyter Notebook zu finden, funktionieren allerdings nur mit einem Privaten SSH-Key des Autors. Passen Sie die SSH Verbindungsdetails auf Ihren SSH-Key an. 
 4. Führen Sie das Notebook `pixtral_formula_extraction` aus, um die Formeln zu extrahieren.
 5. Die Ground Truth und der Vergleich in "output.xslx" wurden per Hand erstellt.
 6. Analysieren Sie die Ergebnisse mit dem Notebook `formula_analysis`.
