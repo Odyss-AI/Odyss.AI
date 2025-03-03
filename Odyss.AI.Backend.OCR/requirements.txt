@@ -22,3 +22,4 @@ bson
 pix2tex
 pdf2image
 jiwer
+scikit-learn
