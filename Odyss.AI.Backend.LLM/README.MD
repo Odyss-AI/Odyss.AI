@@ -6,13 +6,41 @@ Odyss.AI.Backend.LLM ist ein Backend-Projekt, das die Verarbeitung und Bereitste
 
 2. **Mathematische Formelerkennung**: Ein Experiment, das darauf abzielt, mathematische Formeln mithilfe von Pixtral aus Dokumenten zu extrahieren. Diese Komponente untersucht die Möglichkeiten der automatisierten Erkennung und Verarbeitung mathematischer Inhalte.
 
+# Dokumentation für den Image Tagger
 
-ImageTagger.py
+## Übersicht
 
-Dieses Modul greift auf das Modell 'diagramm_classifier.h5' zu, um Bilddaten zu klassifizieren. Damit die Funktionalität gewährleistet ist, müssen alle Abhängigkeiten, die in der Datei 'requirements.txt' aufgeführt sind, installiert werden.
+Der Image Tagger ist eine Komponente des Odyss.AI.Backend.LLM Projekts, die zur Bildklassifizierung entwickelt wurde. Ursprünglich war er in den Workflow integriert, um Bilder zu kategorisieren und zusätzliche Informationen an Pixtral zu senden. Aufgrund von Performance-Problemen und Fehlklassifikationen, die die Ergebnisse von Pixtral beeinträchtigten, wurde der Image Tagger jedoch deaktiviert. Trotz dieser Deaktivierung erzielte der Image Tagger sehr gute Ergebnisse auf den Train/Test-Split-Daten und bleibt ein wichtiger Bestandteil der Projektentwicklung.
 
-Der ImageTagger übernimmt die Kommunikation der Bilddaten und klassifiziert die empfangenen Bilder.
+## Dataset
 
+Das Dataset stammt von Kaggle und ist zu finden unter https://www.kaggle.com/datasets/sunedition/graphs-dataset .
+
+## Komponenten
+
+1. **img_tagger.ipynb**: Das Notebook `img_tagger.ipynb` dient zur Erstellung des Klassifikators. Es analysiert den Datensatz und zeigt die Genauigkeit (accuracy) sowie die Konfusionsmatrix (confusion matrix) des Modells. 
+
+2. **ImageTagger.py**: Das Programm `ImageTagger.py` war ursprünglich in das Projekt integriert, um Bilder zu klassifizieren und die Informationen an Pixtral weiterzugeben, um die Analyse zu verbessern. Der Image Tagger erzielte sehr gute Ergebnisse auf den Train/Test-Split-Daten. 
+
+## Deaktivierung des Image Taggers
+
+Der ImageTagger wurde deaktiviert, da Fehlklassifikationen die Ergebnisse von Pixtral erheblich verschlechterten. `ImageTagger.py` nimmt Bilddaten entgegen und klassifiziert diese mit dem Modell `diagram_classifier.h5`.
+
+## Voraussetzungen
+- **Python 3.7+**: Notwendig zur Ausführung der Skripte und Notebooks.
+- **Jupyter Notebook**: Zum Anzeigen und Ausführen des Notebooks `img_tagger.ipynb`.
+- **TensorFlow**: Zum Laden und Verwenden des Modells `diagram_classifier.h5`.
+- **Keras**: Zum Erstellen und Trainieren des Modells.
+- **Pandas**: Zum Verarbeiten des Datensatzes.
+- **NumPy**: Für numerische Operationen.
+- **Matplotlib**: Zum Visualisieren der Ergebnisse.
+
+## Schritte zur Reproduktion
+1. Klonen Sie das Git-Repository.
+2. Installieren Sie die notwendigen Anforderungen mit `pip install -r requirements.txt`.
+3. Laden Sie das Dataset von [Kaggle](https://www.kaggle.com/datasets/sunedition/graphs-dataset) herunter und speichern Sie es im entsprechenden Verzeichnis.
+4. Öffnen und führen Sie das Notebook `img_tagger.ipynb` aus, um das Modell zu erstellen und zu trainieren.
+5. Verwenden Sie `ImageTagger.py`, um Bilder mit dem trainierten Modell `diagram_classifier.h5` zu klassifizieren.
 
 # Dokumentation für das Experiment der Formel Extraktion
 
