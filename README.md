@@ -14,7 +14,7 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 - [ToDos🎯](#todos)
 
 ## Übersicht🥽
-![Pbersicht Architektur Odyss.AI](odyss_overview.png)
+![Übersicht Architektur Odyss.AI](odyss_overview.png)
 
 ## Installation⚙️
 ### Installation VMware 
@@ -157,6 +157,98 @@ npm install
 
 ### Nutze Docker Compose
 Mithilfe von Docker Compose können alle Services einfach hochgefahren werden. Deployment auf den Uni Server genau damit durchgeführt.
+
+### Github Runner
+Zum besseren Debugging wurde ein Github Runner auf der VM installiert. Dieser wird aktiv sobald eine änderung an dem dev Branch festgestellt wurde. Nach einer Änderung des dev Branches führt der Runner folgende Schritte aus:
+          cd /var/opt/Odyss.AI
+          sudo git pull origin dev
+          sudo docker-compose down
+          sudo docker-compose build
+          sudo docker-compose up -d
+
+Die deploy.yml ist in dem .github/workflows ordner zu finden.
+Nachfolgend wird die installation des Runners erklärt.
+
+### GitHub Repository konfigurieren
+
+1. **Repository erstellen**
+  - Erstelle ein neues Repository auf GitHub oder nutze ein bestehendes Repository.
+
+2. **GitHub Runner Token generieren**
+  - Gehe zu den Einstellungen deines Repositorys.
+  - Navigiere zu `Settings` > `Actions` > `Runners` > `New self-hosted runner`.
+  - Wähle das Betriebssystem und die Architektur aus und klicke auf `Generate new token`.
+
+3. **Runner konfigurieren**
+  - Folge den Anweisungen auf der GitHub-Seite, um den Runner zu konfigurieren. Nutze den generierten Token bei der Konfiguration.
+
+4. **Workflow-Datei erstellen**
+  - Erstelle eine neue Datei `.github/workflows/deploy.yml` in deinem Repository mit folgendem Inhalt:
+  ```yaml
+name: Deploy with Docker
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory /var/opt/Odyss.AI
+
+      - name: Deploy with Docker
+        run: |
+          cd /var/opt/Odyss.AI
+          sudo git pull origin dev
+          sudo docker-compose down
+          sudo docker-compose build
+          sudo docker-compose up -d
+  ```
+
+5. **Workflow aktivieren**
+  - Sobald du Änderungen an den `dev` Branch pushst, wird der GitHub Runner den Workflow ausführen und die neuesten Änderungen auf der VM deployen.
+
+Der GitHub Runner ist nun konfiguriert und wird automatisch aktiviert, wenn Änderungen an deinem Repository vorgenommen werden. 🚀
+
+### GitHub Runner installieren
+
+1. **GitHub Runner herunterladen**
+  - Lade die neueste Version des GitHub Runners herunter:
+  ```bash
+  mkdir actions-runner && cd actions-runner
+  curl -o actions-runner-linux-x64-2.303.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.303.0/actions-runner-linux-x64-2.303.0.tar.gz
+  tar xzf ./actions-runner-linux-x64-2.303.0.tar.gz
+  ```
+
+2. **Abhängigkeiten installieren**
+  - Stelle sicher, dass die notwendigen Abhängigkeiten installiert sind:
+  ```bash
+  sudo apt-get install -y libicu-dev libkrb5-dev
+  ```
+
+3. **Runner konfigurieren**
+  - Konfiguriere den Runner mit deinem Repository:
+  ```bash
+  ./config.sh --url https://github.com/USERNAME/REPOSITORY --token YOUR_TOKEN
+  ```
+
+4. **Runner als Dienst installieren**
+  - Installiere und starte den Runner als Dienst:
+  ```bash
+  sudo ./svc.sh install
+  sudo ./svc.sh start
+  ```
+
+5. **Überprüfung**
+  - Überprüfe, ob der Runner erfolgreich installiert und gestartet wurde:
+  ```bash
+  sudo ./svc.sh status
+  ```
+
+Der GitHub Runner sollte nun auf deiner VM installiert und einsatzbereit sein. 🚀
 
 ## ToDos🎯
 - Darstellung der hochgeladenen Dokumente nach erneuten einloggen
