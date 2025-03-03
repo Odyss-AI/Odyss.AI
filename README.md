@@ -14,7 +14,7 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 - [ToDos🎯](#todos)
 
 ## Übersicht🥽
-![Pbersicht Architektur Odyss.AI](odyss_overview.png)
+![Übersicht Architektur Odyss.AI](odyss_overview.png)
 
 ## Installation⚙️
 ### Installation VMware 
