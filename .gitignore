@@ -120,4 +120,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ignoriere dataset_root und alle Unterordner im OCR Backend
+Odyss.AI.Backend.OCR/app/service/dataset_root/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,flask

@@ -1,10 +1,10 @@
 /* src/components/UserMessage/UserMessage.module.css */
 .userMessage {
-    background-color: #d1e7dd; /* Hintergrundfarbe für die Benutzernachricht */
-    color: #0f5132; /* Textfarbe für die Benutzernachricht */
-    padding: 10px; /* Innenabstand */
+    background-color: #7eacdd; /* Hintergrundfarbe für die Benutzernachricht */
+    color: white; /* Textfarbe für die Benutzernachricht */
+    padding: 0px 10px;
     border-radius: 5px; /* Abgerundete Ecken */
-    margin: 5px 0; /* Abstand zwischen den Nachrichten */
+    font-size: 0.9rem;
     align-self: flex-end; /* Positioniert die Nachricht rechts */
 }
 

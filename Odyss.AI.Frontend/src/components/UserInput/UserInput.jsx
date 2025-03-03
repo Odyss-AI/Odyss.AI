@@ -6,9 +6,10 @@ function UserInput({ onSendMessage }) {
     const [input, setInput] = useState('');
 
     const handleSend = () => {
+        console.log('Sending message:', input);
         if (input.trim()) {
             onSendMessage(input); // Nachricht senden
-            setInput(''); // Eingabefeld zurücksetzen
+            setInput(''); // Input leeren
         }
     };
 
@@ -19,9 +20,9 @@ function UserInput({ onSendMessage }) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
+                placeholder="Schreibe eine Nachricht ..."
             />
-            <button onClick={handleSend}>Send</button>
+            <button onClick={handleSend}>Sende</button>
         </div>
     );
 }

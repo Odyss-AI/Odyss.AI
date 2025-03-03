@@ -4,7 +4,7 @@ import React from 'react';
 function Footer() {
     return (
         <footer>
-            <p>© 2024 ChatBot App. All rights reserved.</p>
+            <p style={{fontSize: '0.8rem'}}>© 2024 ChatBot App. All rights reserved.</p>
         </footer>
     );
 }
