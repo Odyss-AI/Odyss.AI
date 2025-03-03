@@ -6,13 +6,13 @@ Odyss.AI.Backend.LLM ist ein Backend-Projekt, das die Verarbeitung und Bereitste
 
 2. **Mathematische Formelerkennung**: Ein Experiment, das darauf abzielt, mathematische Formeln mithilfe von Pixtral aus Dokumenten zu extrahieren. Diese Komponente untersucht die Möglichkeiten der automatisierten Erkennung und Verarbeitung mathematischer Inhalte.
 
-"""
+
 ImageTagger.py
 
 Dieses Modul greift auf das Modell 'diagramm_classifier.h5' zu, um Bilddaten zu klassifizieren. Damit die Funktionalität gewährleistet ist, müssen alle Abhängigkeiten, die in der Datei 'requirements.txt' aufgeführt sind, installiert werden.
 
 Der ImageTagger übernimmt die Kommunikation der Bilddaten und klassifiziert die empfangenen Bilder.
-"""
+
 
 # Dokumentation für das Experiment der Formel Extraktion
 
