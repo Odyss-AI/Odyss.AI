@@ -38,6 +38,9 @@ class MessageManager:
         
         db = get_db()
         time_logger = TimeLogger("Message handling")
+        bot_msg = None
+        chunks = []
+        sim_chunks = []
 
         # Load the chat from the cache or the database
         chat = await self.get_chat_async(db, message, user, chat_id)
@@ -50,17 +53,19 @@ class MessageManager:
             raise ValueError("Failed to get documents")
         time_logger.exit_func(f"Get documents {str(chat.doc_ids)}", "Search similar documents")
 
-        sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
-        if sim_chunks is None:
-            raise ValueError("Failed to get similar chunks")
+        if len(docs) != 0:
+            sim_chunks = await self.sim_search.search_similar_documents_async(chat.doc_ids, message.content)
+            if sim_chunks is None:
+                sim_chunks = []
+                print("Failed to search similar documents")
         time_logger.exit_func(f"Search similar documents {str(sim_chunks)}", "Get chunks")
 
-        chunks = self.get_chunks_from_docs(docs, sim_chunks)
-        if not chunks:
-            raise ValueError("Failed to get chunks")
+        if len(docs) != 0:
+            chunks = self.get_chunks_from_docs(docs, sim_chunks)
+            if not chunks:
+                chunks = []
+                print("Failed to get chunks from documents")
         time_logger.exit_func(f"Get chunks str(chunks)", "Build prompt and call LLM API")
-
-        print(f"Chunks: {chunks}")
 
         try:
             prompt = qna_prompt_builder(chunks, message.content)
@@ -71,7 +76,7 @@ class MessageManager:
         except Exception as e:
             print(f"Error building prompt or calling LLM API: {e}")
             logging.error(f"Error building prompt or calling LLM API: {e}")
-            return None, f"Error building prompt or calling LLM API: {e}", chat.id
+            return await self.write_bot_msg_async(db, chat, "Sorry, I could not generate a response."), [], chat.id
         time_logger.exit_func(f"Build prompt and call LLM API str(answer)", "Write bot message")
 
         if answer is None:

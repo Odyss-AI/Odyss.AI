@@ -16,7 +16,7 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 - [ToDos🎯](#todos)
 
 ## Übersicht🥽
-![Pbersicht Architektur Odyss.AI](odyss_overview.png)
+![Übersicht Architektur Odyss.AI](odyss_overview.png)
 
 ### Text Embedding Inference (TEI)
 - Model: XLM-RoBERTa --> https://hf.co/intfloat/multilingual-e5-large-instruct

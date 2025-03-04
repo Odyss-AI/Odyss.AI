@@ -1,0 +1,41 @@
+{
+    "Tesseract": {
+        "levenshtein_distance": 5202,
+        "normalized_levenshtein": 0.14012876114538156,
+        "char_error_rate": 14.012876114538155,
+        "word_error_rate": 17.41160773849233,
+        "similarity_ratio": 22.05639819396004,
+        "jaccard_similarity": 84.27973699940226,
+        "cosine_similarity": 99.11769880824895,
+        "precision": 89.01515151515152,
+        "recall": 94.06270847231488,
+        "f1_score": 91.46934803762568,
+        "processing_time": 15.672039270401001
+    },
+    "PaddleOCR": {
+        "levenshtein_distance": 25196,
+        "normalized_levenshtein": 0.6787166985426825,
+        "char_error_rate": 67.87166985426825,
+        "word_error_rate": 36.62441627751834,
+        "similarity_ratio": 4.450076302594288,
+        "jaccard_similarity": 66.0953401178361,
+        "cosine_similarity": 98.85349137835699,
+        "precision": 77.02871410736579,
+        "recall": 82.32154769846565,
+        "f1_score": 79.58722992583037,
+        "processing_time": 25.319600105285645
+    },
+    "Nougat": {
+        "levenshtein_distance": 4960,
+        "normalized_levenshtein": 0.1336098914419632,
+        "char_error_rate": 13.360989144196319,
+        "word_error_rate": 13.275517011340893,
+        "similarity_ratio": 6.587618878685751,
+        "jaccard_similarity": 87.39076154806492,
+        "cosine_similarity": 99.13088764356857,
+        "precision": 93.14703925482368,
+        "recall": 93.3955970647098,
+        "f1_score": 93.2711525649567,
+        "processing_time": 381.29838347435
+    }
+}

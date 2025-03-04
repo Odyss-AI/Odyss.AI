@@ -120,4 +120,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ignoriere dataset_root und alle Unterordner im OCR Backend
+Odyss.AI.Backend.OCR/app/service/dataset_root/
+
+# Ignoriere poppler und IMG Ordner im LLM Backend
+Odyss.AI.Backend.LLM/poppler-24.08.0/
+Odyss.AI.Backend.LLM/IMG/
+
+# Ignoriere nougat_txt_extraction ordner
+/nougat_txt_extraction/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,flask

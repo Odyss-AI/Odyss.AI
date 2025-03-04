@@ -16,6 +16,7 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
 
 * [Überblick](#Überblick)
 * [Projektstruktur](#projektstruktur)
+* [Dataset](#dataset)
 * [Funktionsweise und Ablauf](#funktionsweise-und-ablauf)
 
   * [OCR-Engines](#ocr-engines)
@@ -78,6 +79,7 @@ Das OCR-Modul übernimmt folgende Aufgaben:
 Die Ordnerstruktur des Projekts sieht wie folgt aus:
 
 ```
+
 Odyss.AI.Backend.OCR/         # Hauptordner
 │
 ├── app/                      # Enthält den gesamten Anwendungscode
@@ -86,7 +88,11 @@ Odyss.AI.Backend.OCR/         # Hauptordner
 │   │   └── routes.py
 │   │
 │   ├── service/              # OCR-Services und Hilfsklassen
-│   │   ├── DocumentOCRResults.py
+|   |   ├── dataset_root      # test-dataset ist im git-ignore
+│   │   ├── results	      # Ergebnis von DocumentOCRResults abgespeichert
+│   │   ├── results2	      # Ergebnis von DocumentOCRResults2 abgespeichert, mit txts der OCRs und Ground_truth
+│   │   ├── DocumentOCRResults.py # Veralteter Code zum Vergleichen (Initial)
+│   │   ├── DocumentOCRResults2.py # Neuer Code zum Vergleichen
 │   │   ├── nougatocr.py
 │   │   ├── paddleocr.py
 │   │   ├── StoppingCriteriaScores.py  # Hilfsklasse für Nougat (custom stopping criteria)
@@ -106,6 +112,52 @@ Odyss.AI.Backend.OCR/         # Hauptordner
 ```
 
 ---
+
+
+## Dataset
+
+Für die OCR-Analyse wird ein Datensatz aus wissenschaftlichen Papern generiert. Die Paper stammen aus **arXiv** und werden mit Hilfe des bereitgestellten Resource-Codes heruntergeladen. Die Besonderheit dabei ist, dass arXiv neben der PDF-Datei auch die **LaTeX-Quellen (.tex)** bereitstellt, wodurch eine strukturierte Umwandlung in HTML möglich ist.
+
+### **1. Herunterladen der Paper von arXiv**
+
+Zunächst müssen Paper-PDFs von arXiv bezogen werden. Dies kann über den **Resource-Code** erfolgen, der in diesem Repository bereitgestellt wird. Der Code lädt die LaTeX-Quellen der Paper zusammen mit den zugehörigen PDF-Dateien.
+
+### **2. Umwandlung von LaTeX in HTML**
+
+Um die Paper für die OCR-Verarbeitung besser nutzbar zu machen, wird die `.tex`-Datei mit **LaTeXML** in XML und anschließend in HTML konvertiert:
+
+1. **Konvertierung in XML:**
+   ```bash
+   latexml paper.tex --dest=paper.xml
+   ```
+2. **Konvertierung in HTML:**
+   ```bash
+   latexmlpost --format=html paper.xml --dest=paper.html
+   ```
+
+Nach diesem Prozess liegen die Paper in einer strukturierten HTML-Form vor.
+
+### **3. Ordnerstruktur des Datasets**
+
+Das Dataset wird in folgendem Verzeichnis innerhalb des Projekts abgelegt wie oben im Projektstruktur dargestellt:
+
+```
+service/dataset-root/
+│── paper_htmls/   # Enthält die konvertierten HTML-Versionen der Paper
+│── paper_pdfs/    # Enthält die originalen PDF-Dateien der Paper
+```
+
+Jede Datei wird in den entsprechenden Ordner eingefügt:
+
+* **HTML-Dateien** (`.html`) in `paper_htmls/`
+* **PDF-Dateien** (`.pdf`) in `paper_pdfs/`
+
+### **4. Nutzung des Datasets**
+
+Der generierte Datensatz kann für Tests, Trainingszwecke oder Vergleiche zwischen OCR-Engines verwendet werden. Die strukturierte HTML-Variante erleichtert insbesondere den Vergleich mit den extrahierten Texten aus den PDFs.
+
+---
+
 
 ## Funktionsweise und Ablauf
 
@@ -156,8 +208,6 @@ Die drei implementierten OCR-Engines haben jeweils ihre eigene Klasse und Logik:
 
 ### PDF-Verarbeitung und Datenextraktion
 
-> ![OCR-Code-Ablauf](image/OCR/OCR-Code-Ablauf.png)
-
 Unabhängig von der verwendeten OCR-Engine erfolgt die grundlegende Verarbeitung eines PDFs in mehreren Schritten:
 
 1. **PDF-Öffnen und Umwandeln:**
@@ -196,9 +246,6 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
   Über `run.py` wird der Hauptserver gestartet. Innerhalb der `app/routes/routes.py` findest Du die API-Endpunkte, die die Dokumente entgegennehmen und an den entsprechenden OCR-Service weiterleiten.
 * **OCR-Anfrage:**
 
-  > ![Api-Anfrage](image/OCR/Api-Anfrage.png)
-  >
-
   Ein Dokument (z. B. PDF) wird an den entsprechenden API-Endpunkt geschickt. Der Service:
 
   * Liest das Dokument
@@ -210,13 +257,7 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
   Das finale JSON beinhaltet:
 
   * Eine Liste von `TextChunk`-Objekten (mit Text, Seitenangabe und ggf. LaTeX-Ergebnissen)
-
-    > ![textchunk-response](image/OCR/textchunk-response.png)
-    >
   * Eine Liste von `Image`-Objekten (mit Pfad, Seitennummer, Dateityp und extrahiertem Bildtext)
-
-    > ![Image-response](image/OCR/Image-response.png)
-    >
 
 ---
 
@@ -233,30 +274,27 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
 
 ## Einleitung
 
-In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit und Benutzerfreundlichkeit zu bewerten im Vergleich zu einem **PDFReader**. Wir testen mit diesem Dokument [arXiv:2401.00908](https://arxiv.org/abs/2401.00908) verschiedene Dokumenttypen, darunter:
+In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit, Benutzerfreundlichkeit und weitere Kriterien zu bewerten. Wir testen mit diesem Dokument [arXiv:2401.00908](https://arxiv.org/abs/2401.00908) :
 
-1. Normale Dokumente mit markierbarem Text und Bildern **(Fall 1)**
-2. Dokumente, die nur aus Bildern bestehen **(Fall 2)**
+1. (Allgemeiner Vergleich)
+2. (Intensiver Vergleich)
 
 Die folgenden Kriterien werden zur Bewertung herangezogen.
 
-## Allgemeine Informationen (Fall 1)
+## Allgemeine Informationen (Fall 1: Allgemeiner Vergleich)
 
 - **Dokument:** Paper (normales Dokument)
 - **Anzahl Seiten:** 16 Seiten
 
 ## Vergleichskriterien (Fall 1)
 
-
-| Kriterium                                        | Tesseract   | PaddleOCR   | Nougat      |
-| :------------------------------------------------- | ------------- | ------------- | ------------- |
+| Kriterium                                              | Tesseract   | PaddleOCR   | Nougat      |
+| :----------------------------------------------------- | ----------- | ----------- | ----------- |
 | **Verarbeitungszeit (min)**                      | 0:30        | 0:28        | 14:05       |
-| **Formatierung *(*ja*****/ja/nein)**             | ja*         | ja          | ja*         |
+| **Formatierung *(*ja*****/ja/nein)**         | ja*         | ja          | ja*         |
 | **Bilderkennung (Anzahl)**                       | 5           | 5           | 5           |
-| **Fehlerrate (%)**                               | 6.26        | 9.24        | 23.04       |
 | **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut         | mittel      | schlecht    |
 | **Sonderzeichen/Formeln (%)**                    | [Formeln T] | [Formeln P] | [Formeln N] |
-| **Ähnlichkeitsrate (%)**                        | 85.90       | 61.25       | 72.44       |
 
 ## Kriteriumserklärungen
 
@@ -267,12 +305,8 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
   - *Ja* bedeutet, dass die OCR-Engine die Formatierung größtenteils beibehalten kann
   - *Nein* bedeutet, dass die OCR-Engine die Formatierung entweder gar nicht beibehalten kann.
 - **Bilderkennung (Anzahl)** Zeigt, wie viele Bilder oder Grafiken die OCR-Engine korrekt erkannt hat. Besonders relevant bei Dokumenten, die auch Bilder oder Grafiken enthalten.
-- **Skalierbarkeit** Beschreibt, wie gut die OCR-Engine mit einer größeren Anzahl von Dokumenten oder mit Dokumenten unterschiedlicher Komplexität umgehen kann. Eine skalierbare Lösung arbeitet auch mit größeren Datenmengen effizient.
-- **Fehlerrate (%)** Auch bekannt als **Char Error Rate (CER)**, misst die Anzahl der Fehler bei der Erkennung von Zeichen im Vergleich zur Ground Truth. Ein niedriger Wert bedeutet weniger Fehler bei der Texterkennung.
 - **Benutzerfreundlichkeit (gut/mittel/schlecht)** Beschreibt, wie einfach es ist, mit der OCR-Engine zu arbeiten. Eine benutzerfreundliche Lösung ist einfach zu bedienen, gut dokumentiert und benötigt wenig Eingriff vom Benutzer.
 - **Sonderzeichen/Formeln (%)** Misst die Fähigkeit der OCR-Engine, Sonderzeichen oder mathematische Formeln korrekt zu erkennen. Besonders wichtig für technische oder wissenschaftliche Dokumente, die solche Symbole enthalten.
-- **Ähnlichkeitsrate (%)** Vergleicht den erkannten Text mit dem tatsächlichen Text (Ground Truth) und zeigt die Übereinstimmung als Prozentsatz.
-  Die **Ähnlichkeitsrate** wird üblicherweise mit der **SequenceMatcher**-Methode berechnet, die die Ähnlichkeit zwischen zwei Texten misst. Sie vergleicht die Zeichenfolgen und bestimmt, wie viel von ihnen übereinstimmen, wobei das Ergebnis als Prozentsatz der Übereinstimmung ausgegeben wird. Eine hohe Ähnlichkeitsrate bedeutet, dass der erkannte Text dem tatsächlichen Text sehr ähnlich ist, was auf eine gute Erkennungsgenauigkeit hinweist.
 
 ## Ergebnisse im Detail (Seite 1, Fall 1)
 
@@ -280,36 +314,31 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 - **Texterkennung**: "401.00908v1 [cs.CL] 31 Dec 2023\n\nDOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\n\nDongsheng Wang”, Natraj Raman*, Mathieu Sibue*\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\nJPMorgan Al Research\n{first .last}@jpmchase.com\n\nABSTRACT\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records,\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nPaper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically,\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nKeywords DocAl- VRDU - LLM - GPT - Spatial Attention\n\n1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [I],\nwhich has spurred the development of Al-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [3], Llama [4], Falcon [5]] or PaLM [6] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [[71|8]] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal (70,(11).\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n\n“These authors contributed equally to this work.\n"
 - **Bilderkennung (1. Bild):** "1\nWho is the “Supplier”?\nneem ante 7 Analytic Insight Inc\nINFILL, What is the doc type?\nPurchase Order\np=\nB Is the year 1995?\nae 2,0 Yes\nOCRed Document LLM Extension Pre-training Instruction Tuning\n\nText tokens + Bounding boxes Disentangled Spatial Attention Blocks + Infilling Objective KIE + NLI + VQA + Classify\n"
-- **Ähnlichkeitsrate**: 85.90% – Tesseract hat den Text mit einer hohen Übereinstimmung zum tatsächlichen Text erkannt.
 
 ### Paddle
 
 - **Texterkennung**: "DOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\nDongsheng Wang*, Natraj Raman\", Mathieu Sibue\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\n JPMorgan AI Research\n 2023\n{first.last}@jpmchase.com\nDec '\nABSTRACT\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records.\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically.\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\n00908v1\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\nKeywords DocAI - VRDU - LLM - GPT - Spatial Attention\n1\n Introduction\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [].\nwhich has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAIl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge [2].\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [l, Llama [41, Falcon [ll or PaLM [] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [7] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal [L0 I].\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n* These authors contributed equally to this work"
 - **Bilderkennung (1. Bild):** "Who is the \"Supplier\"?\n(DOMEST\n(Recommended Props\nAnalytic Insight Inc\nate\nMarch3.199\nescription\nLUCKY STRIKE QUALITATIVE ADV\nCITIES\n INFILL\nWhat is the doc type?\nequested byz\nA.A.Strobel\nResearch Req\nBudgeted:\nPurchase Order\nOriginal Budgeted\nwntract.\nIs the year 1995?\nYes\nOCRed Document\nLLM Extension\nPre-training\nInstruction Tuning\nText tokens + Bounding boxes\nDisentangled Spatial Attention\nBlocks + Infilling Objective\nKIE + NLI + VQA+ Classify"
-- **Ähnlichkeitsrate**: 61.25% – PaddleOCR hat eine moderate Übereinstimmung mit dem tatsächlichen Text.
 
 ### Nougat
 
 - **Texterkennung**: "\n\n# DocLLM: A layout-aware generative language model for multimodal document understanding\n\nDongsheng Wang\n\nThese authors contributed equally to this work.\n\nNatraj Raman\n\nThis work was supported by the National Science Foundation of China (No. 116731002) and the National Science Foundation of China (No. 116731002).\n\nMathieu Sibue1\n\nZhiqiang Ma\n\nPetr Babkin\n\nSmerjot Kaur\n\nYulong Pei\n\nArmineh Nourbakhsh\n\nXiaomo Liu\n\nJPMorgan AI Research\n\n{first.last}@jpmchase.com\n\nFootnote 1: footnotemark:\n\n###### Abstract\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records, often carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered by their complex layouts play a crucial role in comprehending these documents effectively. In this paper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for reasoning over visual documents, taking into account both textual semantics and spatial layout. Our model differs from existing multimodal LLMs by avoiding expensive image encoders and focuses exclusively on bounding box information to incorporate the spatial layout structure. Specifically, the cross-alignment between text and spatial modalities is captured by decomposing the attention mechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a pre-training objective that learns to infill text segments. This approach allows us to address irregular layouts and heterogeneous content frequently encountered in visual documents. The pre-trained model is fine-tuned using a large-scale instruction dataset, covering four core document intelligence tasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all tasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nDocAI \\(\\cdot\\) VRDU \\(\\cdot\\) LLM \\(\\cdot\\) GPT \\(\\cdot\\) Spatial Attention\n\n## 1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion of enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [1], which has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts, bespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has made tremendous progress in various tasks including extraction, classification and question answering, there remains a significant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and generalization to previously unseen domains continues to be a challenge [2].\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being critical to understanding the documents. It requires solutions distinct from conventional large language models such as GPT-3.5 [3], Llama [4], Falcon [5] or PaLM [6] that primarily accept text-only inputs and assume that the documents exhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous vision-language frameworks [7] that can process documents as images and capture the interactions between textual and visual modalities are available. However, these frameworks necessitate the use of complex vision backbone architectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual signal [10][11].\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form understanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is"
 - **Bilderkennung:** "\n\n**OCRed Document**\n\nText tokens + Bounding boxes\n\nDisentangled Spatial Attention\n\n**Pre-training**\n\n**Instruction Tuning**\n\n**Closing the number of tokens + Bounding boxes\n\n**OCRed Document**\n\n**Text tokens + Bounding boxes**\n\nDisentangled Spatial Attention\n\n**OCRed Document**\n"
-- **Ähnlichkeitsrate**: 72.44% – Nougat liegt zwischen Tesseract und PaddleOCR, mit einer durchschnittlichen Übereinstimmung.
 
-## Allgemeine Informationen (Fall 2)
+## Allgemeine Informationen (Fall 2: Intensiver Vergleich)
 
-- **Dokument:** Paper als Images
-- **Anzahl Seiten:** 16 Seiten als Images
+- **Dokumente:** Paper-PDFs aus ArXiv (Abgelegt in **Odyss.AI.Backend.LLM/Paper**)
+- **Anzahl Dokumente:** 19
+- **Themen der Dokumente**: Mathematik, Informatik (Machine Learning)
 
 ## Vergleichskriterien (Fall 2)
 
-
-| Kriterium                                        | Tesseract | Paddle     | Nougat   |
-| -------------------------------------------------- | ----------- | ------------ | ---------- |
+| Kriterium                                              | Tesseract | Paddle     | Nougat   |
+| ------------------------------------------------------ | --------- | ---------- | -------- |
 | **Verarbeitungszeit (min)**                      | 0:30      | 0:22       | 14:30    |
 | **Formatierung (ja/nein)**                       | ja        | nein       | ja       |
-| **Fehlerrate (%)**                               | 6.26      | 9.24       | 23.04    |
 | **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut       | gut/mittel | schlecht |
 | **Sonderzeichen/Formeln (%)**                    |           |            |          |
-| **Ähnlichkeitsrate (%)**                        | 85.90     | 61.25      | 72.44    |
 
 ## Ergebnisse im Detail (Seite 1, Fall 2)
 
@@ -385,37 +414,37 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 Diese Analyse hilft, die Stärken und Schwächen der einzelnen OCR-Technologien zu bewerten und zeigt, dass die Wahl der passenden Lösung vom spezifischen Anwendungsfall abhängt.
 
-## Ausführen der DocumentOCRResults-Klasse
+## Ausführen der DocumentOCRResults2-Klasse
 
-Um die `DocumentOCRResults`-Klasse auszuführen, folge diesen Schritten:
+Um die `DocumentOCRResults2`-Klasse auszuführen, folge diesen Schritten:
 
 ### Wechsle zum richtigen Verzeichnis:
 
-Wechsle in das Verzeichnis, in dem sich die Datei `DocumentOCRResults.py` befindet. In diesem Fall ist das Verzeichnis:
+Wechsle in das Verzeichnis, in dem sich die Datei `DocumentOCRResults2.py` befindet. In diesem Fall ist das Verzeichnis:
 
 Du kannst dies im Terminal mit folgendem Befehl tun:
 
 ```bash
 cd Odyss.AI.Backend.OCR
 
-python -m app.service.DocumentOCRResults
+python -m app.service.DocumentOCRResults2
 ```
 
 ---
 
 ## To Do
 
-* **Datensatz-Erstellung:**
-  * Ziel: Die OCRs sollen auf einem umfangreichen Datensatz getestet werden, um ein realitätsnahes Szenario (z. B. wissenschaftliche Arbeiten oder Skripte) abzubilden.
-  * Aktueller Stand: Es wurde bislang kein passender Datensatz gefunden, der unser Szenario widerspiegelt.
-  * Nächste Schritte:
-    * Einen eigenen Datensatz erstellen oder geeignete Quellen identifizieren, die wissenschaftliche Arbeiten bzw. Skripte beinhalten.
-    * Den erstellten Datensatz in die Testumgebung integrieren und die OCR-Engines darauf anwenden.
-* **Formelerkennung:**
-  * Ziel: Formeln sollen direkt aus kompletten Dokumenten extrahiert werden können.
-  * Aktueller Stand:
-    * Die einzige gefundene Open-Source-Lösung (`LaTeX-OCR` – [GitHub-Link](https://github.com/lukas-blecher/LaTeX-OCR)) funktioniert nur, wenn die Formel isoliert vorliegt.
-    * Es gibt zwar weitere Programme zur Formelerkennung aus Dokumenten, diese sind jedoch nicht Open Source.
-  * Nächste Schritte:
-    * Eine eigene Lösung zur Extraktion von Formeln aus vollständigen Dokumenten entwickeln oder bestehende Ansätze erweitern.
-    * Mögliche Ansätze evaluieren und in das bestehende System integrieren.
+* **Datensatz-Erweiterung:**
+
+  * Die OCRs wurden anhand von 19 Dokumenten verglichen. Erste Ergebnisse liegen vor, jedoch noch nicht detailliert. Optional kann die Analyse erweitert und umfassender getestet werden.
+* **Formelerkennung:** Ziel: Formeln sollen direkt aus vollständigen Dokumenten extrahiert werden können.
+* Aktueller Stand:
+
+  * Die einzige bisher getestete Open-Source-Lösung (LaTeX-OCR – [GitHub-Link](https://github.com/lukas-blecher/LaTeX-OCR)) funktioniert nur, wenn die Formel isoliert vorliegt.
+  * Es gibt weitere Programme zur Formelerkennung aus Dokumenten, diese sind jedoch nicht Open Source.
+  * Nougat bietet ebenfalls eine Möglichkeit zur Extraktion von Formeln aus vollständigen Dokumenten. Dies befindet sich jedoch noch in der **Initial-Phase** und muss getestet werden.
+* Nächste Schritte:
+
+  * Nougat auf seine Fähigkeit zur Formelerkennung testen und evaluieren.
+  * Eine eigene Lösung zur Extraktion von Formeln aus vollständigen Dokumenten entwickeln oder bestehende Ansätze erweitern.
+  * Erfolgreiche Methoden in das bestehende System integrieren.
