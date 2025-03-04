@@ -1,6 +1,8 @@
 # Odyss.AI ![Logo](odyss_logo.png)
 Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu deren Inhalten. Mithilfe von Mistral und Pixtral werden relevante Informationen extrahiert und verständlich aufbereitet.
 
+#### Zu Odyss.AI (Uni-VPN): http://141.75.150.74
+
 ### ✨ Funktionen
 - 📂 Dokumente hochladen (PDF, DOCX, PPX usw.)
 - 🤖 Fragen zu den Dokumenten stellen
@@ -16,13 +18,48 @@ Odyss.AI ermöglicht das Hochladen von Dokumenten und das Stellen von Fragen zu 
 ## Übersicht🥽
 ![Übersicht Architektur Odyss.AI](odyss_overview.png)
 
-## Installation⚙️
+### Text Embedding Inference (TEI)
+- Model: XLM-RoBERTa --> https://hf.co/intfloat/multilingual-e5-large-instruct
+- Batchsize: 7/8 (max)
+- Tokens per chunk: 500/512 (max)
+- Embedding Dimesion: 1024
+
+### MongoDB
+- User: odyss
+- Passwort: odyss1
+
+### Ports:
+- Frontend: 80
+- Backend: 443
+- OCR: 5050
+- ImageTagger: 5150
+- MongoDB: 27017
+- QDrant: 6333
+- TEI: 8080
+
+### Deployment:
+Aktuell wird eine Ubuntu VM auf dem Uni Server verwendet. Bei Push auf dev-Branch wird per Workflow mithilfe von Docker Compose alle Services auf der VM deployed.
+
+## Installation (Lokales Debugging)⚙️
 ### Installation VMware 
 https://support.broadcom.com/group/ecx/productdownloads?subfamily=VMware+Workstation+Pro
 
+### Nutze vorbereitete VM:
+
+#### Lade die VM unter folgenden Link herunter: https://technischehochschulen.sharepoint.com/:f:/s/ITProjektML/EjC_i8xo09lNiDksOgHPKUABv0gYrsBETuw8B6bp4vrtzg?e=pK1Ot1
+
+#### Füge die VM in VMware hinzu und starte diese
+- Benutzername: Odyss
+- Passwort: odyss
+- Branch dev-local als Beispiel für lokales debugging, bei anderem Branch -> (Backend) In config.py env auf linux stetzen, Port auf 8443 o.ä. (443 ist geblockt) (Frontend) Passe URL in utils.js und useWebsocket.jsx entsprechend an für Verbindung mit Backend
+- Einstellung für Debugging der Services in launch.json vorbereitet
+
 ### Setup neue Virtual Machine
+
 #### Erstelle eine neue VM mit Ubuntu Linux (downloade die entsprechende ISO Datei)
+
 #### Installiere Git: sudo apt install git
+
 #### 🐳 Docker und Docker Compose auf Ubuntu installieren
 - 1.1 Paketliste aktualisieren und Abhängigkeiten installieren
 ```bash
@@ -150,108 +187,13 @@ sudo apt install npm
 npm install
 ```
 
-### Nutze VM mit allen vorherigen Einstellungen vorbereitet
-- Ziehe VM von:
-- Öffne VMware und füge die VM hinzu
-- Starte die VM, dort ist das komplette Projekt vorhanden auf dem dev-local Branch. Es gibt eine launch.json für debugging der Services. Beachte das die Ports für Backend geändert wurde. Entsprechend müssen in OCR, LLM und Frontend (utils.js) geändert werden. Auf dev-local ist das bereits umgestellt, reiner debugging Branch.
-
-### Nutze Docker Compose
-Mithilfe von Docker Compose können alle Services einfach hochgefahren werden. Deployment auf den Uni Server genau damit durchgeführt.
-
-### Github Runner
-Zum besseren Debugging wurde ein Github Runner auf der VM installiert. Dieser wird aktiv sobald eine änderung an dem dev Branch festgestellt wurde. Nach einer Änderung des dev Branches führt der Runner folgende Schritte aus:
-          cd /var/opt/Odyss.AI
-          sudo git pull origin dev
-          sudo docker-compose down
-          sudo docker-compose build
-          sudo docker-compose up -d
-
-Die deploy.yml ist in dem .github/workflows ordner zu finden.
-Nachfolgend wird die installation des Runners erklärt.
-
-### GitHub Repository konfigurieren
-
-1. **Repository erstellen**
-  - Erstelle ein neues Repository auf GitHub oder nutze ein bestehendes Repository.
-
-2. **GitHub Runner Token generieren**
-  - Gehe zu den Einstellungen deines Repositorys.
-  - Navigiere zu `Settings` > `Actions` > `Runners` > `New self-hosted runner`.
-  - Wähle das Betriebssystem und die Architektur aus und klicke auf `Generate new token`.
-
-3. **Runner konfigurieren**
-  - Folge den Anweisungen auf der GitHub-Seite, um den Runner zu konfigurieren. Nutze den generierten Token bei der Konfiguration.
-
-4. **Workflow-Datei erstellen**
-  - Erstelle eine neue Datei `.github/workflows/deploy.yml` in deinem Repository mit folgendem Inhalt:
-  ```yaml
-name: Deploy with Docker
-
-on:
-  push:
-    branches:
-      - dev
-
-jobs:
-  deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory /var/opt/Odyss.AI
-
-      - name: Deploy with Docker
-        run: |
-          cd /var/opt/Odyss.AI
-          sudo git pull origin dev
-          sudo docker-compose down
-          sudo docker-compose build
-          sudo docker-compose up -d
-  ```
-
-5. **Workflow aktivieren**
-  - Sobald du Änderungen an den `dev` Branch pushst, wird der GitHub Runner den Workflow ausführen und die neuesten Änderungen auf der VM deployen.
-
-Der GitHub Runner ist nun konfiguriert und wird automatisch aktiviert, wenn Änderungen an deinem Repository vorgenommen werden. 🚀
-
-### GitHub Runner installieren
-
-1. **GitHub Runner herunterladen**
-  - Lade die neueste Version des GitHub Runners herunter:
-  ```bash
-  mkdir actions-runner && cd actions-runner
-  curl -o actions-runner-linux-x64-2.303.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.303.0/actions-runner-linux-x64-2.303.0.tar.gz
-  tar xzf ./actions-runner-linux-x64-2.303.0.tar.gz
-  ```
-
-2. **Abhängigkeiten installieren**
-  - Stelle sicher, dass die notwendigen Abhängigkeiten installiert sind:
-  ```bash
-  sudo apt-get install -y libicu-dev libkrb5-dev
-  ```
-
-3. **Runner konfigurieren**
-  - Konfiguriere den Runner mit deinem Repository:
-  ```bash
-  ./config.sh --url https://github.com/USERNAME/REPOSITORY --token YOUR_TOKEN
-  ```
-
-4. **Runner als Dienst installieren**
-  - Installiere und starte den Runner als Dienst:
-  ```bash
-  sudo ./svc.sh install
-  sudo ./svc.sh start
-  ```
-
-5. **Überprüfung**
-  - Überprüfe, ob der Runner erfolgreich installiert und gestartet wurde:
-  ```bash
-  sudo ./svc.sh status
-  ```
-
-Der GitHub Runner sollte nun auf deiner VM installiert und einsatzbereit sein. 🚀
-
 ## ToDos🎯
-- Darstellung der hochgeladenen Dokumente nach erneuten einloggen
+- Darstellung der hochgeladenen Dokumente nach erneuten einloggen (werden nicht angezeigt, in der DB weiterhin hinterlegt, also chatten mit Dokumenten trotzdem möglich)
 - Finaler Dokumentenspeicher finden
-- Leere Textliste von OCR zurückgegeben
-- TEI Embeddings Tokenoverlow
+- Performanceoptimierung bei Bildauswertung (Pixtral) und Zusammenfassung (Mixtral) -> Vermeidung mehrmaliges öffnen des SSH Tunnels wegen Batching
+- Logausgabe funktioniert nicht in der Konsole (aktuell mit Prints gelöst)
+- Optimierung UI/UX Design
+- Authentifizierung durch z.B. Uni Credentials
+- Formeln korrekt aus Dokumentauslesen
+- Ausführliche Tests durchführen
+- Code weiter aufräumen und optimieren
