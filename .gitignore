@@ -127,4 +127,7 @@ Odyss.AI.Backend.OCR/app/service/dataset_root/
 Odyss.AI.Backend.LLM/poppler-24.08.0/
 Odyss.AI.Backend.LLM/IMG/
 
+# Ignoriere nougat_txt_extraction ordner
+/nougat_txt_extraction/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,flask
