@@ -14,44 +14,50 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
 
 ## Inhaltsverzeichnis
 
-* [Überblick](#Überblick)
+* [Überblick](#überblick)
 * [Projektstruktur](#projektstruktur)
 * [Dataset](#dataset)
+
+  * [1. Herunterladen der Paper von arXiv](#1-herunterladen-der-paper-von-arxiv)
+  * [2. Umwandlung von LaTeX in HTML](#2-umwandlung-von-latex-in-html)
+  * [3. Ordnerstruktur des Datasets](#3-ordnerstruktur-des-datasets)
+  * [4. Nutzung des Datasets](#4-nutzung-des-datasets)
 * [Funktionsweise und Ablauf](#funktionsweise-und-ablauf)
 
   * [OCR-Engines](#ocr-engines)
   * [PDF-Verarbeitung und Datenextraktion](#pdf-verarbeitung-und-datenextraktion)
   * [Textextraktion &amp; Chunking](#textextraktion--chunking)
-* [Installation und Setup](#installation-und-setup)
 * [Ausführung und Nutzung](#ausführung-und-nutzung)
-* [Hinweise und Erweiterungsmöglichkeiten](#hinweise-und-erweiterungsmöglichkeiten)
+* [Hinweise](#hinweise)
 * [OCR Vergleich: Tesseract vs. Paddle vs. Nougat](#ocr-vergleich-tesseract-vs-paddle-vs-nougat)
 
-- [Einleitung](#einleitung)
-- [Allgemeine Informationen (Fall 1)](#allgemeine-informationen-fall-1)
-- [Vergleichskriterien (Fall 1)](#vergleichskriterien-fall-1)
-- [Kriteriumserklärungen](#kriteriumserklarungen)
-- [Ergebnisse im Detail (Seite 1, Fall 1)](#ergebnisse-im-detail-seite-1-fall-1)
+  * [Einleitung](#einleitung)
+  * [Allgemeine Informationen (Allgemeiner Vergleich)](#allgemeine-informationen-allgemeiner-vergleich)
+  * [Vergleichskriterien](#vergleichskriterien)
+  * [Kriteriumserklärungen](#kriteriumserklärungen)
+  * [Ergebnisse im Detail (Seite 1)](#ergebnisse-im-detail-seite-1)
+    * [Tesseract](#tesseract)
+    * [PaddleOCR](#paddleocr)
+    * [Nougat](#nougat)
+  * [Evaluation der OCR-Ergebnisse](#evaluation-der-ocr-ergebnisse)
+    * [Übersicht der durchschnittlichen Metriken](#übersicht-der-durchschnittlichen-metriken)
+    * [Interpretation der Ergebnisse](#interpretation-der-ergebnisse)
+    * [Einschränkungen der Ergebnisse](#einschränkungen-der-ergebnisse)
+    * [Fazit](#fazit)
+  * [Fehleranalyse](#fehleranalyse)
+    * [Häufigste Fehlerarten](#häufigste-fehlerarten)
+    * [Vergleich der Fehlerhäufigkeit](#vergleich-der-fehlerhäufigkeit)
+    * [Zusammenfassung](#zusammenfassung)
+* [Ausführen der DocumentOCRResults2-Klasse](#ausführen-der-documentocrresults2-klasse)
 
-  - [Tesseract](#tesseract)
-  - [Paddle](#paddle)
-  - [Nougat](#nougat)
-- [Allgemeine Informationen (Fall 2)](#allgemeine-informationen-fall-2)
-- [Vergleichskriterien (Fall 2)](#vergleichskriterien-fall-2)
-- [Ergebnisse im Detail (Seite 1, Fall 2)](#ergebnisse-im-detail-seite-1-fall-2)
+  * [Wechsle zum richtigen Verzeichnis](#wechsle-zum-richtigen-verzeichnis)
+* [Formelerkennung mit Nougat](#formelerkennung-mit-nougat)
 
-  - [Tesseract](#tesseract-1)
-  - [Paddle](#paddle-1)
-  - [Nougat](#nougat-1)
-- [Zusammenfassung der Ergebnisse](#zusammenfassung-der-ergebnisse)
-- [Fehleranalyse](#fehleranalyse)
-
-  - [Häufigste Fehlerarten](#haeufigste-fehlerarten)
-  - [Vergleich der Fehlerhäufigkeit](#vergleich-der-fehlerhaeufigkeit)
-- [Ausführen der DocumentOCRResults-Klasse](#ausfuehren-der-documentocrresults-klasse)
-
-  - [Wechsle zum richtigen Verzeichnis:](#wechsle-zum-richtigen-verzeichnis)
-- [To Do](#To-Do)
+  * [Nougat als einziges OCR mit Formelerkennung](#nougat-als-einziges-ocr-mit-formelerkennung)
+  * [Evaluierungsmethode](#evaluierungsmethode)
+  * [Ergebnisse der Formelerkennung](#ergebnisse-der-formelerkennung)
+* [To Do
+  ](#to-do)
 
 ---
 
@@ -87,12 +93,16 @@ Odyss.AI.Backend.OCR/         # Hauptordner
 │   │   ├── __init__.py
 │   │   └── routes.py
 │   │
-│   ├── service/              # OCR-Services und Hilfsklassen
-|   |   ├── dataset_root      # test-dataset ist im git-ignore
-│   │   ├── results	      # Ergebnis von DocumentOCRResults abgespeichert
-│   │   ├── results2	      # Ergebnis von DocumentOCRResults2 abgespeichert, mit txts der OCRs und Ground_truth
+│   ├── service/                 # OCR-Services und Hilfsklassen
+|   |   ├── dataset_root         # test-dataset ist im git-ignore
+│   │   ├── results	         # Ergebnis von DocumentOCRResults abgespeichert
+│   │   ├── results2	      	 # Ergebnis von DocumentOCRResults2 abgespeichert, mit txts der OCRs und Ground_truth
+│   │   ├── results3_clean_text	 # Ergebnis von DocumentOCRResults3 abgespeichert, mit txts der OCRs und Ground_truth (Mit Nougat txt vorher ausgeführt, aber andere Ergebnisse)
+│   │   ├── results4_raw_text	 # Test wie Ergebnisse ohne Bereinigung abschneiden
+│   │   ├── results5	      	 # Ergebnis von neuer DocumentOCRResults2 abgespeichert, mit txts der OCRs und Ground_truth (Endergebnis)
 │   │   ├── DocumentOCRResults.py # Veralteter Code zum Vergleichen (Initial)
 │   │   ├── DocumentOCRResults2.py # Neuer Code zum Vergleichen
+│   │   ├── DocumentOCRResults3.py # Nur für den Fall results3_clean_text (txt von Nougat vorher extrahiert, andere Ergebnisse)
 │   │   ├── nougatocr.py
 │   │   ├── paddleocr.py
 │   │   ├── StoppingCriteriaScores.py  # Hilfsklasse für Nougat (custom stopping criteria)
@@ -112,7 +122,6 @@ Odyss.AI.Backend.OCR/         # Hauptordner
 ```
 
 ---
-
 
 ## Dataset
 
@@ -157,7 +166,6 @@ Jede Datei wird in den entsprechenden Ordner eingefügt:
 Der generierte Datensatz kann für Tests, Trainingszwecke oder Vergleiche zwischen OCR-Engines verwendet werden. Die strukturierte HTML-Variante erleichtert insbesondere den Vergleich mit den extrahierten Texten aus den PDFs.
 
 ---
-
 
 ## Funktionsweise und Ablauf
 
@@ -277,16 +285,15 @@ Um lange Texte handhabbar zu machen, wird der gesamte extrahierte Text in kleine
 In diesem Dokument vergleichen wir drei OCR-Technologien: Tesseract, Paddle und Nougat. Ziel ist es, ihre Leistungsfähigkeit hinsichtlich Textgenauigkeit, Verarbeitungszeit, Benutzerfreundlichkeit und weitere Kriterien zu bewerten. Wir testen mit diesem Dokument [arXiv:2401.00908](https://arxiv.org/abs/2401.00908) :
 
 1. (Allgemeiner Vergleich)
-2. (Intensiver Vergleich)
 
 Die folgenden Kriterien werden zur Bewertung herangezogen.
 
-## Allgemeine Informationen (Fall 1: Allgemeiner Vergleich)
+## Allgemeine Informationen (Allgemeiner Vergleich)
 
 - **Dokument:** Paper (normales Dokument)
 - **Anzahl Seiten:** 16 Seiten
 
-## Vergleichskriterien (Fall 1)
+## Vergleichskriterien
 
 | Kriterium                                              | Tesseract   | PaddleOCR   | Nougat      |
 | :----------------------------------------------------- | ----------- | ----------- | ----------- |
@@ -308,7 +315,7 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 - **Benutzerfreundlichkeit (gut/mittel/schlecht)** Beschreibt, wie einfach es ist, mit der OCR-Engine zu arbeiten. Eine benutzerfreundliche Lösung ist einfach zu bedienen, gut dokumentiert und benötigt wenig Eingriff vom Benutzer.
 - **Sonderzeichen/Formeln (%)** Misst die Fähigkeit der OCR-Engine, Sonderzeichen oder mathematische Formeln korrekt zu erkennen. Besonders wichtig für technische oder wissenschaftliche Dokumente, die solche Symbole enthalten.
 
-## Ergebnisse im Detail (Seite 1, Fall 1)
+## Ergebnisse im Detail (Seite 1)
 
 ### Tesseract
 
@@ -325,36 +332,77 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 - **Texterkennung**: "\n\n# DocLLM: A layout-aware generative language model for multimodal document understanding\n\nDongsheng Wang\n\nThese authors contributed equally to this work.\n\nNatraj Raman\n\nThis work was supported by the National Science Foundation of China (No. 116731002) and the National Science Foundation of China (No. 116731002).\n\nMathieu Sibue1\n\nZhiqiang Ma\n\nPetr Babkin\n\nSmerjot Kaur\n\nYulong Pei\n\nArmineh Nourbakhsh\n\nXiaomo Liu\n\nJPMorgan AI Research\n\n{first.last}@jpmchase.com\n\nFootnote 1: footnotemark:\n\n###### Abstract\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records, often carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered by their complex layouts play a crucial role in comprehending these documents effectively. In this paper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for reasoning over visual documents, taking into account both textual semantics and spatial layout. Our model differs from existing multimodal LLMs by avoiding expensive image encoders and focuses exclusively on bounding box information to incorporate the spatial layout structure. Specifically, the cross-alignment between text and spatial modalities is captured by decomposing the attention mechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a pre-training objective that learns to infill text segments. This approach allows us to address irregular layouts and heterogeneous content frequently encountered in visual documents. The pre-trained model is fine-tuned using a large-scale instruction dataset, covering four core document intelligence tasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all tasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nDocAI \\(\\cdot\\) VRDU \\(\\cdot\\) LLM \\(\\cdot\\) GPT \\(\\cdot\\) Spatial Attention\n\n## 1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion of enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [1], which has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts, bespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has made tremendous progress in various tasks including extraction, classification and question answering, there remains a significant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and generalization to previously unseen domains continues to be a challenge [2].\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being critical to understanding the documents. It requires solutions distinct from conventional large language models such as GPT-3.5 [3], Llama [4], Falcon [5] or PaLM [6] that primarily accept text-only inputs and assume that the documents exhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous vision-language frameworks [7] that can process documents as images and capture the interactions between textual and visual modalities are available. However, these frameworks necessitate the use of complex vision backbone architectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual signal [10][11].\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form understanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is"
 - **Bilderkennung:** "\n\n**OCRed Document**\n\nText tokens + Bounding boxes\n\nDisentangled Spatial Attention\n\n**Pre-training**\n\n**Instruction Tuning**\n\n**Closing the number of tokens + Bounding boxes\n\n**OCRed Document**\n\n**Text tokens + Bounding boxes**\n\nDisentangled Spatial Attention\n\n**OCRed Document**\n"
 
-## Allgemeine Informationen (Fall 2: Intensiver Vergleich)
+## Evaluation der OCR-Ergebnisse
 
-- **Dokumente:** Paper-PDFs aus ArXiv (Abgelegt in **Odyss.AI.Backend.LLM/Paper**)
-- **Anzahl Dokumente:** 19
-- **Themen der Dokumente**: Mathematik, Informatik (Machine Learning)
+### Übersicht der durchschnittlichen Metriken
 
-## Vergleichskriterien (Fall 2)
+Die nachfolgende Tabelle fasst die durchschnittlichen Metriken für die OCR-Engines **Tesseract**, **PaddleOCR** und **Nougat** zusammen, basierend auf 19 wissenschaftlichen ArXiv-Papers.
 
-| Kriterium                                              | Tesseract | Paddle     | Nougat   |
-| ------------------------------------------------------ | --------- | ---------- | -------- |
-| **Verarbeitungszeit (min)**                      | 0:30      | 0:22       | 14:30    |
-| **Formatierung (ja/nein)**                       | ja        | nein       | ja       |
-| **Benutzerfreundlichkeit (gut/mittel/schlecht)** | gut       | gut/mittel | schlecht |
-| **Sonderzeichen/Formeln (%)**                    |           |            |          |
+| Metrik                           | Tesseract | PaddleOCR | Nougat   |
+| -------------------------------- | --------- | --------- | -------- |
+| **Levenshtein Distance**   | 14959.16  | 31269.63  | 14026.26 |
+| **Normalized Levenshtein** | 0.2892    | 0.5848    | 0.2567   |
+| **Char Error Rate (%)**    | 28.92     | 58.48     | 25.67    |
+| **Word Error Rate (%)**    | 35.31     | 69.86     | 29.78    |
+| **Similarity Ratio (%)**   | 44.93     | 25.80     | 50.03    |
+| **Jaccard Similarity (%)** | 67.17     | 60.04     | 74.04    |
+| **Cosine Similarity (%)**  | 91.58     | 91.09     | 89.03    |
+| **Precision (%)**          | 86.75     | 87.06     | 90.88    |
+| **Recall (%)**             | 96.15     | 93.02     | 94.67    |
+| **F1-Score (%)**           | 91.06     | 89.82     | 92.64    |
+| **Processing Time (s)**    | 29.76     | 67.25     | 895.09   |
 
-## Ergebnisse im Detail (Seite 1, Fall 2)
+---
 
-### Tesseract
+### Interpretation der Ergebnisse
 
-- **Bilderkennung**: "401.00908v1 [cs.CL] 31 Dec 2023\n\nDOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\n\nDongsheng Wang”, Natraj Raman*, Mathieu Sibue*\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\nJPMorgan Al Research\n{first .last}@jpmchase.com\n\nABSTRACT\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records,\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nPaper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically,\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nKeywords DocAl- VRDU - LLM - GPT - Spatial Attention\n\n1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [I],\nwhich has spurred the development of Al-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [3], Llama [4], Falcon [5]] or PaLM [6] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [[71|8]] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal (70,(11).\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n\n“These authors contributed equally to this work.\n"
+1. **Genauigkeit & Fehlerquoten**
 
-### Paddle
+   - *Nougat* hat die geringste **Character Error Rate (CER)** mit 25.67% und eine bessere **Word Error Rate (WER)** als Tesseract und PaddleOCR.
+   - *PaddleOCR* zeigt mit einer **CER von 58.48%** und einer **WER von 69.86%** die schlechteste Genauigkeit.
+   - *Tesseract* liegt in der Mitte, aber mit einem **Similarity Ratio von 44.93%** hinter Nougat.
+2. **Ähnlichkeit zu Ground Truth**
 
-- **Bilderkennung:** "DOCLLM: A LAYOUT-AWARE GENERATIVE LANGUAGE MODEL\nFOR MULTIMODAL DOCUMENT UNDERSTANDING\nDongsheng Wang*, Natraj Raman\", Mathieu Sibue\nZhiqiang Ma, Petr Babkin, Simerjot Kaur, Yulong Pei, Armineh Nourbakhsh, Xiaomo Liu\n JPMorgan AI Research\n 2023\n{first.last}@jpmchase.com\nDec '\nABSTRACT\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records.\noften carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered\nby their complex layouts play a crucial role in comprehending these documents effectively. In this\nreasoning over visual documents, taking into account both textual semantics and spatial layout. Our\nmodel differs from existing multimodal LLMs by avoiding expensive image encoders and focuses\nexclusively on bounding box information to incorporate the spatial layout structure. Specifically.\nthe cross-alignment between text and spatial modalities is captured by decomposing the attention\nmechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a\npre-training objective that learns to infill text segments. This approach allows us to address irregular\n00908v1\nlayouts and heterogeneous content frequently encountered in visual documents. The pre-trained\nmodel is fine-tuned using a large-scale instruction dataset, covering four core document intelligence\ntasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all\ntasks, and generalizes well to 4 out of 5 previously unseen datasets.\nKeywords DocAI - VRDU - LLM - GPT - Spatial Attention\n1\n Introduction\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion\nof enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [].\nwhich has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts,\nbespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAIl) has\nmade tremendous progress in various tasks including extraction, classification and question answering, there remains a\nsignificant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and\ngeneralization to previously unseen domains continues to be a challenge [2].\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being\ncritical to understanding the documents. It requires solutions distinct from conventional large language models such as\nGPT-3.5 [l, Llama [41, Falcon [ll or PaLM [] that primarily accept text-only inputs and assume that the documents\nexhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous\nvision-language frameworks [7] that can process documents as images and capture the interactions between textual\nand visual modalities are available. However, these frameworks necessitate the use of complex vision backbone\narchitectures [] to encode image information, and they often make use of spatial information as an auxiliary contextual\nsignal [L0 I].\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form\nunderstanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is\n* These authors contributed equally to this work"
+   - Die **Cosine Similarity** liegt für alle Engines nahe bei 90%, was auf eine ähnliche Wortwahl hindeutet.
+   - Die **Jaccard Similarity** ist bei *Nougat* mit 74.04% am höchsten, gefolgt von *Tesseract* mit 67.17%.
+3. **Präzision & Recall**
 
-### Nougat
+   - *Nougat* hat den höchsten **Precision-Wert (90.88%)**, gefolgt von *Tesseract* (86.75%).
+   - Die **Recall-Werte** zeigen, dass *Tesseract* (96.15%) mehr richtige Zeichen erkennt als PaddleOCR (93.02%) und Nougat (94.67%).
+4. **Verarbeitungszeit**
 
-- **Bilderkennung:** "\n\n# DocLLM: A layout-aware generative language model for multimodal document understanding\n\nDongsheng Wang\n\nThese authors contributed equally to this work.\n\nNatraj Raman\n\nThis work was supported by the National Science Foundation of China (No. 116731002) and the National Science Foundation of China (No. 116731002).\n\nMathieu Sibue1\n\nZhiqiang Ma\n\nPetr Babkin\n\nSmerjot Kaur\n\nYulong Pei\n\nArmineh Nourbakhsh\n\nXiaomo Liu\n\nJPMorgan AI Research\n\n{first.last}@jpmchase.com\n\nFootnote 1: footnotemark:\n\n###### Abstract\n\nEnterprise documents such as forms, invoices, receipts, reports, contracts, and other similar records, often carry rich semantics at the intersection of textual and spatial modalities. The visual cues offered by their complex layouts play a crucial role in comprehending these documents effectively. In this paper, we present DocLLM, a lightweight extension to traditional large language models (LLMs) for reasoning over visual documents, taking into account both textual semantics and spatial layout. Our model differs from existing multimodal LLMs by avoiding expensive image encoders and focuses exclusively on bounding box information to incorporate the spatial layout structure. Specifically, the cross-alignment between text and spatial modalities is captured by decomposing the attention mechanism in classical transformers to a set of disentangled matrices. Furthermore, we devise a pre-training objective that learns to infill text segments. This approach allows us to address irregular layouts and heterogeneous content frequently encountered in visual documents. The pre-trained model is fine-tuned using a large-scale instruction dataset, covering four core document intelligence tasks. We demonstrate that our solution outperforms SotA LLMs on 14 out of 16 datasets across all tasks, and generalizes well to 4 out of 5 previously unseen datasets.\n\nDocAI \\(\\cdot\\) VRDU \\(\\cdot\\) LLM \\(\\cdot\\) GPT \\(\\cdot\\) Spatial Attention\n\n## 1 Introduction\n\nDocuments with rich layouts, including invoices, receipts, contracts, orders, and forms, constitute a significant portion of enterprise corpora. The automatic interpretation and analysis of these documents offer considerable advantages [1], which has spurred the development of AI-driven solutions. These visually rich documents feature complex layouts, bespoke type-setting, and often exhibit variations in templates, formats and quality. Although Document AI (DocAI) has made tremendous progress in various tasks including extraction, classification and question answering, there remains a significant performance gap in real-world applications. In particular, accuracy, reliability, contextual understanding and generalization to previously unseen domains continues to be a challenge [2].\n\nDocument intelligence is inherently a multi-modal problem with both the text content and visual layout cues being critical to understanding the documents. It requires solutions distinct from conventional large language models such as GPT-3.5 [3], Llama [4], Falcon [5] or PaLM [6] that primarily accept text-only inputs and assume that the documents exhibit simple layouts and uniform formatting, which may not be suitable for handling visual documents. Numerous vision-language frameworks [7] that can process documents as images and capture the interactions between textual and visual modalities are available. However, these frameworks necessitate the use of complex vision backbone architectures [9] to encode image information, and they often make use of spatial information as an auxiliary contextual signal [10][11].\n\nIn this paper we present DocLLM, a light-weight extension to standard LLMs that excels in several visually rich form understanding tasks. Unlike traditional LLMs, it models both spatial layouts and text semantics, and therefore is"
+   - *Tesseract* und *PaddleOCR* haben eine schnelle Verarbeitung (ca. 30-67 Sekunden pro Dokument).
+   - *Nougat* benötigt mit **895 Sekunden (ca. 15 Minuten)** signifikant mehr Zeit (Auf CPU getestet).
 
-## Zusammenfassung der Ergebnisse
+## **Einschränkungen der Ergebnisse**
+
+Die OCR-Ergebnisse sind mit **Vorsicht** zu interpretieren, da die unterschiedlichen Engines die Dokumente auf verschiedene Weise verarbeiten. Insbesondere gibt es eine **Diskrepanz zwischen den Fehlerquoten (WER/CER) und den hohen Precision-, Recall- und F1-Werten**. Dies kann auf verschiedene Faktoren zurückgeführt werden:
+
+- **Unterschiedliche Fehlerkategorien:**
+
+  - WER & CER berücksichtigen **jeden einzelnen Zeichen-/Wortfehler**, unabhängig davon, ob der Rest des Wortes richtig ist.
+  - Precision, Recall und F1-Score können hoch sein, selbst wenn viele kleine Fehler auftreten.
+- **Formatierungsunterschiede:**
+
+  - OCR-Engines wie *Nougat* rekonstruieren wissenschaftliche Paper oft mit besserer Formatierung, was Fehlerquoten senkt.
+  - *PaddleOCR* zeigt hingegen eine höhere Fehlerquote aufgrund häufiger Zeilenumbrüche und Ersetzungsfehler.
+- **Vergleichbarkeit der Systeme:**
+
+  - Die Ergebnisse sind **vor allem im Verhältnis zueinander sinnvoll**, weniger als absolute Qualitätsmetrik.
+  - *Nougat* zeigt klar die beste Leistung, insbesondere weil es auf wissenschaftlichen Papern trainiert wurde – ein Vorteil für unseren Anwendungsfall.
+
+![OCR_zu_Nougat](image\OCR\OCR_zu_Nougat.png)
+
+---
+
+### Fazit
+
+- **Beste Genauigkeit:** *Nougat* liefert die genauesten Ergebnisse mit den geringsten Fehlerquoten, besonders bei der Zeichen- und Worterkennung.
+- **Schnellste Verarbeitung:** *Tesseract* bietet eine solide Balance zwischen Genauigkeit und Geschwindigkeit.
+- **Schlechteste Leistung:** *PaddleOCR* zeigt eine hohe Fehlerquote und schlechte Ähnlichkeitswerte zur Ground Truth, ist aber vergleichsweise schnell.
+
+**Empfehlung:**
+Falls **Genauigkeit** entscheidend ist, sollte *Nougat* verwendet werden. Wenn **Geschwindigkeit** eine größere Rolle spielt, bietet *Tesseract* ein gutes Gleichgewicht. *PaddleOCR* ist weniger geeignet für wissenschaftliche Dokumente, da es eine hohe Fehlerquote aufweist.
 
 - **Tesseract:** Sehr gut für Standard-Textextraktion, unterstützt viele Sprachen, jedoch probleme bei komplexeren Layouts oder Dokumenten mi tspeziellenFormatierungen und Handwriting
 - **Paddle:** Bietet herausragende Performance bei der Erkennung von Text aus Bildern mit komplexen Layouts und liefert gute Ergebnisse bei handschriftlichen und gemischten Dokumenten, jedoch etwas ressourcenintensiv und benötigt mehr Rechenleistung
@@ -362,57 +410,50 @@ Die folgenden Kriterien werden zur Bewertung herangezogen.
 
 ## Fehleranalyse
 
-### Häufigste Fehlerarten
+### **Häufigste Fehlerarten**
 
 - **Tesseract:**
 
   - **Zeichenfehler:**
-    - Falsche Erkennung von Zeichen, z. B. wird „JPMorgan AI Research“ teilweise als „JPMorgan Al Research“ ausgegeben.
-    - Verwechslungen bei Sonderzeichen wie Anführungszeichen (z. B. „Dongsheng Wang”“).
-  - **Interpunktions- und Formatierungsfehler:**
-    - Unregelmäßigkeiten bei Klammer- und Zitationszeichen (z. B. fehlerhafte Erkennung von eckigen Klammern, wie in „Falcon [5]]“).
-  - **Layout-Inkonsistenzen:**
-    - Teilweise fehlerhafte Trennung und Anordnung von Textabschnitten.
+    - Typische OCR-Fehler, z. B. „JPMorgan AI Research“ wird zu „JPMorgan Al Research“.
+    - Falsche Erkennung von Sonderzeichen (z. B. „Falcon [5]]“ statt „Falcon [5]“).
+  - **Formatierungsprobleme:**
+    - Unregelmäßigkeiten bei Klammern, Zitaten und Leerzeichen.
+    - Einzelne Absätze sind teilweise **nicht klar getrennt**.
 - **PaddleOCR:**
 
-  - **Zeilenumbruch- und Einfügefehler:**
-    - Fehlende oder überflüssige Zeilenumbrüche, was zu fragmentierten Sätzen führt (Beispiel: „Dec '“ oder das Einfügen von „00908v1“ mitten im Text).
-  - **Zeichenersetzung:**
-    - Fehlerhafte Erkennung von Sonderzeichen, wie das Verwechseln von „DocAI“ mit „DocAIl“.
-  - **Unklare Segmentierung bei Zitaten:**
-    - Probleme bei der korrekten Erkennung von Zitations- und Referenzelementen (z. B. fehlerhafte eckige Klammern und inkonsistente Zitatnummern).
+  - **Zeilenumbrüche & fehlende Struktur:**
+    - Häufige unerwartete Zeilenumbrüche (z. B. „Dec '“ oder „00908v1“ mitten im Text).
+  - **Fehlerhafte Zeichenersetzung:**
+    - Falsche Sonderzeichen (z. B. „DocAI“ → „DocAIl“).
+  - **Inhaltsverlust:**
+    - Referenzen und wissenschaftliche Metadaten werden oft **nicht sauber extrahiert**.
 - **Nougat:**
 
-  - **Kleine Namens- und Fußnotenfehler:**
-    - Zusätzliche Zeichen in Namen, z. B. „Mathieu Sibue1“ statt „Mathieu Sibue“.
-    - Unvollständige oder unsauber formatierte Fußnoten („Footnote 1: footnotemark:“).
-  - **Numerische Artefakte:**
-    - Seltenes Einfügen von Zahlen oder Zeichen, die nicht zum Originaltext gehören.
-  - **Allgemeine Sauberkeit:**
-    - Insgesamt klarere Struktur und bessere Trennung von Titeln, Abstract und Fließtext, wenngleich kleinere Fehler auftreten.
+  - **Gelegentliche kleine Artefakte:**
+    - Namen werden manchmal falsch formatiert (z. B. „Mathieu Sibue1“).
+    - Fußnoten können unvollständig sein.
+  - **Nummerierungsfehler:**
+    - Selten fehlerhafte Zahlen in Überschriften oder Verweisen.
+  - **Allgemein beste Formatierung:**
+    - Klarere Struktur, sehr gute **Trennung von Absätzen, Abstract und Haupttext**.
 
-### Vergleich der Fehlerhäufigkeit
+### **Vergleich der Fehlerhäufigkeit**
 
-- **Struktur und Sauberkeit:**
+| Fehlerkategorie               | Tesseract | PaddleOCR | Nougat  |
+| ----------------------------- | --------- | --------- | ------- |
+| **Zeichenfehler**       | Mittel    | Hoch      | Niedrig |
+| **Zeilenumbrüche**     | Gering    | Hoch      | Niedrig |
+| **Formatierungsfehler** | Mittel    | Hoch      | Gering  |
+| **Fehlende Wörter**    | Niedrig   | Mittel    | Gering  |
 
-  - **Nougat** liefert im Allgemeinen die sauberste und am besten strukturierte Ausgabe, mit klar abgegrenzten Abschnitten und wenigen Fehlern.
-  - **Tesseract** weist ähnliche Fehler auf, die typischerweise in der Zeichen- und Interpunktionswiedergabe liegen, jedoch ist die Grundstruktur weitgehend erkennbar.
-- **Zeichen- und Formatierungsfehler:**
+### **Zusammenfassung**
 
-  - **Tesseract** tendiert zu typischen OCR-Zeichenfehlern (z. B. „Al“ statt „AI“, doppelte oder fehlende Klammern).
-  - **PaddleOCR** hat häufiger Probleme mit falschen Zeilenumbrüchen und unerwünschten Einfügungen, was zu einer inkonsistenteren Textausgabe führt.
-- **Spezifische Detailgenauigkeit:**
+- **Nougat** liefert die **beste Struktur** mit minimalen Fehlern, ist aber **langsam**.
+- **Tesseract** bietet eine **solide Basis**, aber leidet unter Zeichen- und Formatierungsfehlern.
+- **PaddleOCR** zeigt **die größten Fehler** in Struktur und Zeichenkorrektheit, weshalb es für wissenschaftliche Paper weniger geeignet ist.
 
-  - Während **Nougat** auch kleinere Fehler (wie Namenszusätze) aufweist, scheinen diese im Vergleich zur insgesamt besseren Formatierung unbedeutend.
-  - **PDFReader** liefert Ergebnisse, die in vielen Aspekten mit denen von Tesseract vergleichbar sind, enthält jedoch zusätzliche Metadaten (z. B. Versionsangaben), die nicht immer zum eigentlichen Text gehören.
-
-### Zusammenfassung
-
-- **Nougat** ist hinsichtlich der Struktur und Klarheit der Ausgabe am besten geeignet, mit nur marginalen Fehlern bei Namen und Fußnoten.
-- **Tesseract**  liefert vergleichbare Ergebnisse, bei denen jedoch typische OCR-Fehler wie falsche Zeichen und inkonsistente Interpunktion auftreten.
-- **PaddleOCR** zeigt die häufigsten Probleme bei Zeilenumbrüchen und der falschen Erkennung von Sonderzeichen, was zu einer insgesamt weniger konsistenten Textausgabe führt.
-
-Diese Analyse hilft, die Stärken und Schwächen der einzelnen OCR-Technologien zu bewerten und zeigt, dass die Wahl der passenden Lösung vom spezifischen Anwendungsfall abhängt.
+Diese Analyse zeigt, dass **Nougat für wissenschaftliche Paper die beste Wahl** ist, während **Tesseract für schnellere Verarbeitung mit akzeptabler Genauigkeit sinnvoll** bleibt. *PaddleOCR* ist für unseren Anwendungsfall nicht empfehlenswert.
 
 ## Ausführen der DocumentOCRResults2-Klasse
 
@@ -430,21 +471,25 @@ cd Odyss.AI.Backend.OCR
 python -m app.service.DocumentOCRResults2
 ```
 
+## Formelerkennung mit Nougat
+
+**Nougat** ist das einzige OCR-System unter den getesteten (*Tesseract*, *PaddleOCR* und *Nougat*), das Formeln zuverlässig erkennen kann. Während andere OCR-Engines mathematische Ausdrücke entweder ignorieren oder fehlerhaft darstellen, bietet Nougat eine weitgehend korrekte und gut strukturierte Erkennung von Formeln in wissenschaftlichen Papers.
+
+### Evaluierungsmethode
+
+Die Formelerkennung wurde anhand von **19 wissenschaftlichen Papers** getestet, indem die Formeln aus den OCR-Ergebnissen von Nougat extrahiert und **manuell mit den Original-Papers verglichen** wurden.
+Hierzu wurde die **Klasse `Nougat_txt.py`** verwendet, die den reinen Textinhalt aus den Papers extrahierte. Die Ergebnisse wurden anschließend überprüft, um festzustellen, wie genau die Formeln wiedergegeben wurden.
+
+### Ergebnisse
+
+- **Nougat bietet die mit Abstand beste Formelwiedergabe** im Vergleich zu *Tesseract* und *PaddleOCR*.
+- **Struktur und Formatierung**: Formeln werden korrekt erkannt und strukturiert ausgegeben.
+- **Begrenzungen**: In einigen Fällen gibt es leichte Abweichungen in der Darstellung, insbesondere bei komplexen Gleichungen.
+
+Detaillierte Ergebnisse zur Formelerkennung sind im Abschnitt **"Odyss.AI.Backend.LLM"** in der README zu finden.
+
 ---
 
 ## To Do
 
-* **Datensatz-Erweiterung:**
-
-  * Die OCRs wurden anhand von 19 Dokumenten verglichen. Erste Ergebnisse liegen vor, jedoch noch nicht detailliert. Optional kann die Analyse erweitert und umfassender getestet werden.
-* **Formelerkennung:** Ziel: Formeln sollen direkt aus vollständigen Dokumenten extrahiert werden können.
-* Aktueller Stand:
-
-  * Die einzige bisher getestete Open-Source-Lösung (LaTeX-OCR – [GitHub-Link](https://github.com/lukas-blecher/LaTeX-OCR)) funktioniert nur, wenn die Formel isoliert vorliegt.
-  * Es gibt weitere Programme zur Formelerkennung aus Dokumenten, diese sind jedoch nicht Open Source.
-  * Nougat bietet ebenfalls eine Möglichkeit zur Extraktion von Formeln aus vollständigen Dokumenten. Dies befindet sich jedoch noch in der **Initial-Phase** und muss getestet werden.
-* Nächste Schritte:
-
-  * Nougat auf seine Fähigkeit zur Formelerkennung testen und evaluieren.
-  * Eine eigene Lösung zur Extraktion von Formeln aus vollständigen Dokumenten entwickeln oder bestehende Ansätze erweitern.
-  * Erfolgreiche Methoden in das bestehende System integrieren.
+* **Datensatz-Erweiterung:** Die OCRs wurden anhand von 19 Dokumenten verglichen. Erste Ergebnisse liegen vor, jedoch noch nicht detailliert. Optional kann die Analyse erweitert und umfassender getestet werden.
