@@ -356,6 +356,8 @@ Die nachfolgende Tabelle fasst die durchschnittlichen Metriken für die OCR-Engi
 
 ### Interpretation der Ergebnisse
 
+![OCR_results](image\OCR\OCR_results.png)
+
 1. **Genauigkeit & Fehlerquoten**
 
    - *Nougat* hat die geringste **Character Error Rate (CER)** mit 25.67% und eine bessere **Word Error Rate (WER)** als Tesseract und PaddleOCR.
