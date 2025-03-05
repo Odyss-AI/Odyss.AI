@@ -56,7 +56,6 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
   * [Nougat als einziges OCR mit Formelerkennung](#nougat-als-einziges-ocr-mit-formelerkennung)
   * [Evaluierungsmethode](#evaluierungsmethode)
   * [Ergebnisse der Formelerkennung](#ergebnisse-der-formelerkennung)
-
 * [To Do
   ](#to-do)
 
@@ -375,7 +374,6 @@ Die nachfolgende Tabelle fasst die durchschnittlichen Metriken für die OCR-Engi
    - *Tesseract* und *PaddleOCR* haben eine schnelle Verarbeitung (ca. 30-67 Sekunden pro Dokument).
    - *Nougat* benötigt mit **895 Sekunden (ca. 15 Minuten)** signifikant mehr Zeit (Auf CPU getestet).
 
-
 ## **Einschränkungen der Ergebnisse**
 
 Die OCR-Ergebnisse sind mit **Vorsicht** zu interpretieren, da die unterschiedlichen Engines die Dokumente auf verschiedene Weise verarbeiten. Insbesondere gibt es eine **Diskrepanz zwischen den Fehlerquoten (WER/CER) und den hohen Precision-, Recall- und F1-Werten**. Dies kann auf verschiedene Faktoren zurückgeführt werden:
@@ -392,6 +390,8 @@ Die OCR-Ergebnisse sind mit **Vorsicht** zu interpretieren, da die unterschiedli
 
   - Die Ergebnisse sind **vor allem im Verhältnis zueinander sinnvoll**, weniger als absolute Qualitätsmetrik.
   - *Nougat* zeigt klar die beste Leistung, insbesondere weil es auf wissenschaftlichen Papern trainiert wurde – ein Vorteil für unseren Anwendungsfall.
+
+![OCR_zu_Nougat](image\OCR\OCR_zu_Nougat.png)
 
 ---
 
