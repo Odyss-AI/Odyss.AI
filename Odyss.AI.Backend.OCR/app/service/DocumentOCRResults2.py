@@ -1,4 +1,5 @@
 from difflib import SequenceMatcher
+from typing import Counter
 from rapidfuzz.distance import Levenshtein
 from bs4 import BeautifulSoup
 import time
@@ -7,41 +8,59 @@ import re
 from app.service.tesseractocr import OCRTesseract
 from app.service.paddleocr import OCRPaddle
 from app.service.nougatocr import OCRNougat
+import jiwer
 from app.user import Document
 import json
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import jaccard_score
+from sklearn.metrics import precision_recall_fscore_support
 
-def clean_text(text):
-    """Normalisiert den Text, entfernt Sonderzeichen und normalisiert Leerzeichen."""
-    text = text.lower()
-    text = re.sub(r'[^\w\s]', '', text)  # Satzzeichen entfernen
-    text = re.sub(r'\s+', ' ', text).strip()
+def clean_text_ocr(text):
+    """Bereinigt den Text für den OCR-Vergleich, behält Groß-/Kleinschreibung sowie mathematische Zeichen."""
+    text = re.sub(r'[^\w\s\-\.\+\*\/\^]', '', text)  # Entfernt unerwünschte Zeichen, behält aber mathematische Operatoren
+    text = re.sub(r'\s+', ' ', text).strip()  # Mehrfache Leerzeichen reduzieren
     return text
 
-def jaccard_similarity(set1, set2):
-    """Berechnet die Jaccard-Ähnlichkeit auf Wortebene."""
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-    return (intersection / union) * 100 if union > 0 else 0
+def calculate_jaccard_similarity(reference, hypothesis):
+    """Berechnet die Jaccard-Ähnlichkeit mit Scikit-learn."""
+    ref_words = set(reference.split())
+    hyp_words = set(hypothesis.split())
+
+    # Erstelle eine gemeinsame Wortliste
+    all_words = list(ref_words | hyp_words)
+
+    # Binärvektoren für beide Texte erstellen
+    y_true = [1 if word in ref_words else 0 for word in all_words]
+    y_pred = [1 if word in hyp_words else 0 for word in all_words]
+
+    return jaccard_score(y_true, y_pred) * 100
+
 
 def cosine_similarity_metric(text1, text2):
-    """Berechnet die Cosine Similarity zwischen zwei Texten."""
-    vectorizer = TfidfVectorizer().fit_transform([text1, text2])
+    """Berechnet die Cosine Similarity zwischen zwei Texten mit Bigrammen und Stopword-Filterung."""
+    vectorizer = TfidfVectorizer(ngram_range=(1,2), stop_words="english").fit_transform([text1, text2])
     vectors = vectorizer.toarray()
     return cosine_similarity([vectors[0]], [vectors[1]])[0][0] * 100
 
-def calculate_precision_recall_f1(ground_truth, ocr_text):
-    """Berechnet Precision, Recall und F1-Score."""
-    gt_words = set(ground_truth.split())
-    ocr_words = set(ocr_text.split())
-    true_positive = len(gt_words & ocr_words)
-    false_positive = len(ocr_words - gt_words)
-    false_negative = len(gt_words - ocr_words)
+def calculate_word_error_rate(reference, hypothesis):
+    """Berechnet die Word Error Rate (WER) mit JiWER."""
+    wer = jiwer.wer(reference, hypothesis) * 100  # Als Prozentwert
+    return wer
+
+def calculate_precision_recall_f1(reference, hypothesis):
+    """Berechnet Precision, Recall und F1-Score über Wortfrequenzen mit Counter."""
+    ref_word_counts = Counter(reference.split())
+    hyp_word_counts = Counter(hypothesis.split())
+
+    true_positive = sum(min(ref_word_counts[w], hyp_word_counts[w]) for w in ref_word_counts if w in hyp_word_counts)
+    false_positive = sum(hyp_word_counts[w] for w in hyp_word_counts if w not in ref_word_counts)
+    false_negative = sum(ref_word_counts[w] for w in ref_word_counts if w not in hyp_word_counts)
+
     precision = (true_positive / (true_positive + false_positive)) * 100 if (true_positive + false_positive) > 0 else 0
     recall = (true_positive / (true_positive + false_negative)) * 100 if (true_positive + false_negative) > 0 else 0
     f1_score = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
     return precision, recall, f1_score
 
 class DocumentOCRResults2:
@@ -58,29 +77,25 @@ class DocumentOCRResults2:
             with open(self.html_path, "r", encoding="utf-8") as f:
                 soup = BeautifulSoup(f, "html.parser")
             text = soup.get_text()
-            return clean_text(text)
+            return clean_text_ocr(text)
         except Exception as e:
             print(f"Fehler beim Extrahieren der Ground Truth: {e}")
             return ""
     
     def _save_ground_truth(self):
         """Speichert die Ground Truth als Textdatei."""
- 
-        os.makedirs("results2", exist_ok=True)  # Stellt sicher, dass der Ordner existiert
-        
-        gt_text_file = os.path.join("app", "service","results2", os.path.basename(self.html_path).replace(".html", "_ground_truth.txt"))
+        gt_text_file = os.path.join("app", "service", "results5", os.path.basename(self.html_path).replace(".html", "_ground_truth.txt"))
         with open(gt_text_file, "w", encoding="utf-8") as f:
             f.write(self.ground_truth)
 
-
     def _extract_text_from_document(self, document):
         """Extrahiert den OCR-Text aus dem Dokument-Objekt."""
-        return clean_text(" ".join(chunk.text for chunk in document.textList))
+        return clean_text_ocr(" ".join(chunk.text for chunk in document.textList))
     
     def run_ocr(self, ocr_engines):
         """Führt OCR mit allen angegebenen Engines durch."""
         for engine_name, engine_instance in ocr_engines.items():
-            print(f"🔍 Starte OCR mit {engine_name}...")
+            print(f"Starte OCR mit {engine_name}...")
             start_time = time.time()
             document = engine_instance.extract_text(Document(
                 id="dummy_id", doc_id="dummy_doc_id", mongo_file_id="dummy_mongo_id", name=os.path.basename(self.pdf_path), 
@@ -93,7 +108,7 @@ class DocumentOCRResults2:
 
     def _save_ocr_text(self, engine_name, text):
         """Speichert den extrahierten OCR-Text als Datei."""
-        ocr_text_file = os.path.join("app", "service", "results2", f"{os.path.basename(self.pdf_path).replace('.pdf', '')}_{engine_name}_text.txt")
+        ocr_text_file = os.path.join("app", "service", "results5", f"{os.path.basename(self.pdf_path).replace('.pdf', '')}_{engine_name}_text.txt")
         with open(ocr_text_file, "w", encoding="utf-8") as f:
             f.write(text)
 
@@ -104,20 +119,18 @@ class DocumentOCRResults2:
             metrics = self._calculate_metrics(data['text'])
             metrics['processing_time'] = data['processing_time']
             results[ocr_name] = metrics
-        output_file = os.path.join("app", "service", "results2", os.path.basename(self.pdf_path).replace(".pdf", "_OCR_Ergebnisse.json"))
+        output_file = os.path.join("app", "service", "results5", os.path.basename(self.pdf_path).replace(".pdf", "_OCR_Ergebnisse.json"))
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=4, ensure_ascii=False)
         print(f"\nErgebnisse gespeichert in: {output_file}")
     
     def _calculate_metrics(self, ocr_text):
-        gt_words = set(self.ground_truth.split())
-        ocr_words = set(ocr_text.split())
         levenshtein_distance = Levenshtein.distance(self.ground_truth, ocr_text)
         similarity_ratio = SequenceMatcher(None, self.ground_truth, ocr_text).ratio() * 100
-        jaccard_similarity_score = jaccard_similarity(gt_words, ocr_words)
+        jaccard_similarity_score = calculate_jaccard_similarity(self.ground_truth, ocr_text)
         cosine_sim = cosine_similarity_metric(self.ground_truth, ocr_text)
-        char_error_rate = (levenshtein_distance / len(self.ground_truth)) * 100 if len(self.ground_truth) > 0 else 0
-        word_error_rate = (Levenshtein.distance(list(gt_words), list(ocr_words)) / len(gt_words)) * 100 if len(gt_words) > 0 else 0
+        char_error_rate = jiwer.cer(self.ground_truth, ocr_text) * 100
+        word_error_rate = calculate_word_error_rate(self.ground_truth, ocr_text)
         precision, recall, f1_score = calculate_precision_recall_f1(self.ground_truth, ocr_text)
         return {
             "levenshtein_distance": levenshtein_distance,
@@ -131,14 +144,13 @@ class DocumentOCRResults2:
             "recall": recall,
             "f1_score": f1_score
         }
-
     
     @staticmethod
     def process_folder(dataset_root):
         """Verarbeitet alle PDFs in `paper_pdfs/` und vergleicht sie mit `paper_htmls/`."""
         pdf_folder = os.path.join(dataset_root, "paper_pdfs")
         html_folder = os.path.join(dataset_root, "paper_htmls")
-        results_folder = os.path.join("app", "service", "results2")
+        results_folder = os.path.join("app", "service", "results5")
 
         os.makedirs(results_folder, exist_ok=True)  # Ordner erstellen, falls nicht vorhanden
 
