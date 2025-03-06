@@ -352,6 +352,119 @@ Die nachfolgende Tabelle fasst die durchschnittlichen Metriken für die OCR-Engi
 | **F1-Score (%)**           | 91.06     | 89.82     | 92.64    |
 | **Processing Time (s)**    | 29.76     | 67.25     | 895.09   |
 
+## Erklärung der Metriken
+
+Um die Leistung der verschiedenen OCR-Engines objektiv zu vergleichen, wurden folgende Metriken verwendet:
+
+### **Fehlerraten & Ähnlichkeitswerte**
+
+Diese Metriken messen, wie genau die extrahierten Texte mit dem Originaltext übereinstimmen.
+
+- **Levenshtein Distance** Die Anzahl der Änderungen (Einfügungen, Löschungen, Ersetzungen), die erforderlich sind, um den erkannten OCR-Text in den tatsächlichen Originaltext umzuwandeln.
+
+  - **Niedriger Wert** = Bessere Genauigkeit
+- **Normalized Levenshtein** Die Levenshtein-Distanz normalisiert auf eine Skala von 0 bis 1, wobei 0 eine perfekte Übereinstimmung und 1 eine vollständige Abweichung bedeutet.
+
+  - **Niedriger Wert** = Besser
+- **Char Error Rate (CER) (%)** Die Fehlerquote auf Zeichenebene, berechnet als: CER = (Levenshtein-Distanz) / (Anzahl der Zeichen im Originaltext)
+
+  - **Niedriger Wert** = OCR erkennt Zeichen präziser
+- **Word Error Rate (WER) (%)** Die Fehlerquote auf Wortebene, berechnet als: WER = (Levenshtein-Distanz auf Wortebene) / (Anzahl der Wörter im Originaltext)
+
+  - **Niedriger Wert** = Besser, da weniger Wörter falsch erkannt wurden
+
+### **Ähnlichkeitsmetriken**
+
+Diese Metriken bewerten, wie ähnlich der OCR-Text dem Originaltext ist.
+
+- **Similarity Ratio (%)** Gibt an, wie viel Prozent der Zeichen und Wörter übereinstimmen.
+
+  - **Höherer Wert** = Besser
+- **Jaccard Similarity (%)** Eine Metrik, die die Anzahl gemeinsamer Wörter zwischen OCR-Text und Originaltext misst, relativ zur Gesamtzahl der Wörter in beiden Texten: J(A, B) = |A ∩ B| / |A ∪ B|
+
+  - **Höherer Wert** = OCR erkennt mehr der tatsächlichen Wörter
+- **Cosine Similarity (%)** Berechnet die Ähnlichkeit zwischen zwei Texten basierend auf der Häufigkeit gemeinsamer Begriffe.
+
+  - **Höherer Wert** = OCR-Text ist näher am Original
+
+### **Präzisionsmetriken**
+
+Diese Metriken stammen aus der Information-Retrieval-Analyse und bewerten die Qualität der OCR-Erkennung.
+
+**Precision (%)**
+Anteil der korrekt erkannten Wörter im Verhältnis zu allen erkannten Wörtern:
+
+Precision = (Korrekt erkannte Wörter) / (Alle erkannten Wörter)
+
+- **Höherer Wert** = OCR erkennt weniger falsche Wörter
+
+**Recall (%)** Anteil der korrekt erkannten Wörter im Verhältnis zu den tatsächlich existierenden Wörtern im Originaltext::
+
+Recall = (Korrekt erkannte Wörter) / (Alle existierenden Wörter im Originaltext)
+
+* **Höherer Wert** = OCR erkennt mehr der tatsächlich vorhandenen Wörter
+
+**F1-Score (%)** Der harmonische Mittelwert von Precision und Recall, um ein Gleichgewicht zwischen beiden Werten zu schaffen:\
+
+F1 = 2 × (Precision × Recall) / (Precision + Recall)
+
+- **Höherer Wert** = Besseres Gleichgewicht zwischen Präzision und Erkennungsrate
+
+### **Laufzeit-Metrik**
+
+- **Processing Time (s)**Die Zeit, die das OCR-Modell benötigt, um ein Dokument zu verarbeiten.
+  - **Niedriger Wert** = Schnellere Verarbeitung
+
+Diese Metriken helfen, die Stärken und Schwächen der OCR-Systeme zu bewerten und zeigen, welches Modell für verschiedene Anwendungsfälle am besten geeignet ist.
+
+## Warum mehrere Metriken nutzen?
+
+Die Bewertung von OCR-Systemen ist komplex, da verschiedene Aspekte der Erkennung berücksichtigt werden müssen. Eine einzelne Metrik reicht oft nicht aus, um die Qualität eines OCR-Systems objektiv zu bewerten. Daher ist es sinnvoll, mehrere Metriken zu verwenden, die unterschiedliche Dimensionen der Genauigkeit und Effizienz messen.
+
+### **1. Warum mehrere Ähnlichkeitsmetriken?**
+
+Ähnlichkeitsmetriken messen, wie gut der OCR-Text mit dem Originaltext übereinstimmt. Da es verschiedene Möglichkeiten gibt, „Ähnlichkeit“ zu definieren, ergänzen sich die folgenden Metriken:
+
+- **Levenshtein Distance / Normalized Levenshtein:**
+
+  - Misst die minimale Anzahl von Bearbeitungen (Einfügungen, Löschungen, Ersetzungen), die notwendig sind, um den OCR-Text in den Originaltext zu verwandeln.
+  - **Problem:** Sensitiv gegenüber kleinen Änderungen und ignoriert die semantische Bedeutung von Wörtern.
+- **Char Error Rate (CER) & Word Error Rate (WER):**
+
+  - CER misst Fehler auf Zeichenebene, während WER Fehler auf Wortebene betrachtet.
+  - **CER ist hilfreich bei kleinen OCR-Fehlern (z. B. Buchstabendreher), während WER besser für ganze Wörter geeignet ist.**
+- **Jaccard Similarity:**
+
+  - Betrachtet die Anzahl der gemeinsamen Wörter zwischen OCR-Text und Originaltext relativ zur Gesamtmenge aller vorkommenden Wörter.
+  - **Nützlich, um zu messen, ob alle Schlüsselbegriffe erhalten bleiben, ignoriert aber deren Reihenfolge.**
+- **Cosine Similarity:**
+
+  - Berechnet die Ähnlichkeit basierend auf der Häufigkeit gemeinsamer Wörter, ohne dabei auf deren Reihenfolge zu achten.
+  - **Gut für lange Texte, aber kann problematisch sein, wenn OCR-Fehler ähnliche Wörter produziert.**
+
+### **2. Warum mehrere Metriken insgesamt nutzen?**
+
+Jede OCR-Metrik misst unterschiedliche Aspekte der Genauigkeit. Ein einziges Bewertungskriterium kann die Gesamtqualität verzerren.
+
+#### **Genauigkeitsmetriken (Precision, Recall, F1-Score)**
+
+Diese Metriken sind wichtig, da sie aufzeigen:
+
+- **Precision**: Wie viele erkannte Wörter waren tatsächlich korrekt?→ Hilft zu vermeiden, dass viele falsche Wörter extrahiert werden.
+- **Recall**: Wie viele der tatsächlich vorhandenen Wörter wurden erkannt?→ Zeigt, ob ein OCR-System wichtige Informationen auslässt.
+- **F1-Score**: Das Gleichgewicht zwischen Precision und Recall.
+
+**Beispiel:**
+
+- Ein Modell mit hoher **Precision**, aber niedrigem **Recall** erkennt nur sichere Wörter und übersieht viele.
+- Ein Modell mit hohem **Recall**, aber niedriger **Precision** erkennt viele Wörter, produziert aber viele Fehler.
+- Der **F1-Score** hilft, dieses Ungleichgewicht auszugleichen.
+
+#### **Verarbeitungszeit (Processing Time)**
+
+- Die Qualität eines OCR-Systems sollte nicht nur nach Genauigkeit bewertet werden, sondern auch nach Effizienz.
+- Ein hochgenaues Modell, das sehr langsam ist, könnte für Echtzeit-Anwendungen ungeeignet sein.
+
 ---
 
 ### Interpretation der Ergebnisse

@@ -113,7 +113,13 @@ const useChatStore = create((set) => ({
                 chatList: state.chatList.filter(chat => chat.id !== chatId),
             };
         }),
-}));
 
+    // Funktion zum Zurücksetzen des Stores
+    resetStore: () =>
+        set(() => ({
+            chats: {},
+            chatList: [],
+        })),
+}));
 
 export default useChatStore;

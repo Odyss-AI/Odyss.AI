@@ -12,6 +12,7 @@ function Login() {
     const login = useAuthStore((state) => state.login);  // Login-Funktion holen
     const addChat = useChatStore((state) => state.addChat);  // Chat hinzufügen
     const sendMessage = useChatStore((state) => state.sendMessage);  // Nachricht senden
+    const resetChatStore = useChatStore((state) => state.resetStore);  // Chat-Store zurücksetzen
 
     const { initializeWebSocket } = useWebSocket();
 
@@ -24,7 +25,7 @@ function Login() {
     // const msg1 = { content: "Hallo", isUser: true, timestamp: "2021-07-01T12:00:00.000Z" };
     // const msg2 = { content: "Hallo zurück", is_user: false, timestamp: "2021-07-01T12:01:00.000Z" };
     // const chats = [{ chat_name:  "test", messages: [msg1, msg2], id: 1 }];
-    
+
     const handleLogin = async () => {
         if (username && password) {
             const user = await getUser(username);  // Benutzerdaten überprüfen
@@ -35,6 +36,7 @@ function Login() {
             }
             console.log('User found:', user);
             login(username);  // Login-Logik hier
+            resetChatStore();  // Chat-Store zurücksetzen
             
             const chats = await getChats(username);  // Chats des Benutzers laden
             if (!chats) {
@@ -43,16 +45,15 @@ function Login() {
                 return;
             }
             chats.forEach(chat => {
-            //     //TODO: Hole tatsächliche Dokumente anhand der file_ids
                 addChat(chat.chat_name, [], [], chat.id);  // Chat hinzufügen
                 chat.messages.forEach(message => {
                     sendMessage(chat.id, message.content, message.is_user, message.timestamp);  // Nachrichten hinzufügen
-                })
+                });
             });
 
             initializeWebSocket();  // WebSocket initialisieren
         }
-        else {
+else {
             alert('Please enter username and password');
         }
     };
