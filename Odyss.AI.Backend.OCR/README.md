@@ -12,25 +12,23 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
 
 ---
 
+
 ## Inhaltsverzeichnis
 
 * [Überblick](#überblick)
 * [Projektstruktur](#projektstruktur)
 * [Dataset](#dataset)
-
   * [1. Herunterladen der Paper von arXiv](#1-herunterladen-der-paper-von-arxiv)
   * [2. Umwandlung von LaTeX in HTML](#2-umwandlung-von-latex-in-html)
   * [3. Ordnerstruktur des Datasets](#3-ordnerstruktur-des-datasets)
   * [4. Nutzung des Datasets](#4-nutzung-des-datasets)
 * [Funktionsweise und Ablauf](#funktionsweise-und-ablauf)
-
   * [OCR-Engines](#ocr-engines)
   * [PDF-Verarbeitung und Datenextraktion](#pdf-verarbeitung-und-datenextraktion)
   * [Textextraktion &amp; Chunking](#textextraktion--chunking)
 * [Ausführung und Nutzung](#ausführung-und-nutzung)
 * [Hinweise](#hinweise)
 * [OCR Vergleich: Tesseract vs. Paddle vs. Nougat](#ocr-vergleich-tesseract-vs-paddle-vs-nougat)
-
   * [Einleitung](#einleitung)
   * [Allgemeine Informationen (Allgemeiner Vergleich)](#allgemeine-informationen-allgemeiner-vergleich)
   * [Vergleichskriterien](#vergleichskriterien)
@@ -41,6 +39,16 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
     * [Nougat](#nougat)
   * [Evaluation der OCR-Ergebnisse](#evaluation-der-ocr-ergebnisse)
     * [Übersicht der durchschnittlichen Metriken](#übersicht-der-durchschnittlichen-metriken)
+    * [Erklärung der Metriken](#erklärung-der-metriken)
+      * [Fehlerraten &amp; Ähnlichkeitswerte](#fehlerraten--ähnlichkeitswerte)
+      * [Ähnlichkeitsmetriken](#ähnlichkeitsmetriken)
+      * [Präzisionsmetriken](#präzisionsmetriken)
+      * [Laufzeit-Metrik](#laufzeit-metrik)
+      * [Warum mehrere Metriken nutzen?](#warum-mehrere-metriken-nutzen)
+        * [1. Warum mehrere Ähnlichkeitsmetriken?](#1-warum-mehrere-ähnlichkeitsmetriken)
+        * [2. Warum mehrere Metriken insgesamt nutzen?](#2-warum-mehrere-metriken-insgesamt-nutzen)
+        * [Genauigkeitsmetriken (Precision, Recall, F1-Score)](#genauigkeitsmetriken-precision-recall-f1-score)
+        * [Verarbeitungszeit (Processing Time)](#verarbeitungszeit-processing-time)
     * [Interpretation der Ergebnisse](#interpretation-der-ergebnisse)
     * [Einschränkungen der Ergebnisse](#einschränkungen-der-ergebnisse)
     * [Fazit](#fazit)
@@ -49,15 +57,11 @@ Die einzelnen Implementierungen extrahieren sowohl Fließtext als auch eingebett
     * [Vergleich der Fehlerhäufigkeit](#vergleich-der-fehlerhäufigkeit)
     * [Zusammenfassung](#zusammenfassung)
 * [Ausführen der DocumentOCRResults2-Klasse](#ausführen-der-documentocrresults2-klasse)
-
   * [Wechsle zum richtigen Verzeichnis](#wechsle-zum-richtigen-verzeichnis)
 * [Formelerkennung mit Nougat](#formelerkennung-mit-nougat)
-
-  * [Nougat als einziges OCR mit Formelerkennung](#nougat-als-einziges-ocr-mit-formelerkennung)
   * [Evaluierungsmethode](#evaluierungsmethode)
-  * [Ergebnisse der Formelerkennung](#ergebnisse-der-formelerkennung)
-* [To Do
-  ](#to-do)
+  * [Ergebnisse](#ergebnisse)
+* [To Do](#to-do)
 
 ---
 
