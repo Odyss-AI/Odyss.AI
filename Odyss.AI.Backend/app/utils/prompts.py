@@ -48,7 +48,7 @@ def qna_prompt_builder(chunks: list, question: str):
         {context}
 
         # Anweisungen:
-        Antworte in 3-8 klaren und prägnanten Sätzen auf die folgende Frage: 
+        Antworte in klaren und prägnanten Sätzen auf die folgende Frage: 
         {question}
         """
     else:
