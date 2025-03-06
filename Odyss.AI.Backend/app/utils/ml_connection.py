@@ -187,6 +187,7 @@ async def query_pixtral_with_ssh_async(doc:Document):
 
                     # Ergebnis anzeigen
                     img.llm_output = chat_completion_from_base64.choices[0].message.content
+                    print(f"Ergebnis für Bild {img.id}: {img.llm_output}")
                 except Exception as e:
                     print(img.id + ": Error while processing image: ", e)
                     logging.error(f"Error while processing image: {e}")
@@ -230,11 +231,15 @@ async def query_mixtral_with_ssh_async(prompt: list):
                         try:
                             result = await response.json()
                             if isinstance(result, list) and 'generated_text' in result[0]:
-                                return result[0]['generated_text']
+                                generated_text = result[0]['generated_text']
+                                
+                                # Suche nach "Model answer </s>" und gib nur den relevanten Teil zurück
+                                split_text = generated_text.split("Model answer </s>", 1)
+                                return split_text[1].strip() if len(split_text) > 1 else generated_text.strip()
                             else:
                                 print("Unexpected response format:", str(result))
                         except Exception as e:
-                            print("Error while process JSON response from Mistral:", str(e))
+                            print("Error while processing JSON response from Mistral:", str(e))
                     else:
                         print("Error while getting response from Mistral:", str(response.status), await response.text())
 
