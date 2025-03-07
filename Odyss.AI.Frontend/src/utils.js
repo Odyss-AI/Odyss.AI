@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BaseUrl = "http://141.75.150.74:443";
+const BaseUrl = "http://141.75.150.107:443";
 // const BaseUrl = "http://0.0.0.0:443";
 
 // GET-Anfrage
